@@ -21,11 +21,13 @@
 
 ### 网站截图
 首页截图
-![网站截图](./public/assets/uploads/截图.jpg)
+![网站截图](./public/assets/uploads/ScreenShot.jpg)
+列表页截图
+![网站截图](./public/assets/uploads/ScreenShot1.jpg)
 内容页截图
-![网站截图2](./public/assets/uploads/截图4.jpg)
+![网站截图2](./public/assets/uploads/ScreenShot2.jpg)
 友情链接
-![网站截图3](./public/assets/uploads/截图3.jpg)
+![网站截图3](./public/assets/uploads/ScreenShot3.jpg)
 
 ### 技术栈
 - 前端框架：Astro 5.x + React 18 + TypeScript 5
