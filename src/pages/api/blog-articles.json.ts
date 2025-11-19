@@ -1,12 +1,14 @@
 import { getCollection } from "astro:content";
 import type { APIRoute } from "astro";
+import { logger } from "@lib/env";
 
 // 生成博客文章列表的API端点
 export const GET: APIRoute = async () => {
   try {
+    console.log('开始获取博客文章...')
     // 获取所有已发布的博客文章
-    const allPosts = await getCollection("blog", ({ data }) => {
-      return data.status === "published" && !data.draft;
+    const allPosts = await getCollection("blog", ({ data,filePath }) => {
+      return data.status === "published" && !data.draft && filePath?.indexOf('-index') == -1;
     });
 
     // 转换为前端需要的格式

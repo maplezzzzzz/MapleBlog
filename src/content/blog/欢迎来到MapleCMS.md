@@ -1,8 +1,8 @@
 ---
 title: 欢迎使用 MapleBlog
 description: 本文是 MapleBlog 的默认示例，帮助你快速了解如何使用本系统发布内容。MapleBlog 是一款轻量级、开源的内容管理系统，专为个人博客、文档站点与小团队协作设计。
-createdAt: 2025-11-12
-updatedAt: 2025-11-12
+createdAt: 2025-11-17
+updatedAt: 2025-11-17
 categories:
   - 使用说明
 author: Maple

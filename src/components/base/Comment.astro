@@ -8,7 +8,7 @@
       const commentsContainer = document.getElementById("tcomment");
       if (commentsContainer) {
         if (!twikooEnvId) {
-          console.error("Twikoo envId 未配置。请在 .env 中设置 PUBLIC_TWIKOO_ENV_ID。");
+          showError("留言模块未加载，Twikoo envId 未配置。");
           return;
         }
         const script = document.createElement("script");
@@ -29,20 +29,35 @@
             // 动态加载 Twikoo 自定义样式的函数
             function loadTwikooCustomStyles() {
                 if (document.getElementById('twikoo-custom-link')) {
-        return;
-    }
-    
-    const link = document.createElement('link');
-    link.id = 'twikoo-custom-link';
-    link.rel = 'stylesheet';
-    link.href = '/src/styles/twikoo-custom.scss'; // 需要构建工具支持
-    document.head.appendChild(link);
+                    return;
+                }
+                
+                const link = document.createElement('link');
+                link.id = 'twikoo-custom-link';
+                link.rel = 'stylesheet';
+                link.href = '/src/styles/twikoo-custom.scss'; // 需要构建工具支持
+                document.head.appendChild(link);
             }
         `;
           document.body.appendChild(initScript);
         };
         document.body.appendChild(script);
       }
+    }
+
+    function showError(msg){
+      const list = document.getElementById("tcomment");
+      if(!list) return;
+      list.removeAttribute('aria-busy');
+      list.innerHTML = `
+        <div class="py-4">
+          <div class="text-center text-red-600 dark:text-red-400">
+            ${msg || "评论获取失败，请稍后重试。"}
+          </div>
+        </div>
+      `;
+      const btn = document.getElementById("rc-retry-btn");
+      if(btn){ btn.addEventListener("click", load, { once: true }); }
     }
     loadTwikoo();
   });

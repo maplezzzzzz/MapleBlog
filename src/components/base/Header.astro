@@ -444,11 +444,11 @@ const menu = [
             if (!response.ok) {
               throw new Error("无法获取文章列表");
             }
-
             const articles = await response.json();
             if (!articles || articles.length === 0) {
               throw new Error("没有找到可用的文章");
             }
+            
 
             // 随机选择一篇文章
             const randomIndex = Math.floor(Math.random() * articles.length);

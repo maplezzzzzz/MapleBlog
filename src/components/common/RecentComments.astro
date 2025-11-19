@@ -46,7 +46,6 @@ const titleMap = Object.fromEntries(
       <li class="py-4">
         <div class="text-center text-red-600 dark:text-red-400">
           ${msg || "评论获取失败，请稍后重试。"}
-          <button id="rc-retry-btn" class="ml-2 px-2 py-1 text-sm rounded border border-red-300 dark:border-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20">重试</button>
         </div>
       </li>
     `;
@@ -123,7 +122,7 @@ const titleMap = Object.fromEntries(
   function load(){
     if(!list){return}
     if(!twikooEnvId){
-      showError("未配置 Twikoo 环境 ID");
+      showError("留言模块未加载，Twikoo envId 未配置。");
       return;
     }
     showLoading();

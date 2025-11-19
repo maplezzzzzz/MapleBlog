@@ -34,7 +34,7 @@ const actuallyHideToc =
   hideToc ||
   globalHideToc ||
   headings.filter((heading) => heading.depth <= tocDepth).length === 0;
-console.log("actuallyHideToc:", actuallyHideToc);
+
 // 简化布局类计算
 const articleClass = "w-full lg:w-3/4 xl:w-4/5"; //因为侧边栏还有推荐阅读，所以不需要根据toc是否隐藏来计算宽度
 // const articleClass = actuallyHideToc ? "w-full" : "w-full lg:w-3/4 xl:w-4/5";
