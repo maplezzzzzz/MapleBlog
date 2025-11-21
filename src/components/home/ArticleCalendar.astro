@@ -1,5 +1,7 @@
 ---
-import { getCollection } from "astro:content";
+import { getEntries } from "@lib/contentParser";
+
+
 
 // 定义类型
 interface DayData {
@@ -15,18 +17,9 @@ interface MonthLabel {
 }
 
 // 获取所有文章（包括blog和notes）
-const blogPosts = await getCollection("blog", ({ data, filePath }) => {
-  if (filePath?.includes("-index.md")) {
-    return false;
-  }
-  return data.status === "published" && !data.draft;
-});
-const notesPosts = await getCollection("notes", ({ data, filePath }) => {
-  if (filePath?.includes("-index.md")) {
-    return false;
-  }
-  return !data.draft;
-});
+const blogPosts = await getEntries("blog");
+const notesPosts = await getEntries("notes");
+
 const allPosts = [...blogPosts, ...notesPosts];
 
 // 生成当前年度的日期数据（从1月1日开始）

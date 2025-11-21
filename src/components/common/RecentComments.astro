@@ -25,7 +25,7 @@ const titleMap = Object.fromEntries(
   limit,
   titleMap
 }}>
-  const list = document.getElementById("recent-comments-list");
+  let list = document.getElementById("recent-comments-list");
   const maxLen=100;
   function showLoading(){
     if(!list) return;
@@ -120,6 +120,7 @@ const titleMap = Object.fromEntries(
     });
   }
   function load(){
+    list = document.getElementById("recent-comments-list");
     if(!list){return}
     if(!twikooEnvId){
       showError("留言模块未加载，Twikoo envId 未配置。");
