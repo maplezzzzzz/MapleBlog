@@ -805,10 +805,6 @@ const customFooterCode = customSettings?.custom_footer_code || "";
         }
       });
 
-      // 监听浏览器前进后退按钮
-      window.addEventListener("popstate", () => {
-        showPageLoading();
-      });
 
       // 监听表单提交（如搜索表单）
       document.addEventListener("submit", (e) => {
