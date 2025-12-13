@@ -8,12 +8,6 @@ import { fileURLToPath } from 'url';
 // 明确指定此为服务器渲染路由
 export const prerender = false;
 
-// 为动态路由提供静态路径，返回空数组避免实际生成静态页面
-export async function getStaticPaths() {
-  // 对于API路由，返回空数组以避免构建静态页面
-  // 但满足构建系统对动态路由函数的要求
-  return [];
-}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
