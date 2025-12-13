@@ -8,15 +8,11 @@ import { fileURLToPath } from 'url';
 // 明确指定此为服务器渲染路由
 export const prerender = false;
 
-// 为动态路由提供静态路径的最小实现，以满足构建系统要求，但实际不生成静态页面
+// 为动态路由提供静态路径，返回空数组避免实际生成静态页面
 export async function getStaticPaths() {
-  // 返回一个示例路径以满足构建要求，但不实际生成静态内容
-  return [
-    {
-      params: { slug: "example" },
-      // 不提供props，因为我们使用动态服务器端处理
-    }
-  ];
+  // 对于API路由，返回空数组以避免构建静态页面
+  // 但满足构建系统对动态路由函数的要求
+  return [];
 }
 
 const __filename = fileURLToPath(import.meta.url);
