@@ -156,9 +156,6 @@ export const DELETE: APIRoute = async ({ params }) => {
     } else if (slug.startsWith('about/')) {
       contentDir = 'about';
       fileExtension = '.md';
-    } else if (slug.startsWith('notes/')) {
-      contentDir = 'notes';
-      fileExtension = '.mdx';
     } else {
       // 默认处理blog内容
       contentDir = 'blog';
