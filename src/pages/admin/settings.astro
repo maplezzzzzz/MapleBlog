@@ -1,0 +1,351 @@
+---
+import Layout from '../../layouts/AdminLayout.astro';
+
+const title = '网站设置';
+---
+
+<Layout title={title}>
+  <div class="admin-container">
+    <h2>网站设置</h2>
+    
+    <div class="admin-tabs">
+      <button class="tab-btn active" data-tab="general">常规</button>
+      <button class="tab-btn" data-tab="contact">联系方式</button>
+      <button class="tab-btn" data-tab="social">社交媒体</button>
+      <button class="tab-btn" data-tab="legal">法律信息</button>
+      <button class="tab-btn" data-tab="appearance">外观</button>
+    </div>
+    
+    <form class="admin-form" id="settings-form">
+      <!-- 常规设置标签页 -->
+      <div class="tab-content active" id="general-tab">
+        <div class="form-group">
+          <label for="site-name">网站名称</label>
+          <input type="text" id="site-name" name="siteName" placeholder="网站的名称">
+        </div>
+        
+        <div class="form-group">
+          <label for="site-description">网站描述</label>
+          <textarea id="site-description" name="siteDescription" placeholder="网站的简短描述"></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label for="site-email">管理员邮箱</label>
+          <input type="email" id="site-email" name="adminEmail" placeholder="管理员联系邮箱">
+        </div>
+        
+        <div class="form-group">
+          <label for="site-url">网站URL</label>
+          <input type="url" id="site-url" name="siteUrl" placeholder="完整的网站URL">
+        </div>
+        
+        <div class="form-group">
+          <label for="favicon">网站图标(Favicon)</label>
+          <input type="text" id="favicon" name="favicon" placeholder="图标文件路径或URL">
+          <small>通常为 /favicon.ico 或 /favicon.png</small>
+        </div>
+        
+        <div class="form-group">
+          <label for="logo">网站Logo</label>
+          <input type="text" id="logo" name="logo" placeholder="Logo图片路径或URL">
+        </div>
+        
+        <div class="form-group">
+          <label for="beian">备案信息</label>
+          <input type="text" id="beian" name="beian" placeholder="中国大陆ICP备案号">
+        </div>
+        
+        <div class="form-group">
+          <label for="ga-code">Google Analytics代码</label>
+          <input type="text" id="ga-code" name="gaCode" placeholder="如: UA-XXXXXXXX-X 或 G-XXXXXXXXXX">
+        </div>
+      </div>
+      
+      <!-- 联系方式标签页 -->
+      <div class="tab-content" id="contact-tab">
+        <div class="form-group">
+          <label for="contact-address">联系地址</label>
+          <input type="text" id="contact-address" name="contactAddress" placeholder="公司或个人地址">
+        </div>
+        
+        <div class="form-group">
+          <label for="contact-phone">联系电话</label>
+          <input type="tel" id="contact-phone" name="contactPhone" placeholder="联系电话号码">
+        </div>
+        
+        <div class="form-group">
+          <label for="contact-email">联系邮箱</label>
+          <input type="email" id="contact-email" name="contactEmail" placeholder="联系邮箱地址">
+        </div>
+        
+        <div class="form-group">
+          <label for="business-hours">营业时间</label>
+          <input type="text" id="business-hours" name="businessHours" placeholder="如: 周一至周五 9:00-18:00">
+        </div>
+      </div>
+      
+      <!-- 社交媒体标签页 -->
+      <div class="tab-content" id="social-tab">
+        <div class="form-group">
+          <label for="social-facebook">Facebook</label>
+          <input type="url" id="social-facebook" name="facebook" placeholder="Facebook页面URL">
+        </div>
+        
+        <div class="form-group">
+          <label for="social-twitter">Twitter(X)</label>
+          <input type="url" id="social-twitter" name="twitter" placeholder="Twitter/X页面URL">
+        </div>
+        
+        <div class="form-group">
+          <label for="social-instagram">Instagram</label>
+          <input type="url" id="social-instagram" name="instagram" placeholder="Instagram页面URL">
+        </div>
+        
+        <div class="form-group">
+          <label for="social-linkedin">LinkedIn</label>
+          <input type="url" id="social-linkedin" name="linkedin" placeholder="LinkedIn页面URL">
+        </div>
+        
+        <div class="form-group">
+          <label for="social-wechat">微信</label>
+          <input type="text" id="social-wechat" name="wechat" placeholder="微信号">
+        </div>
+        
+        <div class="form-group">
+          <label for="social-github">GitHub</label>
+          <input type="url" id="social-github" name="github" placeholder="GitHub页面URL">
+        </div>
+        
+        <div class="form-group">
+          <label for="social-youtube">YouTube</label>
+          <input type="url" id="social-youtube" name="youtube" placeholder="YouTube频道URL">
+        </div>
+      </div>
+      
+      <!-- 法律信息标签页 -->
+      <div class="tab-content" id="legal-tab">
+        <div class="form-group">
+          <label for="copyright">版权信息</label>
+          <input type="text" id="copyright" name="copyright" placeholder="版权信息文本">
+        </div>
+        
+        <div class="form-group">
+          <label for="privacy-policy">隐私政策页面</label>
+          <input type="text" id="privacy-policy" name="privacyPolicy" placeholder="隐私政策页面路径">
+        </div>
+        
+        <div class="form-group">
+          <label for="terms-of-service">服务条款页面</label>
+          <input type="text" id="terms-of-service" name="termsOfService" placeholder="服务条款页面路径">
+        </div>
+        
+        <div class="form-group">
+          <label for="disclaimer">免责声明</label>
+          <input type="text" id="disclaimer" name="disclaimer" placeholder="免责声明文本">
+        </div>
+      </div>
+      
+      <!-- 外观标签页 -->
+      <div class="tab-content" id="appearance-tab">
+        <div class="form-group">
+          <label for="theme-color">主题色</label>
+          <input type="color" id="theme-color" name="themeColor" value="#3498db">
+        </div>
+        
+        <div class="form-group">
+          <label for="font-family">字体族</label>
+          <select id="font-family" name="fontFamily">
+            <option value="system">系统默认</option>
+            <option value="sans-serif">无衬线字体</option>
+            <option value="serif">衬线字体</option>
+            <option value="'PingFang SC', 'Hiragino Sans GB', sans-serif">苹果字体</option>
+            <option value="'Microsoft YaHei', sans-serif">微软雅黑</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="layout-style">布局风格</label>
+          <select id="layout-style" name="layoutStyle">
+            <option value="modern">现代风格</option>
+            <option value="classic">经典风格</option>
+            <option value="minimalist">极简风格</option>
+            <option value="professional">专业风格</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="enable-comments">启用评论功能</label>
+          <select id="enable-comments" name="enableComments">
+            <option value="true">是</option>
+            <option value="false">否</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="max-post-display">首页最大文章数</label>
+          <input type="number" id="max-post-display" name="maxPostDisplay" min="1" max="50" value="10">
+        </div>
+      </div>
+    </form>
+    
+    <div class="form-actions">
+      <button type="submit" form="settings-form" class="admin-btn">保存设置</button>
+      <button type="button" class="admin-btn admin-btn-secondary" onclick="resetForm()">重置表单</button>
+    </div>
+  </div>
+
+  <script>
+    // 切换标签页
+    document.querySelectorAll('.tab-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        // 移除所有active类
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        // 添加active类到当前按钮和内容
+        button.classList.add('active');
+        const tabId = button.getAttribute('data-tab') + '-tab';
+        document.getElementById(tabId).classList.add('active');
+      });
+    });
+    
+    // 加载当前设置
+    async function loadSettings() {
+      try {
+        const response = await fetch('/api/settings');
+        if (response.ok) {
+          const settings = await response.json();
+
+          const elementsMap: { [key: string]: string } = {
+            'site-name': settings.siteName || '',
+            'site-description': settings.siteDescription || '',
+            'site-email': settings.adminEmail || '',
+            'site-url': settings.siteUrl || '',
+            'favicon': settings.favicon || '',
+            'logo': settings.logo || '',
+            'beian': settings.beian || '',
+            'ga-code': settings.gaCode || '',
+            'contact-address': settings.contactAddress || '',
+            'contact-phone': settings.contactPhone || '',
+            'contact-email': settings.contactEmail || '',
+            'business-hours': settings.businessHours || '',
+            'social-facebook': settings.facebook || '',
+            'social-twitter': settings.twitter || '',
+            'social-instagram': settings.instagram || '',
+            'social-linkedin': settings.linkedin || '',
+            'social-wechat': settings.wechat || '',
+            'social-github': settings.github || '',
+            'social-youtube': settings.youtube || '',
+            'copyright': settings.copyright || '',
+            'privacy-policy': settings.privacyPolicy || '',
+            'terms-of-service': settings.termsOfService || '',
+            'disclaimer': settings.disclaimer || '',
+            'theme-color': settings.themeColor || '#3498db',
+            'font-family': settings.fontFamily || 'system',
+            'layout-style': settings.layoutStyle || 'modern',
+            'enable-comments': settings.enableComments || 'true',
+            'max-post-display': settings.maxPostDisplay || '10'
+          };
+
+          Object.entries(elementsMap).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) {
+              (element as HTMLInputElement).value = value;
+            }
+          });
+        }
+      } catch (error) {
+        console.error('加载设置失败:', error);
+      }
+    }
+    
+    // 保存设置
+    const settingsForm = document.getElementById('settings-form');
+    if (settingsForm) {
+      settingsForm.addEventListener('submit', async (e: Event) => {
+        e.preventDefault();
+
+        const formData = new FormData(e.target as HTMLFormElement);
+        const settings = Object.fromEntries(formData.entries());
+
+        try {
+          const response = await fetch('/api/settings', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(settings)
+          });
+
+          if (response.ok) {
+            alert('网站设置保存成功！');
+          } else {
+            alert('保存失败，请重试。');
+          }
+        } catch (error) {
+          console.error('保存设置失败:', error);
+          alert('保存失败，请重试。');
+        }
+      });
+    }
+    
+    // 重置表单
+    function resetForm() {
+      if (confirm('确定要重置所有更改吗？')) {
+        loadSettings(); // 重新加载原始设置
+      }
+    }
+    
+    // 页面加载时获取设置
+    document.addEventListener('DOMContentLoaded', loadSettings);
+  </script>
+  
+  <style>
+    .admin-tabs {
+      display: flex;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    .tab-btn {
+      background: none;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+    }
+    
+    .tab-btn.active {
+      border-bottom: 3px solid #3498db;
+      color: #3498db;
+    }
+    
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.3s ease-in;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .form-actions {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    
+    input[type="color"] {
+      width: 60px;
+      height: 40px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+  </style>
+</Layout>

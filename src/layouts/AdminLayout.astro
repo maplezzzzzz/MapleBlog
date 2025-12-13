@@ -1,0 +1,43 @@
+---
+interface Props {
+  title?: string;
+}
+
+const { title = '管理后台' } = Astro.props as Props;
+---
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{title} - 小白天地</title>
+  <link rel="stylesheet" href="/admin/styles/admin.css">
+</head>
+<body>
+  <div class="admin-wrapper">
+    <aside class="admin-sidebar">
+      <div class="admin-logo">
+        <h2>管理后台</h2>
+      </div>
+      <nav class="admin-nav">
+        <a href="/admin/" class="nav-link">仪表板</a>
+        <a href="/admin/content" class="nav-link">内容管理</a>
+        <a href="/admin/analytics" class="nav-link">访问统计</a>
+        <a href="/admin/seo" class="nav-link">SEO优化</a>
+        <a href="/admin/ads" class="nav-link">广告管理</a>
+        <a href="/admin/settings" class="nav-link">网站设置</a>
+        <a href="/admin/python-integration" class="nav-link">Python功能</a>
+      </nav>
+    </aside>
+    <main class="admin-main">
+      <header class="admin-header">
+        <h1>{title}</h1>
+      </header>
+      <div class="admin-content">
+        <slot />
+      </div>
+    </main>
+  </div>
+</body>
+</html>

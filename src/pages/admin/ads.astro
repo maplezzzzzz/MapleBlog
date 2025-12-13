@@ -1,0 +1,306 @@
+---
+import Layout from '../../layouts/AdminLayout.astro';
+
+const title = '广告管理';
+---
+
+<Layout title={title}>
+  <div class="admin-container">
+    <h2>广告管理</h2>
+    
+    <div class="admin-controls">
+      <button class="admin-btn" onclick="createAd()">新建广告</button>
+    </div>
+    
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>广告名称</th>
+          <th>类型</th>
+          <th>状态</th>
+          <th>展示次数</th>
+          <th>点击次数</th>
+          <th>CTR</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="ads-list">
+        <!-- 广告列表将通过JS加载 -->
+      </tbody>
+    </table>
+    
+    <div class="modal" id="ad-modal" style="display: none;">
+      <div class="modal-content">
+        <span class="close" onclick="closeAdModal()">&times;</span>
+        <h3 id="ad-modal-title">新建广告</h3>
+        <form id="ad-form">
+          <div class="form-group">
+            <label for="ad-name">广告名称</label>
+            <input type="text" id="ad-name" name="name" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="ad-type">广告类型</label>
+            <select id="ad-type" name="type" required>
+              <option value="banner">横幅广告</option>
+              <option value="sidebar">侧边栏广告</option>
+              <option value="popup">弹窗广告</option>
+              <option value="in-content">内容中广告</option>
+              <option value="footer">页脚广告</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="ad-status">状态</label>
+            <select id="ad-status" name="status">
+              <option value="active">启用</option>
+              <option value="inactive">停用</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="ad-code">广告代码</label>
+            <textarea id="ad-code" name="code" placeholder="粘贴广告代码（如Google AdSense）"></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label for="ad-url">点击链接</label>
+            <input type="url" id="ad-url" name="url" placeholder="广告点击跳转的URL">
+          </div>
+          
+          <div class="form-group">
+            <label for="ad-start-date">开始日期</label>
+            <input type="date" id="ad-start-date" name="startDate">
+          </div>
+          
+          <div class="form-group">
+            <label for="ad-end-date">结束日期</label>
+            <input type="date" id="ad-end-date" name="endDate">
+          </div>
+          
+          <div class="form-actions">
+            <button type="submit" class="admin-btn">保存广告</button>
+            <button type="button" class="admin-btn admin-btn-secondary" onclick="closeAdModal()">取消</button>
+            <button type="button" class="admin-btn admin-btn-secondary" onclick="deleteAd()" id="delete-ad-btn" style="display: none;">删除广告</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentAdId = null;
+    
+    // 加载广告列表
+    async function loadAds() {
+      try {
+        const response = await fetch('/api/ads');
+        const ads = await response.json();
+        const tbody = document.getElementById('ads-list');
+
+        if (tbody) {
+          tbody.innerHTML = '';
+
+          ads.forEach((ad: any) => {
+            const ctr = ad.impressions > 0 ? ((ad.clicks / ad.impressions) * 100).toFixed(2) : '0.00';
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${ad.name}</td>
+              <td>${getAdTypeText(ad.type)}</td>
+              <td><span class="status-badge ${ad.status}">${ad.status === 'active' ? '启用' : '停用'}</span></td>
+              <td>${ad.impressions || 0}</td>
+              <td>${ad.clicks || 0}</td>
+              <td>${ctr}%</td>
+              <td class="admin-table-actions">
+                <button class="admin-btn admin-btn-secondary" onclick="editAd('${ad.id}')">编辑</button>
+                <button class="admin-btn" onclick="viewAd('${ad.id}')">预览</button>
+              </td>
+            `;
+            tbody.appendChild(row);
+          });
+        }
+      } catch (error) {
+        console.error('加载广告列表失败:', error);
+      }
+    }
+    
+    function getAdTypeText(type) {
+      const types = {
+        'banner': '横幅广告',
+        'sidebar': '侧边栏广告',
+        'popup': '弹窗广告',
+        'in-content': '内容中广告',
+        'footer': '页脚广告'
+      };
+      return types[type] || type;
+    }
+    
+    // 打开新建广告模态框
+    function createAd() {
+      currentAdId = null;
+      document.getElementById('ad-modal-title').textContent = '新建广告';
+      document.getElementById('ad-form').reset();
+      document.getElementById('delete-ad-btn').style.display = 'none';
+      document.getElementById('ad-modal').style.display = 'block';
+    }
+    
+    // 编辑广告
+    async function editAd(id) {
+      currentAdId = id;
+      document.getElementById('ad-modal-title').textContent = '编辑广告';
+      
+      try {
+        const response = await fetch(`/api/ads/${id}`);
+        if (response.ok) {
+          const ad = await response.json();
+          
+          document.getElementById('ad-name').value = ad.name || '';
+          document.getElementById('ad-type').value = ad.type || 'banner';
+          document.getElementById('ad-status').value = ad.status || 'active';
+          document.getElementById('ad-code').value = ad.code || '';
+          document.getElementById('ad-url').value = ad.url || '';
+          document.getElementById('ad-start-date').value = ad.startDate || '';
+          document.getElementById('ad-end-date').value = ad.endDate || '';
+          
+          document.getElementById('delete-ad-btn').style.display = 'inline-block';
+          document.getElementById('ad-modal').style.display = 'block';
+        }
+      } catch (error) {
+        console.error('加载广告数据失败:', error);
+      }
+    }
+    
+    // 保存广告
+    document.getElementById('ad-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData(e.target);
+      const adData = Object.fromEntries(formData.entries());
+      
+      try {
+        let response;
+        if (currentAdId) {
+          // 更新现有广告
+          response = await fetch(`/api/ads/${currentAdId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(adData)
+          });
+        } else {
+          // 创建新广告
+          response = await fetch('/api/ads', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(adData)
+          });
+        }
+        
+        if (response.ok) {
+          closeAdModal();
+          loadAds(); // 重新加载广告列表
+          alert(currentAdId ? '广告更新成功！' : '广告创建成功！');
+        } else {
+          alert('操作失败，请重试。');
+        }
+      } catch (error) {
+        console.error('保存广告失败:', error);
+        alert('操作失败，请重试。');
+      }
+    });
+    
+    // 删除广告
+    async function deleteAd() {
+      if (!currentAdId) return;
+      
+      if (confirm('确定要删除这个广告吗？此操作不可撤销。')) {
+        try {
+          const response = await fetch(`/api/ads/${currentAdId}`, {
+            method: 'DELETE'
+          });
+          
+          if (response.ok) {
+            closeAdModal();
+            loadAds(); // 重新加载广告列表
+            alert('广告删除成功！');
+          } else {
+            alert('删除失败，请重试。');
+          }
+        } catch (error) {
+          console.error('删除广告失败:', error);
+          alert('删除失败，请重试。');
+        }
+      }
+    }
+    
+    // 预览广告
+    function viewAd(id) {
+      alert(`广告预览功能将在完整实现后提供\n广告ID: ${id}`);
+    }
+    
+    // 关闭模态框
+    function closeAdModal() {
+      document.getElementById('ad-modal').style.display = 'none';
+      document.getElementById('delete-ad-btn').style.display = 'none';
+      currentAdId = null;
+    }
+    
+    // 点击模态框外部关闭
+    window.onclick = function(event) {
+      const modal = document.getElementById('ad-modal');
+      if (event.target === modal) {
+        closeAdModal();
+      }
+    }
+    
+    // 页面加载时获取广告数据
+    document.addEventListener('DOMContentLoaded', loadAds);
+  </script>
+  
+  <style>
+    .modal {
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+    }
+    
+    .modal-content {
+      background-color: white;
+      margin: 5% auto;
+      padding: 20px;
+      border-radius: 8px;
+      width: 80%;
+      max-width: 600px;
+      position: relative;
+    }
+    
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      position: absolute;
+      right: 15px;
+      top: 10px;
+    }
+    
+    .close:hover {
+      color: black;
+    }
+    
+    .form-actions {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+  </style>
+</Layout>

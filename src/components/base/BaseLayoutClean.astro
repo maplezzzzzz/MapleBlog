@@ -721,18 +721,11 @@ const customFooterCode = customSettings?.custom_footer_code || "";
           this.persistentOverlay.style.visibility = 'visible';
           this.persistentOverlay.style.transition = 'opacity 0.3s ease';
           
-          // 获取当前页面的实际背景色，而非仅依赖暗色模式
-          const computedStyle = getComputedStyle(document.documentElement);
-          const bgColor = computedStyle.getPropertyValue('--color-background') ||
-                         computedStyle.backgroundColor ||
-                         '#ffffff';
-          // 确保颜色值有效，否则使用默认值
-          this.persistentOverlay.style.backgroundColor = bgColor && bgColor !== 'transparent'
-            ? bgColor
-            : (document.documentElement.classList.contains('dark') ||
-               window.matchMedia('(prefers-color-scheme: dark)').matches
-               ? '#111111'
-               : '#ffffff');
+          // 在暗色模式下使用深色背景
+          if (document.documentElement.classList.contains('dark') || 
+              window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            this.persistentOverlay.style.backgroundColor = '#111111';
+          }
           
           document.body.appendChild(this.persistentOverlay);
           
@@ -830,20 +823,8 @@ const customFooterCode = customSettings?.custom_footer_code || "";
         async performZeroFlashTransition(url) {
           return new Promise(async (resolve, reject) => {
             try {
-              // 立即显示持久遮罩以防止白屏，并同步当前背景色
+              // 立即显示持久遮罩以防止白屏
               if (!this.isFirstLoad) {
-                // 更新遮罩背景色以匹配当前页面
-                const computedStyle = getComputedStyle(document.documentElement);
-                const bgColor = computedStyle.getPropertyValue('--color-background') ||
-                               computedStyle.backgroundColor ||
-                               '#ffffff';
-                this.persistentOverlay.style.backgroundColor = bgColor && bgColor !== 'transparent'
-                  ? bgColor
-                  : (document.documentElement.classList.contains('dark') ||
-                     window.matchMedia('(prefers-color-scheme: dark)').matches
-                     ? '#111111'
-                     : '#ffffff');
-
                 this.persistentOverlay.style.visibility = 'visible';
                 this.persistentOverlay.style.opacity = '1';
               }

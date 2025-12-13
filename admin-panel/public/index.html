@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>小白天地 - 管理后台</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/3.3.0/tailwind.min.css">
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    .admin-sidebar {
+      width: 250px;
+      background-color: #2c3e50;
+      color: white;
+      height: 100vh;
+      position: fixed;
+      overflow-y: auto;
+    }
+    .admin-main {
+      margin-left: 250px;
+      padding: 20px;
+    }
+    .nav-link {
+      display: block;
+      color: #bdc3c7;
+      padding: 12px 20px;
+      text-decoration: none;
+      transition: all 0.3s;
+    }
+    .nav-link:hover, .nav-link.active {
+      background: #34495e;
+      color: #3498db;
+    }
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+    }
+    .dashboard-card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.3s;
+    }
+    .dashboard-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+    
+    // 导航组件
+    const Sidebar = ({ activePage, setActivePage }) => {
+      const menuItems = [
+        { id: 'dashboard', label: '仪表板', icon: '📊' },
+        { id: 'content', label: '内容管理', icon: '📝' },
+        { id: 'analytics', label: '访问统计', icon: '📈' },
+        { id: 'seo', label: 'SEO优化', icon: '🔍' },
+        { id: 'ads', label: '广告管理', icon: '📢' },
+        { id: 'settings', label: '网站设置', icon: '⚙️' },
+        { id: 'python', label: 'Python功能', icon: '🐍' },
+      ];
+      
+      return (
+        <div className="admin-sidebar">
+          <div className="p-5 border-b border-gray-700">
+            <h2 className="text-xl font-bold">管理后台</h2>
+          </div>
+          <nav>
+            {menuItems.map(item => (
+              <a 
+                key={item.id}
+                href="#" 
+                className={`nav-link ${activePage === item.id ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setActivePage(item.id);
+                }}
+              >
+                <span className="mr-2">{item.icon}</span>
+                {item.label}
+              </a>
+            ))}
+          </nav>
+        </div>
+      );
+    };
+    
+    // 仪表板组件
+    const Dashboard = () => {
+      const [stats, setStats] = useState({
+        totalVisits: 0,
+        todayVisits: 0,
+        onlineUsers: 0,
+        postCount: 0
+      });
+      
+      useEffect(() => {
+        // 模拟获取统计数据
+        fetch('/api/analytics/stats')
+          .then(res => res.json())
+          .then(data => setStats({
+            totalVisits: data.totalVisits || 0,
+            todayVisits: data.todayVisits || 0,
+            onlineUsers: data.onlineUsers || 0,
+            postCount: data.postCount || 0
+          }))
+          .catch(() => {
+            // 模拟数据
+            setStats({
+              totalVisits: 5421,
+              todayVisits: 42,
+              onlineUsers: 8,
+              postCount: 24
+            });
+          });
+      }, []);
+      
+      return (
+        <div>
+          <h1 className="text-2xl font-bold mb-6">仪表板</h1>
+          <div className="dashboard-grid mb-8">
+            <div className="dashboard-card">
+              <h3 className="text-lg font-semibold mb-2">总访问量</h3>
+              <p className="text-3xl font-bold text-blue-600">{stats.totalVisits}</p>
+            </div>
+            <div className="dashboard-card">
+              <h3 className="text-lg font-semibold mb-2">今日访问</h3>
+              <p className="text-3xl font-bold text-green-600">{stats.todayVisits}</p>
+            </div>
+            <div className="dashboard-card">
+              <h3 className="text-lg font-semibold mb-2">在线用户</h3>
+              <p className="text-3xl font-bold text-yellow-600">{stats.onlineUsers}</p>
+            </div>
+            <div className="dashboard-card">
+              <h3 className="text-lg font-semibold mb-2">文章数</h3>
+              <p className="text-3xl font-bold text-purple-600">{stats.postCount}</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-4">最近文章</h3>
+              <ul className="space-y-2">
+                <li className="flex justify-between border-b pb-2">
+                  <span>Astro静态站点生成器入门指南</span>
+                  <span className="text-gray-500">2025-01-15</span>
+                </li>
+                <li className="flex justify-between border-b pb-2">
+                  <span>TypeScript在现代Web开发中的应用</span>
+                  <span className="text-gray-500">2025-01-14</span>
+                </li>
+                <li className="flex justify-between">
+                  <span>Tailwind CSS响应式设计实践</span>
+                  <span className="text-gray-500">2025-01-13</span>
+                </li>
+              </ul>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-4">快速操作</h3>
+              <div className="space-y-3">
+                <button className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">
+                  新建文章
+                </button>
+                <button className="w-full bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600">
+                  管理评论
+                </button>
+                <button className="w-full bg-purple-500 text-white py-2 px-4 rounded hover:bg-purple-600">
+                  查看SEO报告
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+    
+    // 专门的文章编辑器组件
+    const ArticleEditor = () => {
+      const [article, setArticle] = useState({
+        title: '',
+        description: '',
+        content: '',
+        status: 'draft',
+        categories: '',
+        tags: '',
+        featuredImg: '',
+        type: 'blog'
+      });
+      const [isPreview, setIsPreview] = useState(false);
+      const [imageList, setImageList] = useState([]);
+      const [showImageManager, setShowImageManager] = useState(false);
+      const [dragActive, setDragActive] = useState(false);
+      const contentRef = useRef(null);
+
+      // 获取图片列表
+      useEffect(() => {
+        fetch('/api/images')
+          .then(res => res.json())
+          .then(data => setImageList(data))
+          .catch(() => setImageList([]));
+      }, []);
+
+      // 处理图片上传
+      const handleImageUpload = async (files) => {
+        for (const file of files) {
+          if (!file.type.startsWith('image/')) continue;
+
+          const formData = new FormData();
+          formData.append('image', file);
+
+          try {
+            const response = await fetch('/api/upload', {
+              method: 'POST',
+              body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+              // 更新图片列表
+              fetch('/api/images')
+                .then(res => res.json())
+                .then(data => setImageList(data));
+
+              // 在编辑器中插入图片引用
+              const imgMarkdown = `![${file.name}](${result.path})\n`;
+              setArticle(prev => ({...prev, content: prev.content + imgMarkdown}));
+            } else {
+              alert('上传失败: ' + result.error);
+            }
+          } catch (error) {
+            console.error('上传图片时出错:', error);
+            alert('上传失败: ' + error.message);
+          }
+        }
+      };
+
+      // 处理文件拖拽事件
+      const handleDrag = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === "dragenter" || e.type === "dragover") {
+          setDragActive(true);
+        } else if (e.type === "dragleave") {
+          setDragActive(false);
+        }
+      };
+
+      // 处理文件拖放事件
+      const handleDrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+          handleImageUpload(e.dataTransfer.files);
+        }
+      };
+
+      // 处理粘贴事件
+      const handlePaste = (e) => {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (const item of items) {
+          if (item.type.indexOf('image') !== -1) {
+            const file = item.getAsFile();
+            handleImageUpload([file]);
+          }
+        }
+      };
+
+      // 处理文件输入
+      const handleFileInput = (e) => {
+        if (e.target.files && e.target.files[0]) {
+          handleImageUpload(e.target.files);
+        }
+      };
+
+      // 插入图片到编辑器
+      const insertImage = (imagePath) => {
+        const imgMarkdown = `![图片](${imagePath})\n`;
+        setArticle(prev => ({...prev, content: prev.content + imgMarkdown}));
+        setShowImageManager(false);
+      };
+
+      // 保存文章
+      const saveArticle = async () => {
+        if (!article.title || !article.content) {
+          alert('请填写标题和内容');
+          return;
+        }
+
+        // 解析分类和标签
+        const categories = article.categories ? article.categories.split(',').map(c => c.trim()) : [];
+        const tags = article.tags ? article.tags.split(',').map(t => t.trim()) : [];
+
+        // 构建frontmatter数据
+        const data = {
+          title: article.title,
+          description: article.description,
+          status: article.status,
+          createdAt: new Date().toISOString(),
+          categories: categories.length > 0 ? categories : undefined,
+          tags: tags.length > 0 ? tags : undefined,
+          featuredImg: article.featuredImg || undefined
+        };
+
+        try {
+          const response = await fetch('/api/content', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              type: article.type,
+              slug: article.title.toLowerCase().replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '-').replace(/-+/g, '-'),
+              data,
+              content: article.content
+            })
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            alert('文章保存成功！');
+          } else {
+            alert('保存失败: ' + result.error);
+          }
+        } catch (error) {
+          console.error('保存文章时出错:', error);
+          alert('保存失败: ' + error.message);
+        }
+      };
+
+      // 切换预览模式
+      const togglePreview = () => {
+        setIsPreview(!isPreview);
+      };
+
+      return (
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h2 className="text-2xl font-bold mb-6">文章编辑器</h2>
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* 左側工具欄 */}
+            <div className="lg:col-span-1">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-semibold mb-4">文章設置</h3>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">文章類型</label>
+                  <select
+                    className="w-full border border-gray-300 rounded-md p-2"
+                    value={article.type}
+                    onChange={(e) => setArticle({...article, type: e.target.value})}
+                  >
+                    <option value="blog">博客文章</option>
+                    <option value="pages">頁面</option>
+                    <option value="notes">筆記</option>
+                  </select>
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">狀態</label>
+                  <select
+                    className="w-full border border-gray-300 rounded-md p-2"
+                    value={article.status}
+                    onChange={(e) => setArticle({...article, status: e.target.value})}
+                  >
+                    <option value="draft">草稿</option>
+                    <option value="published">已發布</option>
+                    <option value="archived">已歸檔</option>
+                  </select>
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">標題</label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-300 rounded-md p-2"
+                    value={article.title}
+                    onChange={(e) => setArticle({...article, title: e.target.value})}
+                    placeholder="文章標題"
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">描述</label>
+                  <textarea
+                    className="w-full border border-gray-300 rounded-md p-2"
+                    value={article.description}
+                    onChange={(e) => setArticle({...article, description: e.target.value})}
+                    placeholder="文章描述"
+                    rows="3"
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">分類</label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-300 rounded-md p-2"
+                    value={article.categories}
+                    onChange={(e) => setArticle({...article, categories: e.target.value})}
+                    placeholder="分類1, 分類2"
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">標籤</label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-300 rounded-md p-2"
+                    value={article.tags}
+                    onChange={(e) => setArticle({...article, tags: e.target.value})}
+                    placeholder="標籤1, 標籤2"
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">封面圖片</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="w-full border border-gray-300 rounded-md p-2"
+                    onChange={handleFileInput}
+                  />
+                  {article.featuredImg && (
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-600">當前封面: {article.featuredImg}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex space-x-2">
+                  <button
+                    className="flex-1 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+                    onClick={saveArticle}
+                  >
+                    保存
+                  </button>
+                  <button
+                    className="flex-1 bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
+                    onClick={togglePreview}
+                  >
+                    {isPreview ? '編輯' : '預覽'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <button
+                  className="w-full bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 mb-2"
+                  onClick={() => setShowImageManager(true)}
+                >
+                  插入圖片
+                </button>
+                <button
+                  className="w-full bg-purple-500 text-white py-2 px-4 rounded hover:bg-purple-600"
+                  onClick={() => {
+                    // 插入常用Markdown格式
+                    const newContent = article.content +
+                      '\n# 標題\n\n這是段落。\n\n## 子標題\n\n- 列表項目1\n- 列表項目2\n\n**加粗文字** 或 *斜體文字*\n\n';
+                    setArticle({...article, content: newContent});
+                  }}
+                >
+                  插入格式
+                </button>
+              </div>
+            </div>
+
+            {/* 主編輯區域 */}
+            <div className="lg:col-span-3">
+              <div
+                className={`w-full border-2 border-dashed rounded-md p-4 h-96 font-mono text-sm ${
+                  dragActive ? "border-blue-500 bg-blue-50" : "border-gray-300"
+                }`}
+                onDragEnter={handleDrag}
+                onDragOver={handleDrag}
+                onDragLeave={handleDrag}
+                onDrop={handleDrop}
+                onPaste={handlePaste}
+                ref={contentRef}
+              >
+                {isPreview ? (
+                  <div className="h-full overflow-y-auto">
+                    <h2 className="text-2xl font-bold mb-4">{article.title || '文章標題'}</h2>
+                    <div className="prose max-w-none">
+                      {article.content ? (
+                        <div dangerouslySetInnerHTML={{__html: article.content.replace(/\n/g, '<br />')}} />
+                      ) : (
+                        <p className="text-gray-500">預覽內容...</p>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <textarea
+                    className="w-full h-full resize-none focus:outline-none"
+                    value={article.content}
+                    onChange={(e) => setArticle({...article, content: e.target.value})}
+                    placeholder="# 文章標題
+
+這里是文章內容。
+
+## 子標題
+
+您可以使用Markdown語法：
+
+- 列表項目1
+- 列表項目2
+
+**加粗文字** 或 *斜體文字*
+
+![圖片](圖片路徑)
+"
+                  />
+                )}
+                {dragActive && (
+                  <div className="absolute inset-0 bg-blue-100 bg-opacity-75 flex items-center justify-center rounded-md">
+                    <p className="text-xl text-blue-500 font-bold">釋放以上傳圖片</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-2 text-sm text-gray-500">
+                <p>提示: 您可以拖拽圖片到編輯區域，或在這裡粘貼圖片</p>
+              </div>
+            </div>
+          </div>
+
+          {/* 圖片管理器模態框 */}
+          {showImageManager && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg w-full max-w-2xl max-h-96 overflow-hidden flex flex-col">
+                <div className="p-4 border-b flex justify-between items-center">
+                  <h3 className="text-lg font-semibold">選擇圖片</h3>
+                  <button
+                    className="text-gray-500 hover:text-gray-700"
+                    onClick={() => setShowImageManager(false)}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="p-4 overflow-y-auto flex-1">
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">上傳新圖片 (點擊或拖拽)</label>
+                    <div
+                      className={`border-2 border-dashed rounded p-4 text-center cursor-pointer ${
+                        dragActive ? "border-blue-500 bg-blue-50" : "border-gray-300"
+                      }`}
+                      onDragEnter={handleDrag}
+                      onDragOver={handleDrag}
+                      onDragLeave={handleDrag}
+                      onDrop={(e) => {
+                        handleDrop(e);
+                        // 也关闭模态框
+                        setTimeout(() => setShowImageManager(false), 500);
+                      }}
+                      onClick={() => document.getElementById('fileInputManager').click()}
+                    >
+                      <p className="text-gray-500">點擊選擇圖片或拖拽圖片到這裡</p>
+                      <input
+                        id="fileInputManager"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          handleFileInput(e);
+                          // 也关闭模态框
+                          setTimeout(() => setShowImageManager(false), 500);
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    {imageList.map((image, index) => (
+                      <div
+                        key={index}
+                        className="border rounded p-2 cursor-pointer hover:bg-gray-100"
+                        onClick={() => insertImage(image.url)}
+                      >
+                        <div className="aspect-square bg-gray-200 rounded flex items-center justify-center mb-1">
+                          <span className="text-xs text-gray-500">圖片</span>
+                        </div>
+                        <p className="text-xs truncate">{image.name}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="p-4 border-t flex justify-end">
+                  <button
+                    className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                    onClick={() => setShowImageManager(false)}
+                  >
+                    關閉
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // 内容管理组件
+    const ContentManagement = () => {
+      const [activeTab, setActiveTab] = useState('blog');
+      const [contentList, setContentList] = useState([]);
+      const [showEditor, setShowEditor] = useState(false);
+
+      const tabs = [
+        { id: 'blog', label: '博客文章' },
+        { id: 'pages', label: '页面' },
+        { id: 'notes', label: '笔记' },
+        { id: 'categories', label: '分类' },
+        { id: 'tags', label: '标签' },
+      ];
+
+      useEffect(() => {
+        fetch(`/api/content-list.json?type=${activeTab}`)
+          .then(res => res.json())
+          .then(data => setContentList(data))
+          .catch(() => {
+            setContentList([]);
+          });
+      }, [activeTab]);
+
+      if (showEditor) {
+        return (
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-2xl font-bold">文章编辑器</h1>
+              <button 
+                className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
+                onClick={() => setShowEditor(false)}
+              >
+                返回列表
+              </button>
+            </div>
+            <ArticleEditor key={`editor-${Date.now()}`} />
+          </div>
+        );
+      }
+
+      return (
+        <div>
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold">内容管理</h1>
+            <div className="space-x-2">
+              <button
+                className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+                onClick={() => setShowEditor(true)}
+              >
+                新建图文
+              </button>
+            </div>
+          </div>
+
+          <div className="mb-6 border-b">
+            <nav className="flex space-x-6">
+              {tabs.map(tab => (
+                <button
+                  key={tab.id}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === tab.id
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
+          </div>
+
+          <div className="bg-white shadow overflow-hidden sm:rounded-md">
+            <ul className="divide-y divide-gray-200">
+              {contentList.map(item => (
+                <li key={item.id}>
+                  <div className="px-4 py-4 sm:px-6 flex justify-between items-center">
+                    <div className="flex items-center">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        item.status === 'published'
+                          ? 'bg-green-100 text-green-800'
+                          : item.status === 'draft'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {item.status === 'published' ? '已发布' : item.status === 'draft' ? '草稿' : '归档'}
+                      </span>
+                      <p className="ml-4 text-sm font-medium text-gray-900">{item.title}</p>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <p className="text-sm text-gray-500">{new Date(item.createdAt).toLocaleDateString()}</p>
+                      <p className="text-sm text-gray-500">浏览: {item.views || 0}</p>
+                      <button className="text-indigo-600 hover:text-indigo-900 text-sm">编辑</button>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      );
+    };
+    
+    // 访问统计组件
+    const Analytics = () => {
+      const [stats, setStats] = useState({
+        totalVisits: 0,
+        todayVisits: 0,
+        onlineUsers: 0,
+        topPosts: [],
+        trafficSources: []
+      });
+      
+      useEffect(() => {
+        // 获取统计信息
+        Promise.all([
+          fetch('/api/analytics/stats').then(res => res.json()),
+          fetch('/api/analytics/top-posts').then(res => res.json()),
+          fetch('/api/analytics/traffic-sources').then(res => res.json())
+        ])
+        .then(([statsData, topPostsData, trafficData]) => {
+          setStats({
+            totalVisits: statsData.totalVisits || 0,
+            todayVisits: statsData.todayVisits || 0,
+            onlineUsers: statsData.onlineUsers || 0,
+            topPosts: topPostsData,
+            trafficSources: trafficData
+          });
+        })
+        .catch(() => {
+          // 模拟数据
+          setStats({
+            totalVisits: 5421,
+            todayVisits: 42,
+            onlineUsers: 8,
+            topPosts: [
+              { title: 'Astro静态站点生成器入门指南', slug: 'astro-guide', views: 1240 },
+              { title: 'TypeScript在现代Web开发中的应用', slug: 'typescript-tips', views: 982 },
+              { title: 'Tailwind CSS响应式设计实践', slug: 'tailwind-practice', views: 876 }
+            ],
+            trafficSources: [
+              { name: '直接访问', count: 2340, percentage: 45.2 },
+              { name: '搜索引擎', count: 1890, percentage: 36.7 },
+              { name: '社交媒体', count: 654, percentage: 12.3 },
+              { name: '引荐网站', count: 301, percentage: 5.8 }
+            ]
+          });
+        });
+      }, []);
+      
+      return (
+        <div>
+          <h1 className="text-2xl font-bold mb-6">访问统计</h1>
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-2">总访问量</h3>
+              <p className="text-3xl font-bold text-blue-600">{stats.totalVisits}</p>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-2">今日访问</h3>
+              <p className="text-3xl font-bold text-green-600">{stats.todayVisits}</p>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-2">在线用户</h3>
+              <p className="text-3xl font-bold text-yellow-600">{stats.onlineUsers}</p>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-2">跳出率</h3>
+              <p className="text-3xl font-bold text-red-600">42%</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-4">热门文章</h3>
+              <ul className="space-y-3">
+                {stats.topPosts.map((post, index) => (
+                  <li key={index} className="flex justify-between items-center border-b pb-2">
+                    <span>{index + 1}. {post.title}</span>
+                    <span className="bg-gray-100 px-2 py-1 rounded">{post.views} 次浏览</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-4">流量来源</h3>
+              <ul className="space-y-3">
+                {stats.trafficSources.map((source, index) => (
+                  <li key={index} className="flex justify-between items-center border-b pb-2">
+                    <span>{source.name}</span>
+                    <div className="flex items-center">
+                      <span className="mr-2 bg-gray-100 px-2 py-1 rounded">{source.count} 次访问</span>
+                      <span>({source.percentage}%)</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      );
+    };
+    
+    // 其他组件占位符
+    const SeoSettings = () => (
+      <div>
+        <h1 className="text-2xl font-bold mb-6">SEO优化设置</h1>
+        <p className="text-gray-600">SEO 设置页面 - 网站标题、描述、关键词等配置</p>
+        <div className="bg-white p-6 rounded-lg shadow mt-4">
+          <h3 className="text-lg font-semibold mb-4">页面SEO设置</h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">网站标题</label>
+              <input type="text" className="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="网站的主要标题" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">网站描述</label>
+              <textarea className="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="网站的简短描述" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">关键词</label>
+              <input type="text" className="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="用逗号分隔的关键词" />
+            </div>
+            <button className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">保存设置</button>
+          </div>
+        </div>
+      </div>
+    );
+    
+    const AdManagement = () => (
+      <div>
+        <h1 className="text-2xl font-bold mb-6">广告管理</h1>
+        <p className="text-gray-600">广告管理页面 - 管理网站广告位和广告内容</p>
+        <div className="bg-white p-6 rounded-lg shadow mt-4">
+          <h3 className="text-lg font-semibold mb-4">广告列表</h3>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">广告名称</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">类型</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">展示次数</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td className="px-6 py-4 whitespace-nowrap">首页横幅广告</td>
+                  <td className="px-6 py-4 whitespace-nowrap">横幅广告</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">启用</span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">12,400</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <button className="text-indigo-600 hover:text-indigo-900 mr-2">编辑</button>
+                    <button className="text-red-600 hover:text-red-900">删除</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+    
+    const SiteSettings = () => (
+      <div>
+        <h1 className="text-2xl font-bold mb-6">网站设置</h1>
+        <p className="text-gray-600">网站设置页面 - 管理网站图标、备案信息、联系方式等</p>
+        <div className="bg-white p-6 rounded-lg shadow mt-4">
+          <h3 className="text-lg font-semibold mb-4">基本信息</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">网站名称</label>
+              <input type="text" className="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="网站的名称" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">网站URL</label>
+              <input type="text" className="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="完整的网站URL" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">管理员邮箱</label>
+              <input type="email" className="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="管理员联系邮箱" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">备案信息</label>
+              <input type="text" className="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="中国大陆ICP备案号" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <button className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">保存设置</button>
+          </div>
+        </div>
+      </div>
+    );
+    
+    const PythonIntegration = () => (
+      <div>
+        <h1 className="text-2xl font-bold mb-6">Python功能集成</h1>
+        <p className="text-gray-600">集成Python实现的高级功能</p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-semibold mb-4">文本分析</h3>
+            <textarea 
+              className="w-full border border-gray-300 rounded-md p-2 mb-4" 
+              placeholder="输入要分析的文本..."
+              rows="4"
+            ></textarea>
+            <button className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">分析文本</button>
+          </div>
+          
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-semibold mb-4">内容优化建议</h3>
+            <input 
+              type="text" 
+              className="w-full border border-gray-300 rounded-md p-2 mb-2" 
+              placeholder="文章标题" 
+            />
+            <textarea 
+              className="w-full border border-gray-300 rounded-md p-2 mb-2" 
+              placeholder="文章内容..."
+              rows="3"
+            ></textarea>
+            <input 
+              type="text" 
+              className="w-full border border-gray-300 rounded-md p-2 mb-4" 
+              placeholder="关键词（逗号分隔）" 
+            />
+            <button className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600">生成优化建议</button>
+          </div>
+        </div>
+      </div>
+    );
+    
+    // 主应用组件
+    const App = () => {
+      const [activePage, setActivePage] = useState('dashboard');
+      
+      const renderPage = () => {
+        switch(activePage) {
+          case 'dashboard': return <Dashboard />;
+          case 'content': return <ContentManagement />;
+          case 'analytics': return <Analytics />;
+          case 'seo': return <SeoSettings />;
+          case 'ads': return <AdManagement />;
+          case 'settings': return <SiteSettings />;
+          case 'python': return <PythonIntegration />;
+          default: return <Dashboard />;
+        }
+      };
+      
+      return (
+        <div className="flex">
+          <Sidebar activePage={activePage} setActivePage={setActivePage} />
+          <div className="admin-main">
+            {renderPage()}
+          </div>
+        </div>
+      );
+    };
+    
+    // 渲染应用
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

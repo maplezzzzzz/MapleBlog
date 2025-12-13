@@ -1,0 +1,41 @@
+---
+import Layout from '../../layouts/AdminLayout.astro';
+
+const title = '管理后台';
+---
+
+<Layout title={title}>
+  <div class="admin-container">
+    <h1>管理后台</h1>
+    <div class="dashboard-grid">
+      <a href="/admin/dashboard" class="dashboard-card">
+        <h3>仪表板</h3>
+        <p>查看网站概览</p>
+      </a>
+      <a href="/admin/content" class="dashboard-card">
+        <h3>内容管理</h3>
+        <p>管理文章、页面和媒体</p>
+      </a>
+      <a href="/admin/analytics" class="dashboard-card">
+        <h3>访问统计</h3>
+        <p>查看访问数据和分析</p>
+      </a>
+      <a href="/admin/seo" class="dashboard-card">
+        <h3>SEO优化</h3>
+        <p>管理SEO设置和优化</p>
+      </a>
+      <a href="/admin/ads" class="dashboard-card">
+        <h3>广告管理</h3>
+        <p>管理网站广告位</p>
+      </a>
+      <a href="/admin/settings" class="dashboard-card">
+        <h3>网站设置</h3>
+        <p>网站配置和信息</p>
+      </a>
+      <a href="/admin/python-integration" class="dashboard-card">
+        <h3>Python功能</h3>
+        <p>集成Python功能</p>
+      </a>
+    </div>
+  </div>
+</Layout>

@@ -1,0 +1,222 @@
+---
+import Layout from '../../../layouts/AdminLayout.astro';
+
+const title = '内容管理';
+---
+
+<Layout title={title}>
+  <div class="admin-container">
+    <h2>内容管理</h2>
+    
+    <div class="admin-tabs">
+      <button class="tab-btn active" data-tab="posts">文章</button>
+      <button class="tab-btn" data-tab="pages">页面</button>
+      <button class="tab-btn" data-tab="media">媒体</button>
+      <button class="tab-btn" data-tab="categories">分类</button>
+      <button class="tab-btn" data-tab="tags">标签</button>
+    </div>
+    
+    <div class="tab-content active" id="posts-tab">
+      <div class="admin-controls">
+        <button class="admin-btn" onclick="createPost()">新建文章</button>
+      </div>
+      
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>标题</th>
+            <th>状态</th>
+            <th>分类</th>
+            <th>发布时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="posts-list">
+          <!-- 文章列表将通过JS加载 -->
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="tab-content" id="pages-tab">
+      <div class="admin-controls">
+        <button class="admin-btn" onclick="createPage()">新建页面</button>
+      </div>
+      
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>页面名称</th>
+            <th>路径</th>
+            <th>状态</th>
+            <th>创建时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="pages-list">
+          <!-- 页面列表将通过JS加载 -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // 切换标签页
+    document.querySelectorAll('.tab-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        // 移除所有active类
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        // 添加active类到当前按钮和内容
+        button.classList.add('active');
+        const tabId = button.getAttribute('data-tab') + '-tab';
+        document.getElementById(tabId).classList.add('active');
+      });
+    });
+    
+    // 加载文章列表
+    async function loadPosts() {
+      try {
+        const response = await fetch('/api/posts');
+        const posts = await response.json();
+        const tbody = document.getElementById('posts-list');
+
+        if (tbody) {
+          tbody.innerHTML = '';
+
+          posts.forEach((post: any) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${post.title}</td>
+              <td><span class="status-badge ${post.status}">${post.status}</span></td>
+              <td>${post.categories ? post.categories.join(', ') : ''}</td>
+              <td>${post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : '未发布'}</td>
+              <td class="admin-table-actions">
+                <button class="admin-btn admin-btn-secondary" onclick="editPost('${post.id}')">编辑</button>
+                <button class="admin-btn" onclick="viewPost('${post.slug}')">查看</button>
+              </td>
+            `;
+            tbody.appendChild(row);
+          });
+        }
+      } catch (error) {
+        console.error('加载文章列表失败:', error);
+      }
+    }
+
+    // 加载页面列表
+    async function loadPages() {
+      try {
+        const response = await fetch('/api/pages');
+        const pages = await response.json();
+        const tbody = document.getElementById('pages-list');
+
+        if (tbody) {
+          tbody.innerHTML = '';
+
+          pages.forEach((page: any) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${page.title}</td>
+              <td>${page.path}</td>
+              <td><span class="status-badge ${page.status}">${page.status}</span></td>
+              <td>${new Date(page.createdAt).toLocaleDateString()}</td>
+              <td class="admin-table-actions">
+                <button class="admin-btn admin-btn-secondary" onclick="editPage('${page.id}')">编辑</button>
+                <button class="admin-btn" onclick="viewPage('${page.slug}')">查看</button>
+              </td>
+            `;
+            tbody.appendChild(row);
+          });
+        }
+      } catch (error) {
+        console.error('加载页面列表失败:', error);
+      }
+    }
+    
+    // 页面加载时自动加载内容
+    document.addEventListener('DOMContentLoaded', () => {
+      loadPosts();
+      loadPages();
+    });
+    
+    // 通用函数占位符
+    function createPost() {
+      alert('创建新文章功能将在API完成后实现');
+    }
+    
+    function editPost(id) {
+      window.location.href = `/admin/content/edit/post/${id}`;
+    }
+    
+    function viewPost(slug) {
+      window.open(`/blog/${slug}`, '_blank');
+    }
+    
+    function createPage() {
+      alert('创建新页面功能将在API完成后实现');
+    }
+    
+    function editPage(id) {
+      window.location.href = `/admin/content/edit/page/${id}`;
+    }
+    
+    function viewPage(slug) {
+      window.open(`/${slug}`, '_blank');
+    }
+  </script>
+  
+  <style>
+    .admin-tabs {
+      display: flex;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    .tab-btn {
+      background: none;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+    }
+    
+    .tab-btn.active {
+      border-bottom: 3px solid #3498db;
+      color: #3498db;
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    .admin-controls {
+      margin-bottom: 20px;
+    }
+    
+    .status-badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    
+    .status-badge.published {
+      background: #d4edda;
+      color: #155724;
+    }
+    
+    .status-badge.draft {
+      background: #fff3cd;
+      color: #856404;
+    }
+    
+    .status-badge.archived {
+      background: #f8d7da;
+      color: #721c24;
+    }
+  </style>
+</Layout>

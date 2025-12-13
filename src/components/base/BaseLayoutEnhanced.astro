@@ -3,8 +3,7 @@ import { plainify } from "@lib/textConverter";
 import Footer from "@components/base/Footer.astro";
 import Header from "@components/base/Header.astro";
 import "@/styles/main.scss";
-import "@/styles/loading-enhanced.scss";
-// import { ClientRouter } from "astro:transitions"; // 暂时禁用Astro的路由
+import { ClientRouter } from "astro:transitions";
 import Background from "@/components/base/Background.astro";
 import { Tooltips } from "astro-tooltips";
 import { SITE_INFO } from "@lib/config";
@@ -195,11 +194,11 @@ const customFooterCode = customSettings?.custom_footer_code || "";
       defer></script>
     <script
       src="https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.min.js"
-      integrity="sha384-dZ/hSVfTPHuzXyECOYCetAvMd0cgqWxN5Fh+mwo86PV4GdU9xgQ/MNzh/YM/lotR"
+      integrity="sha384-dZ/hSVfTPHuzXyECOYCetAvMd0cgqWxN5Fh+hnbJkTp4zjNr5Wvst75AqUeFDxeRUa7l5vEDyUiAip//r+EFLLCyA=="
       crossorigin="anonymous"
       defer></script>
-    <!-- 禁用Astro的默认客户端路由，使用我们自定义的零闪烁路由 -->
-    <!-- <ClientRouter fallback="swap" /> -->
+    <!-- https://docs.astro.build/en/guides/view-transitions -->
+    <ClientRouter fallback="swap" />
     <Tooltips interactive={false} delay={[100, 50]} />
 
     <!-- Google Analytics - 仅在生产环境加载 -->
@@ -461,10 +460,10 @@ const customFooterCode = customSettings?.custom_footer_code || "";
           transform: scale(1.1) rotate(90deg);
         }
         50% {
-          transform: scale(0.9) rotate(180deg);
+          transform: scale(1.05) rotate(180deg);
         }
         75% {
-          transform: scale(1.05) rotate(270deg);
+          transform: scale(0.95) rotate(270deg);
         }
       }
 
@@ -521,40 +520,37 @@ const customFooterCode = customSettings?.custom_footer_code || "";
         }
       }
 
-      /* 页面过渡动画 */
-      html {
-        view-transition-name: root;
+      /* 增强页面过渡动画 */
+      .page-transition-enter {
+        opacity: 0;
+        transform: translateY(10px);
+        transition:
+          opacity 0.3s ease,
+          transform 0.3s ease;
       }
-
+      
+      .page-transition-enter-active {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      
+      .page-transition-exit {
+        opacity: 1;
+        transform: translateY(0);
+        transition:
+          opacity 0.3s ease,
+          transform 0.3s ease;
+      }
+      
+      .page-transition-exit-active {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      
+      /* 禁用view transition以避免白屏 */
       ::view-transition-old(root),
       ::view-transition-new(root) {
-        animation-duration: 0.3s;
-      }
-
-      ::view-transition-old(root) {
-        animation-name: fade-out;
-      }
-
-      ::view-transition-new(root) {
-        animation-name: fade-in;
-      }
-
-      @keyframes fade-out {
-        from {
-          opacity: 1;
-        }
-        to {
-          opacity: 0;
-        }
-      }
-
-      @keyframes fade-in {
-        from {
-          opacity: 0;
-        }
-        to {
-          opacity: 1;
-        }
+        animation: none;
       }
     </style>
 
@@ -643,11 +639,11 @@ const customFooterCode = customSettings?.custom_footer_code || "";
       // 安全的 KaTeX 渲染函数
       function renderMathSafely() {
         if (
-          typeof (window).renderMathInElement !== "undefined" &&
+          typeof (window as any).renderMathInElement !== "undefined" &&
           document.body
         ) {
           try {
-            (window).renderMathInElement(document.body, {
+            (window as any).renderMathInElement(document.body, {
               delimiters: [
                 { left: "$$", right: "$$", display: true },
                 { left: "$", right: "$", display: false },
@@ -678,97 +674,46 @@ const customFooterCode = customSettings?.custom_footer_code || "";
 
     <!-- 增强版页面过渡管理脚本 -->
     <script>
-      // 零闪烁页面过渡管理器
+      // 页面过渡管理器脚本
       class PageTransitionManager {
         constructor(options = {}) {
           this.options = {
-            duration: options.duration || 400,
-            easing: options.easing || 'cubic-bezier(0.34, 1.56, 0.64, 1)',
-            fadeInDuration: options.fadeInDuration || 300,
-            fadeOutDuration: options.fadeOutDuration || 200,
-            iframePreload: true,
-            useCustomHistory: true
+            duration: options.duration || 300,
+            easing: options.easing || 'ease',
+            showLoader: options.showLoader !== false,
+            loaderDelay: options.loaderDelay || 150,
+            cacheEnabled: options.cacheEnabled !== false,
           };
-          
+          this.cache = new Map();
           this.isLoading = false;
-          this.transitionQueue = [];
-          this.isProcessing = false;
-          this.iframeCache = new Map();
-          this.maxIframeCacheSize = 5;
-          this.isFirstLoad = true;
-          
-          // 创建iframe容器
-          this.createIframeContainer();
-          
-          // 创建持久的加载遮罩
-          this.createPersistentOverlay();
+          this.abortController = null;
           
           this.init();
-        }
-
-        createPersistentOverlay() {
-          // 创建一个持久的遮罩层，始终覆盖整个页面
-          this.persistentOverlay = document.createElement('div');
-          this.persistentOverlay.id = 'persistent-overlay';
-          this.persistentOverlay.style.position = 'fixed';
-          this.persistentOverlay.style.top = '0';
-          this.persistentOverlay.style.left = '0';
-          this.persistentOverlay.style.width = '100%';
-          this.persistentOverlay.style.height = '100%';
-          this.persistentOverlay.style.backgroundColor = '#ffffff';
-          this.persistentOverlay.style.zIndex = '9999';
-          this.persistentOverlay.style.opacity = '1';
-          this.persistentOverlay.style.visibility = 'visible';
-          this.persistentOverlay.style.transition = 'opacity 0.3s ease';
-          
-          // 获取当前页面的实际背景色，而非仅依赖暗色模式
-          const computedStyle = getComputedStyle(document.documentElement);
-          const bgColor = computedStyle.getPropertyValue('--color-background') ||
-                         computedStyle.backgroundColor ||
-                         '#ffffff';
-          // 确保颜色值有效，否则使用默认值
-          this.persistentOverlay.style.backgroundColor = bgColor && bgColor !== 'transparent'
-            ? bgColor
-            : (document.documentElement.classList.contains('dark') ||
-               window.matchMedia('(prefers-color-scheme: dark)').matches
-               ? '#111111'
-               : '#ffffff');
-          
-          document.body.appendChild(this.persistentOverlay);
-          
-          // 首次加载完成后淡出遮罩
-          setTimeout(() => {
-            this.isFirstLoad = false;
-            this.persistentOverlay.style.opacity = '0';
-            setTimeout(() => {
-              this.persistentOverlay.style.visibility = 'hidden';
-            }, 300);
-          }, 500);
-        }
-
-        createIframeContainer() {
-          // 创建一个隐藏的iframe容器用于预加载内容
-          this.iframeContainer = document.createElement('div');
-          this.iframeContainer.style.position = 'absolute';
-          this.iframeContainer.style.visibility = 'hidden';
-          this.iframeContainer.style.pointerEvents = 'none';
-          this.iframeContainer.style.width = '0';
-          this.iframeContainer.style.height = '0';
-          this.iframeContainer.style.overflow = 'hidden';
-          this.iframeContainer.style.zIndex = '-1';
-          this.iframeContainer.style.left = '-9999px';
-          this.iframeContainer.style.top = '-9999px';
-          document.body.appendChild(this.iframeContainer);
         }
 
         init() {
           // 监听页面跳转事件
           this.hookNavigationEvents();
+          
+          // 监听页面加载完成事件
+          this.hookPageLoadEvents();
         }
 
         hookNavigationEvents() {
           // 拦截所有链接点击事件
           document.addEventListener('click', this.handleLinkClick.bind(this));
+          
+          // 监听表单提交事件
+          document.addEventListener('submit', this.handleFormSubmit.bind(this));
+          
+          // 监视浏览器前进后退按钮
+          window.addEventListener('popstate', this.handlePopState.bind(this));
+        }
+
+        hookPageLoadEvents() {
+          // Astro页面加载事件
+          document.addEventListener('astro:before-preparation', this.handleBeforePreparation.bind(this));
+          document.addEventListener('astro:page-load', this.handlePageLoadComplete.bind(this));
         }
 
         handleLinkClick(event) {
@@ -790,256 +735,175 @@ const customFooterCode = customSettings?.custom_footer_code || "";
           if (url.pathname === currentUrl.pathname) {
             if (url.hash) {
               event.preventDefault();
+              // 平滑滚动到目标元素
               this.smoothScrollToTarget(url.hash);
             }
             return;
           }
 
-          // 执行完美零闪烁过渡
+          // 执行平滑过渡
           event.preventDefault();
           this.navigateTo(link.href);
         }
 
+        handleFormSubmit(event) {
+          const form = event.target;
+          if (form && form.method.toLowerCase() === 'get') {
+            this.isLoading = true;
+            if (this.options.showLoader) {
+              this.showLoader();
+            }
+          }
+        }
+
+        handlePopState(event) {
+          // 阻止默认的页面跳转，执行平滑过渡
+          this.performSmoothTransition(window.location.href);
+        }
+
+        handleBeforePreparation(event) {
+          this.isLoading = true;
+          if (this.options.showLoader) {
+            // 使用延迟避免不必要的闪烁
+            setTimeout(() => {
+              if (this.isLoading) {
+                this.showLoader();
+              }
+            }, this.options.loaderDelay);
+          }
+        }
+
+        handlePageLoadComplete(event) {
+          this.isLoading = false;
+          if (this.options.showLoader) {
+            this.hideLoader();
+          }
+          
+          // 触发过渡完成事件
+          this.dispatchTransitionCompleteEvent();
+        }
+
         async navigateTo(url) {
-          // 如果正在处理其他过渡，将其加入队列
-          if (this.isProcessing) {
-            this.transitionQueue.push(url);
-            return;
+          // 显示加载状态
+          this.isLoading = true;
+          if (this.options.showLoader) {
+            // 延迟显示loader以避免快速跳转的闪烁
+            setTimeout(() => {
+              if (this.isLoading) {
+                this.showLoader();
+              }
+            }, this.options.loaderDelay);
           }
-          
-          this.isProcessing = true;
-          
-          try {
-            // 执行零闪烁过渡
-            await this.performZeroFlashTransition(url);
-          } catch (error) {
-            console.error('页面跳转失败:', error);
-            // 发生错误时直接跳转
-            window.location.href = url;
-          } finally {
-            this.isProcessing = false;
-            
-            // 处理队列中的下一个跳转
-            if (this.transitionQueue.length > 0) {
-              const nextUrl = this.transitionQueue.shift();
-              setTimeout(() => this.navigateTo(nextUrl), 100);
-            }
-          }
+
+          // 执行页面过渡
+          await this.performSmoothTransition(url);
         }
 
-        async performZeroFlashTransition(url) {
-          return new Promise(async (resolve, reject) => {
-            try {
-              // 立即显示持久遮罩以防止白屏，并同步当前背景色
-              if (!this.isFirstLoad) {
-                // 更新遮罩背景色以匹配当前页面
-                const computedStyle = getComputedStyle(document.documentElement);
-                const bgColor = computedStyle.getPropertyValue('--color-background') ||
-                               computedStyle.backgroundColor ||
-                               '#ffffff';
-                this.persistentOverlay.style.backgroundColor = bgColor && bgColor !== 'transparent'
-                  ? bgColor
-                  : (document.documentElement.classList.contains('dark') ||
-                     window.matchMedia('(prefers-color-scheme: dark)').matches
-                     ? '#111111'
-                     : '#ffffff');
+        async performSmoothTransition(url) {
+          return new Promise((resolve) => {
+            // 保存当前页面状态
+            const currentPage = document.documentElement.cloneNode(true);
 
-                this.persistentOverlay.style.visibility = 'visible';
-                this.persistentOverlay.style.opacity = '1';
-              }
-              
-              // 首先，淡出当前内容
-              const currentMain = document.querySelector('main#main-content');
-              if (!currentMain) {
-                window.location.href = url;
-                return;
-              }
-              
-              // 创建当前内容的快照并保持可见
-              const snapshot = this.createSnapshot(currentMain);
-              currentMain.parentNode?.insertBefore(snapshot, currentMain);
-              currentMain.style.visibility = 'hidden';
-              
-              // 预加载目标页面
-              const iframe = await this.preloadPageWithIframe(url);
-              
-              // 从iframe中提取内容
-              const content = this.extractContentFromIframe(iframe, url);
-              if (!content) {
-                throw new Error('无法从iframe中提取内容');
-              }
-              
-              // 将新内容添加到DOM中（但隐藏）
-              content.newMain.style.opacity = '0';
-              content.newMain.style.visibility = 'hidden';
-              currentMain.parentNode?.replaceChild(content.newMain, currentMain);
-              
-              // 更新标题和元数据
-              document.title = content.newTitle;
-              this.updateMetaTags(content.newDoc);
-              
-              // 确保新内容渲染后再显示
-              await this.waitForRender(content.newMain);
-              
-              // 执行淡入淡出动画
-              await this.performFadeInOut(snapshot, content.newMain);
-              
-              // 更新浏览器历史记录
-              if (this.options.useCustomHistory) {
-                history.pushState({}, '', url);
-              }
-              
-              // 延迟隐藏持久遮罩，确保过渡完成
-              setTimeout(() => {
-                this.persistentOverlay.style.opacity = '0';
-                setTimeout(() => {
-                  if (!this.isFirstLoad) {
-                    this.persistentOverlay.style.visibility = 'hidden';
-                  }
-                }, 300);
-              }, 100);
-              
-              // 清理iframe
-              setTimeout(() => {
-                if (iframe.parentNode) {
-                  iframe.parentNode.removeChild(iframe);
-                }
-              }, 1000);
-              
-              resolve();
-            } catch (error) {
-              console.error('零闪烁过渡执行失败:', error);
-              // 即使出现错误也要确保遮罩被移除
-              this.persistentOverlay.style.opacity = '0';
-              setTimeout(() => {
-                this.persistentOverlay.style.visibility = 'hidden';
-              }, 300);
-              reject(error);
-            }
-          });
-        }
+            // 更新浏览器历史记录
+            history.pushState({}, '', url);
 
-        async preloadPageWithIframe(url) {
-          // 检查是否已缓存iframe
-          if (this.iframeCache.has(url)) {
-            return this.iframeCache.get(url);
-          }
-          
-          return new Promise((resolve, reject) => {
-            const iframe = document.createElement('iframe');
-            iframe.style.position = 'absolute';
-            iframe.style.visibility = 'hidden';
-            iframe.style.width = '100%';
-            iframe.style.height = '100vh';
-            iframe.style.border = 'none';
-            iframe.style.zIndex = '-1';
-            // 防止iframe获取焦点
-            iframe.style.pointerEvents = 'none';
-            iframe.style.opacity = '0';
+            // 发起页面请求
+            this.abortController = new AbortController();
             
-            iframe.onload = () => {
-              // 确保iframe完全加载后才返回
-              setTimeout(() => {
-                // 如果缓存已满，删除最旧的条目
-                if (this.iframeCache.size >= this.maxIframeCacheSize) {
-                  const firstKey = this.iframeCache.keys().next().value;
-                  const oldIframe = this.iframeCache.get(firstKey);
-                  if (oldIframe && oldIframe.parentNode) {
-                    oldIframe.parentNode.removeChild(oldIframe);
-                  }
-                  this.iframeCache.delete(firstKey);
+            fetch(url, {
+              signal: this.abortController.signal
+            })
+            .then(response => response.text())
+            .then(html => {
+              // 解析新的HTML内容
+              const parser = new DOMParser();
+              const doc = parser.parseFromString(html, 'text/html');
+              
+              // 提取关键内容部分
+              const newMain = doc.querySelector('main#main-content');
+              const newTitle = doc.querySelector('title');
+              
+              if (newMain && newTitle) {
+                // 执行过渡动画
+                this.executeTransitionAnimation(newMain, newTitle.textContent || '');
+                
+                // 更新页面内容
+                const currentMain = document.querySelector('main#main-content');
+                if (currentMain) {
+                  currentMain.replaceWith(newMain);
                 }
                 
-                // 缓存iframe
-                this.iframeCache.set(url, iframe);
-                resolve(iframe);
-              }, 100);
-            };
-            
-            iframe.onerror = () => {
-              reject(new Error('Failed to load iframe for ' + url));
-            };
-            
-            iframe.src = url;
-            this.iframeContainer.appendChild(iframe);
-          });
-        }
-
-        extractContentFromIframe(iframe, url) {
-          try {
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-            
-            // 提取关键内容部分
-            const newMain = iframeDoc.querySelector('main#main-content');
-            const newTitle = iframeDoc.querySelector('title')?.textContent || '';
-            
-            if (!newMain) {
-              return null;
-            }
-            
-            // 深拷贝内容以避免引用问题
-            const newMainClone = newMain.cloneNode(true);
-            
-            return {
-              newMain: newMainClone,
-              newTitle,
-              newDoc: iframeDoc
-            };
-          } catch (e) {
-            console.error('无法从iframe中提取内容 ' + url + ':', e);
-            return null;
-          }
-        }
-
-        createSnapshot(element) {
-          // 创建当前内容的深拷贝作为快照
-          const snapshot = element.cloneNode(true);
-          snapshot.id = 'content-snapshot';
-          snapshot.style.position = 'relative';
-          snapshot.style.zIndex = '9997';
-          snapshot.style.transition = 'opacity 0.2s ease-out';
-          
-          return snapshot;
-        }
-
-        async waitForRender(element) {
-          // 确保元素完全渲染
-          return new Promise(resolve => {
-            // 使用 requestAnimationFrame 确保渲染完成
-            requestAnimationFrame(() => {
-              // 再次使用，确保CSS样式完全应用
-              requestAnimationFrame(() => {
-                setTimeout(resolve, 10);
-              });
+                // 更新标题
+                document.title = newTitle.textContent || '';
+                
+                // 更新元数据
+                this.updateMetaTags(doc);
+                
+                // 完成过渡
+                this.onTransitionComplete(resolve);
+              } else {
+                // 如果无法解析内容，执行完整页面刷新
+                window.location.href = url;
+              }
+            })
+            .catch(error => {
+              if (error.name !== 'AbortError') {
+                console.error('页面加载失败:', error);
+                // 出错时执行完整页面跳转
+                window.location.href = url;
+              }
             });
           });
         }
 
-        async performFadeInOut(snapshot, newMain) {
-          return new Promise(resolve => {
-            // 设置新内容样式
+        executeTransitionAnimation(newMain) {
+          const currentMain = document.querySelector('main#main-content');
+          if (!currentMain) return;
+
+          // 应用过渡样式
+          currentMain.style.position = 'relative';
+          currentMain.style.zIndex = '1';
+          currentMain.style.opacity = '1';
+          currentMain.style.transition = `opacity ${this.options.duration}ms ${this.options.easing}, transform ${this.options.duration}ms ${this.options.easing}`;
+          
+          // 淡出当前内容
+          currentMain.style.opacity = '0';
+          currentMain.style.transform = 'translateY(10px)';
+          
+          // 在动画结束后应用新内容
+          setTimeout(() => {
+            // 将新内容淡入
+            newMain.style.position = 'relative';
+            newMain.style.zIndex = '1';
             newMain.style.opacity = '0';
-            newMain.style.visibility = 'visible';
-            newMain.style.transition = 'opacity ' + this.options.fadeInDuration + 'ms ease-out';
+            newMain.style.transform = 'translateY(-10px)';
+            newMain.style.transition = `opacity ${this.options.duration}ms ${this.options.easing}, transform ${this.options.duration}ms ${this.options.easing}`;
             
-            // 淡出快照，淡入新内容
-            snapshot.style.transition = 'opacity ' + this.options.fadeOutDuration + 'ms ease-out';
-            snapshot.style.opacity = '0';
-            
-            // 显示新内容
+            // 确保DOM更新后再执行动画
             requestAnimationFrame(() => {
               newMain.style.opacity = '1';
+              newMain.style.transform = 'translateY(0)';
             });
-            
-            // 等待所有动画完成
-            setTimeout(() => {
-              // 移除快照
-              if (snapshot.parentNode) {
-                snapshot.parentNode.removeChild(snapshot);
-              }
-              resolve();
-            }, Math.max(this.options.fadeOutDuration, this.options.fadeInDuration) + 50);
+          }, this.options.duration / 2);
+        }
+
+        onTransitionComplete(callback) {
+          // 延迟一小段时间以确保动画完全结束
+          setTimeout(() => {
+            this.isLoading = false;
+            if (this.options.showLoader) {
+              this.hideLoader();
+            }
+            this.dispatchTransitionCompleteEvent();
+            callback();
+          }, this.options.duration / 2);
+        }
+
+        dispatchTransitionCompleteEvent() {
+          const event = new CustomEvent('page-transition-complete', {
+            detail: { url: window.location.href }
           });
+          document.dispatchEvent(event);
         }
 
         updateMetaTags(newDoc) {
@@ -1059,7 +923,7 @@ const customFooterCode = customSettings?.custom_footer_code || "";
           ogTags.forEach(tag => {
             const prop = tag.getAttribute('property');
             if (prop) {
-              const currentTag = document.querySelector('meta[property="' + prop + '"]');
+              const currentTag = document.querySelector(`meta[property="${prop}"]`);
               if (currentTag) {
                 currentTag.setAttribute('content', tag.getAttribute('content'));
               } else {
@@ -1073,7 +937,7 @@ const customFooterCode = customSettings?.custom_footer_code || "";
           twitterTags.forEach(tag => {
             const name = tag.getAttribute('name');
             if (name) {
-              const currentTag = document.querySelector('meta[name="' + name + '"]');
+              const currentTag = document.querySelector(`meta[name="${name}"]`);
               if (currentTag) {
                 currentTag.setAttribute('content', tag.getAttribute('content'));
               } else {
@@ -1081,6 +945,40 @@ const customFooterCode = customSettings?.custom_footer_code || "";
               }
             }
           });
+        }
+
+        showLoader() {
+          const loader = document.querySelector('.page-loading');
+          if (loader) {
+            // 随机加载文本
+            const texts = [
+              "✨ 魔法正在施展中...",
+              "🌈 彩虹桥搭建中...",
+              "🎨 创意正在迸发...",
+              "🚀 即将起飞...",
+              "💫 星辰大海等你来...",
+              "🌹 精彩内容准备中...",
+              "🌟 闪亮登场倒计时..."
+            ];
+            const textElement = loader.querySelector('#loading-text');
+            if (textElement) {
+              textElement.textContent = texts[Math.floor(Math.random() * texts.length)];
+            }
+            
+            // 延迟显示，避免快速跳转的闪烁
+            setTimeout(() => {
+              if (this.isLoading) {
+                loader.classList.add('active');
+              }
+            }, 50);
+          }
+        }
+
+        hideLoader() {
+          const loader = document.querySelector('.page-loading');
+          if (loader) {
+            loader.classList.remove('active');
+          }
         }
 
         smoothScrollToTarget(hash) {
@@ -1094,35 +992,25 @@ const customFooterCode = customSettings?.custom_footer_code || "";
         }
 
         destroy() {
+          if (this.abortController) {
+            this.abortController.abort();
+          }
+          
           // 移除事件监听器
           document.removeEventListener('click', this.handleLinkClick.bind(this));
-          
-          // 清理iframe容器
-          if (this.iframeContainer && this.iframeContainer.parentNode) {
-            this.iframeContainer.parentNode.removeChild(this.iframeContainer);
-          }
-          
-          // 清理持久遮罩
-          if (this.persistentOverlay && this.persistentOverlay.parentNode) {
-            this.persistentOverlay.parentNode.removeChild(this.persistentOverlay);
-          }
-          
-          // 清理所有缓存的iframe
-          for (const iframe of this.iframeCache.values()) {
-            if (iframe.parentNode) {
-              iframe.parentNode.removeChild(iframe);
-            }
-          }
-          this.iframeCache.clear();
+          document.removeEventListener('submit', this.handleFormSubmit.bind(this));
+          window.removeEventListener('popstate', this.handlePopState.bind(this));
+          document.removeEventListener('astro:before-preparation', this.handleBeforePreparation.bind(this));
+          document.removeEventListener('astro:page-load', this.handlePageLoadComplete.bind(this));
         }
       }
 
-      // 初始化管理器
+      // 初始化页面过渡管理器
       document.addEventListener('DOMContentLoaded', () => {
         const pageTransitionManager = new PageTransitionManager({
-          duration: 400,
-          fadeInDuration: 300,
-          fadeOutDuration: 200
+          duration: 300,
+          showLoader: true,
+          loaderDelay: 100
         });
       });
     </script>

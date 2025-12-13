@@ -14,17 +14,19 @@ import ShareButton from "@components/blog/ShareButton.astro";
 import RecommendedReadCard from "@components/blog/RecommendedReadCard.astro";
 import type { BlogEntry } from "@/types";
 import { SITE_INFO } from "@lib/config";
+import SkeletonScreen from "@components/common/SkeletonScreen.astro";
 
 interface Props {
   entry: CollectionEntry<"blog">;
+  loading?: boolean;
 }
 const isDev = import.meta.env.DEV;
-const { entry } = Astro.props;
+const { entry, loading = false } = Astro.props;
 const isDraft = entry.data.draft;
 const { title, description, image, hideToc, updatedAt, author } = entry.data;
 
 // 从Astro的render()结果中获取处理好的headings
-const { headings } = await render(entry);
+const { headings } = loading ? { headings: [] } : await render(entry);
 
 const descriptionLenth = 200;
 const globalHideToc = false;
@@ -33,7 +35,7 @@ const tocDepth = 3;
 const actuallyHideToc =
   hideToc ||
   globalHideToc ||
-  headings.filter((heading) => heading.depth <= tocDepth).length === 0;
+  (!loading && headings.filter((heading) => heading.depth <= tocDepth).length === 0);
 
 // 简化布局类计算
 const articleClass = "w-full lg:w-3/4 xl:w-4/5"; //因为侧边栏还有推荐阅读，所以不需要根据toc是否隐藏来计算宽度
@@ -47,60 +49,64 @@ const entryDescription =
   (entry.body ? plainify(entry.body.slice(0, descriptionLenth)) : "");
 
 // 获取推荐文章
-const allBlogPosts = (await getCollection("blog", ({ data,filePath }) => {
-  if(filePath?.includes("-index.md")){
-    return false;
-  }
-  return data.status === "published" && !data.draft;
-})) as BlogEntry[];
+const allBlogPosts = loading
+  ? []
+  : (await getCollection("blog", ({ data,filePath }) => {
+      if(filePath?.includes("-index.md")){
+        return false;
+      }
+      return data.status === "published" && !data.draft;
+    })) as BlogEntry[];
 
 // 过滤掉当前文章并获取推荐文章
 const currentTags = entry.data.tags || [];
 const currentCategories = entry.data.categories || [];
 
 // 基于标签和分类相似性推荐文章
-const recommendedPosts = allBlogPosts
-  .filter((post) => post.id !== entry.id) // 排除当前文章
-  .map((post) => {
-    let score = 0;
-    const postTags = post.data.tags || [];
-    const postCategories = post.data.categories || [];
+const recommendedPosts = loading
+  ? []
+  : allBlogPosts
+      .filter((post) => post.id !== entry.id) // 排除当前文章
+      .map((post) => {
+        let score = 0;
+        const postTags = post.data.tags || [];
+        const postCategories = post.data.categories || [];
 
-    // 标签匹配得分
-    const tagMatches = postTags.filter((tag) =>
-      currentTags.includes(tag),
-    ).length;
-    score += tagMatches * 2;
+        // 标签匹配得分
+        const tagMatches = postTags.filter((tag) =>
+          currentTags.includes(tag),
+        ).length;
+        score += tagMatches * 2;
 
-    // 分类匹配得分
-    const categoryMatches = postCategories.filter((cat) =>
-      currentCategories.includes(cat),
-    ).length;
-    score += categoryMatches * 3;
+        // 分类匹配得分
+        const categoryMatches = postCategories.filter((cat) =>
+          currentCategories.includes(cat),
+        ).length;
+        score += categoryMatches * 3;
 
-    return { post, score };
-  })
-  .sort((a, b) => {
-    // 先按相似度排序，再按发布时间排序
-    if (b.score !== a.score) {
-      return b.score - a.score;
-    }
-    const dateA = new Date(
-      a.post.data.publishedAt || a.post.data.createdAt || 0,
-    );
-    const dateB = new Date(
-      b.post.data.publishedAt || b.post.data.createdAt || 0,
-    );
-    return dateB.getTime() - dateA.getTime();
-  })
-  .slice(0, 5) // 限制为5篇推荐文章
-  .map((item) => item.post);
+        return { post, score };
+      })
+      .sort((a, b) => {
+        // 先按相似度排序，再按发布时间排序
+        if (b.score !== a.score) {
+          return b.score - a.score;
+        }
+        const dateA = new Date(
+          a.post.data.publishedAt || a.post.data.createdAt || 0,
+        );
+        const dateB = new Date(
+          b.post.data.publishedAt || b.post.data.createdAt || 0,
+        );
+        return dateB.getTime() - dateA.getTime();
+      })
+      .slice(0, 5) // 限制为5篇推荐文章
+      .map((item) => item.post);
 ---
 
-<BaseLayout title={title} description={entryDescription} image={image?.src}>
+<BaseLayout title={loading ? undefined : title} description={loading ? undefined : entryDescription} image={loading ? undefined : image?.src}>
   <!-- 草稿提示 -->
   {
-    isDraft && isDev && (
+    !loading && isDraft && isDev && (
       <section class="flex container px-3 lg:px-8">
         <div class="bg-yellow-100 dark:bg-yellow-900 border-l-4 border-yellow-500 p-4 mb-6 w-full">
           <div class="flex">
@@ -127,163 +133,171 @@ const recommendedPosts = allBlogPosts
       </section>
     )
   }
-  <section class="flex container px-3 lg:px-8">
+  <section class="flex container px-3 lg:px-8" data-critical="true">
     <div class:list={[articleClass]}>
-      <article>
-        <section>
-          <EntryHeader
-            entry={entry}
-            showImage
-            showAuthor
-            showDate
-            showReadingTime
-            showCategories
-            showTags
-          />
-        </section>
-        <LiquidGlassLess
-          containerType="section"
-          heavy
-          wrapperClass="panel flex flex-col justify-between mb-4 rounded-[35px] intersect-no-queue min-h-96"
-        >
-          <div
-            class="p-3 lg:p-8 prose max-w-none markdown-content text-txt-p dark:text-darkmode-txt-p intersect:animate-fadeUp"
-          >
-            <slot />
-          </div>
-        </LiquidGlassLess>
-        <!-- 文章信息区 -->
-        <!-- 文章底部信息卡片 -->
-        <div class="relative mt-16">
-          <!-- 作者头像 - 超出顶部 -->
-          <div
-            class="left_centor -top-12 transform -translate-x-1/2 z-10 animate-fadeUp"
-          >
-            <div class="relative group">
-              <div
-                class="absolute -inset-2 bg-gradient-to-r from-orange-500 via-indigo-500 to-green-500 rounded-[35px] blur opacity-40 group-hover:opacity-60 transition duration-300"
-              >
-              </div>
-              <Image
-                class="relative w-20 h-20 rounded-full border-4 border-white/50 shadow-2xl transform group-hover:scale-105 transition-all duration-300 bg-white/10 backdrop-blur-sm"
-                src={AuthorImg}
-                alt={author || "Author"}
-                width={80}
-                height={80}
-                loading="lazy"
-              />
-            </div>
-          </div>
-
-          <LiquidGlassLess
-            heavy
-            wrapperClass="dock rounded-2xl pt-16 pb-8 px-8"
-            textClass="intersect-no-queue"
-          >
-            <!-- 作者信息 -->
-            <div class="text-center m-6">
-              <div
-                class="font-bold text-2xl text-txt-p dark:text-darkmode-txt-p mb-1"
-              >
-                {author || "Maple"}
-              </div>
-              <!-- <div class="text-sm text-txt-s dark:text-darkmode-txt-s opacity-80">
-                文章作者
-              </div> -->
-            </div>
-
-            <!-- 互动按钮区域（已移除点赞） -->
-            <div class="flex items-center justify-center gap-4 mb-2">
-              <ShareButton
-                title={title}
-                description={entryDescription}
-                folder="blog"
-                id={entry.id}
-              />
-            </div>
-
-            <!-- 分割线 -->
-            <div
-              class="w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mb-2"
-            >
-            </div>
-
-            <!-- 文章信息 -->
-            <div class="space-y-4 text-center">
-              <!-- 版权信息 -->
-              <div
-                class="text-xs text-txt-p dark:text-darkmode-txt-p opacity-75 leading-relaxed"
+      <article data-critical="true">
+        {
+          loading ? (
+            <SkeletonScreen type="article" />
+          ) : (
+            <>
+              <section data-critical="true">
+                <EntryHeader
+                  entry={entry}
+                  showImage
+                  showAuthor
+                  showDate
+                  showReadingTime
+                  showCategories
+                  showTags
+                />
+              </section>
+              <LiquidGlassLess
+                containerType="section"
+                heavy
+                wrapperClass="panel flex flex-col justify-between mb-4 rounded-[35px] intersect-no-queue min-h-96"
               >
                 <div
-                  class="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4"
+                  class="p-3 lg:p-8 prose max-w-none markdown-content text-txt-p dark:text-darkmode-txt-p intersect:animate-fadeUp"
                 >
-                  <span>
-                    © 2025 by
-                    <a href={SITE_INFO.URL}>{SITE_INFO.SITE_NAME}</a>
-                     本文基于
-                    <a
-                      target="_blank"
-                      href="https://creativecommons.org/licenses/by-nc-sa/4.0/"
-                      class="font-bold"
-                    >
-                      CC BY-NC-SA 4.0
-                    </a>
-                     许可
-                    <img
-                      src="https://mirrors.creativecommons.org/presskit/icons/cc.svg"
-                      alt="CC 协议"
-                      aria-label="CC 协议"
-                      style="max-width: 1em;max-height:1em; display:inline-block;"
-                    />
-                    <img
-                      src="https://mirrors.creativecommons.org/presskit/icons/by.svg"
-                      alt="必须注明创作者"
-                      style="max-width: 1em;max-height:1em;display:inline-block;"
-                    />
-                    <img
-                      src="https://mirrors.creativecommons.org/presskit/icons/nc.svg"
-                      alt="仅允许将作品用于非商业用途"
-                      style="max-width: 1em;max-height:1em;display:inline-block;"
-                    />
-                    <img
-                      src="https://mirrors.creativecommons.org/presskit/icons/sa.svg"
-                      alt="改编作品必须遵循相同条款进行共享"
-                      style="max-width: 1em;max-height:1em;display:inline-block;"
-                    />
-                  </span>
-                  <span class="hidden sm:inline text-white/30">|</span>
-                  <span class="inline-flex items-center gap-2">
-                    <svg
-                      class="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                     最后更新：{
-                      updatedAt
-                        ? new Date(updatedAt).toLocaleDateString("zh-CN")
-                        : "未知"
-                    }
-                  </span>
+                  <slot />
                 </div>
-              </div>
-            </div>
-          </LiquidGlassLess>
-        </div>
+              </LiquidGlassLess>
+              <!-- 文章信息区 -->
+              <!-- 文章底部信息卡片 -->
+              <div class="relative mt-16">
+                <!-- 作者头像 - 超出顶部 -->
+                <div
+                  class="left_centor -top-12 transform -translate-x-1/2 z-10 animate-fadeUp"
+                >
+                  <div class="relative group">
+                    <div
+                      class="absolute -inset-2 bg-gradient-to-r from-orange-500 via-indigo-500 to-green-500 rounded-[35px] blur opacity-40 group-hover:opacity-60 transition duration-300"
+                    >
+                    </div>
+                    <Image
+                      class="relative w-20 h-20 rounded-full border-4 border-white/50 shadow-2xl transform group-hover:scale-105 transition-all duration-300 bg-white/10 backdrop-blur-sm"
+                      src={AuthorImg}
+                      alt={author || "Author"}
+                      width={80}
+                      height={80}
+                      loading="lazy"
+                    />
+                  </div>
+                </div>
 
-        <LiquidGlassLess
-          heavy
-          wrapperClass="dock rounded-lg p-6 my-4"
-          textClass="intersect-no-queue  px-3 lg:px-8 "
-        >
-          <Comment />
-        </LiquidGlassLess>
+                <LiquidGlassLess
+                  heavy
+                  wrapperClass="dock rounded-2xl pt-16 pb-8 px-8"
+                  textClass="intersect-no-queue"
+                >
+                  <!-- 作者信息 -->
+                  <div class="text-center m-6">
+                    <div
+                      class="font-bold text-2xl text-txt-p dark:text-darkmode-txt-p mb-1"
+                    >
+                      {author || "Maple"}
+                    </div>
+                    <!-- <div class="text-sm text-txt-s dark:text-darkmode-txt-s opacity-80">
+                      文章作者
+                    </div> -->
+                  </div>
+
+                  <!-- 互动按钮区域（已移除点赞） -->
+                  <div class="flex items-center justify-center gap-4 mb-2">
+                    <ShareButton
+                      title={title}
+                      description={entryDescription}
+                      folder="blog"
+                      id={entry.id}
+                    />
+                  </div>
+
+                  <!-- 分割线 -->
+                  <div
+                    class="w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mb-2"
+                  >
+                  </div>
+
+                  <!-- 文章信息 -->
+                  <div class="space-y-4 text-center">
+                    <!-- 版权信息 -->
+                    <div
+                      class="text-xs text-txt-p dark:text-darkmode-txt-p opacity-75 leading-relaxed"
+                    >
+                      <div
+                        class="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4"
+                      >
+                        <span>
+                          © 2025 by
+                          <a href={SITE_INFO.URL}>{SITE_INFO.SITE_NAME}</a>
+                           本文基于
+                          <a
+                            target="_blank"
+                            href="https://creativecommons.org/licenses/by-nc-sa/4.0/"
+                            class="font-bold"
+                          >
+                            CC BY-NC-SA 4.0
+                          </a>
+                           许可
+                          <img
+                            src="https://mirrors.creativecommons.org/presskit/icons/cc.svg"
+                            alt="CC 协议"
+                            aria-label="CC 协议"
+                            style="max-width: 1em;max-height:1em; display:inline-block;"
+                          />
+                          <img
+                            src="https://mirrors.creativecommons.org/presskit/icons/by.svg"
+                            alt="必须注明创作者"
+                            style="max-width: 1em;max-height:1em;display:inline-block;"
+                          />
+                          <img
+                            src="https://mirrors.creativecommons.org/presskit/icons/nc.svg"
+                            alt="仅允许将作品用于非商业用途"
+                            style="max-width: 1em;max-height:1em;display:inline-block;"
+                          />
+                          <img
+                            src="https://mirrors.creativecommons.org/presskit/icons/sa.svg"
+                            alt="改编作品必须遵循相同条款进行共享"
+                            style="max-width: 1em;max-height:1em;display:inline-block;"
+                          />
+                        </span>
+                        <span class="hidden sm:inline text-white/30">|</span>
+                        <span class="inline-flex items-center gap-2">
+                          <svg
+                            class="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                          </svg>
+                           最后更新：{
+                            updatedAt
+                              ? new Date(updatedAt).toLocaleDateString("zh-CN")
+                              : "未知"
+                          }
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </LiquidGlassLess>
+              </div>
+
+              <LiquidGlassLess
+                heavy
+                wrapperClass="dock rounded-lg p-6 my-4"
+                textClass="intersect-no-queue  px-3 lg:px-8 "
+              >
+                <Comment />
+              </LiquidGlassLess>
+            </>
+          )
+        }
       </article>
     </div>
 
@@ -291,11 +305,15 @@ const recommendedPosts = allBlogPosts
     <div
       class="flex-col h-full sticky top-[4rem] ml-4 space-y-4 hidden lg:flex lg:w-1/4 xl:w-1/5"
     >
-      <TableOfContents headings={headings} tocDepth={tocDepth} />
+      {
+        !loading && !actuallyHideToc && (
+          <TableOfContents headings={headings} tocDepth={tocDepth} />
+        )
+      }
 
       <!-- 推荐阅读模块 -->
       {
-        recommendedPosts.length > 0 && (
+        !loading && recommendedPosts.length > 0 && (
           <LiquidGlassLess
             heavy
             wrapperClass="dock rounded-[25px] overflow-hidden mb-3"
@@ -333,6 +351,45 @@ const recommendedPosts = allBlogPosts
                       showReadingTime={true}
                       compact={true}
                     />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </LiquidGlassLess>
+        )
+      }
+
+      {
+        loading && (
+          <LiquidGlassLess
+            heavy
+            wrapperClass="dock rounded-[25px] overflow-hidden mb-3"
+            textClass="intersect-no-queue"
+          >
+            <div class="py-2">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-txt-p dark:text-darkmode-txt-p flex items-center gap-2">
+                  <svg
+                    class="w-5 h-5 text-orange-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                    />
+                  </svg>
+                  推荐阅读
+                </h3>
+              </div>
+
+              <div class="space-y-1">
+                {[...Array(3)].map((_, index) => (
+                  <div class="p-2">
+                    <div class="h-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
                   </div>
                 ))}
               </div>

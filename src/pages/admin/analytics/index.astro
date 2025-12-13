@@ -1,0 +1,218 @@
+---
+import Layout from '../../../layouts/AdminLayout.astro';
+
+const title = '访问统计';
+---
+
+<Layout title={title}>
+  <div class="admin-container">
+    <h2>访问统计</h2>
+    
+    <div class="stats-overview">
+      <div class="stat-card">
+        <h3>总访问量</h3>
+        <p id="total-visits">--</p>
+      </div>
+      <div class="stat-card">
+        <h3>今日访问</h3>
+        <p id="today-visits">--</p>
+      </div>
+      <div class="stat-card">
+        <h3>当前在线</h3>
+        <p id="online-users">--</p>
+      </div>
+      <div class="stat-card">
+        <h3>文章数</h3>
+        <p id="post-count">--</p>
+      </div>
+    </div>
+    
+    <div class="chart-container">
+      <canvas id="visitsChart" height="200"></canvas>
+    </div>
+    
+    <div class="analytics-section">
+      <h3>热门文章</h3>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>文章标题</th>
+            <th>访问量</th>
+            <th>最后访问</th>
+          </tr>
+        </thead>
+        <tbody id="top-posts">
+          <!-- 热门文章将通过JS加载 -->
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="analytics-section">
+      <h3>访问来源</h3>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>来源</th>
+            <th>访问次数</th>
+            <th>占比</th>
+          </tr>
+        </thead>
+        <tbody id="traffic-sources">
+          <!-- 访问来源将通过JS加载 -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // 初始化图表
+    const chartCanvas = document.getElementById('visitsChart');
+    if (chartCanvas) {
+      const ctx = (chartCanvas as HTMLCanvasElement).getContext('2d');
+      if (ctx) {
+        const visitsChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: ['1月', '2月', '3月', '4月', '5月', '6月'],
+            datasets: [{
+              label: '访问量',
+              data: [120, 190, 150, 210, 180, 230],
+              borderColor: '#3498db',
+              backgroundColor: 'rgba(52, 152, 219, 0.1)',
+              tension: 0.4
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                display: false
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true
+              }
+            }
+          }
+        });
+      }
+    }
+    
+    // 加载统计数据
+    async function loadStats() {
+      try {
+        // 从API获取统计数据
+        const statsResponse = await fetch('/api/analytics/stats');
+        if (statsResponse.ok) {
+          const stats = await statsResponse.json();
+
+          const totalVisitsEl = document.getElementById('total-visits');
+          const todayVisitsEl = document.getElementById('today-visits');
+          const onlineUsersEl = document.getElementById('online-users');
+          const postCountEl = document.getElementById('post-count');
+
+          if (totalVisitsEl) totalVisitsEl.textContent = stats.totalVisits || '--';
+          if (todayVisitsEl) todayVisitsEl.textContent = stats.todayVisits || '--';
+          if (onlineUsersEl) onlineUsersEl.textContent = stats.onlineUsers || '--';
+          if (postCountEl) postCountEl.textContent = stats.postCount || '--';
+        }
+
+        // 加载热门文章
+        const topPostsResponse = await fetch('/api/analytics/top-posts');
+        if (topPostsResponse.ok) {
+          const topPosts = await topPostsResponse.json();
+          const tbody = document.getElementById('top-posts');
+
+          if (tbody) {
+            tbody.innerHTML = '';
+
+            topPosts.forEach((post: any) => {
+              const row = document.createElement('tr');
+              row.innerHTML = `
+                <td><a href="/blog/${post.slug}" target="_blank">${post.title}</a></td>
+                <td>${post.views}</td>
+                <td>${post.lastViewed ? new Date(post.lastViewed).toLocaleString() : 'N/A'}</td>
+              `;
+              tbody.appendChild(row);
+            });
+          }
+        }
+
+        // 加载流量来源
+        const trafficResponse = await fetch('/api/analytics/traffic-sources');
+        if (trafficResponse.ok) {
+          const sources = await trafficResponse.json();
+          const tbody = document.getElementById('traffic-sources');
+
+          if (tbody) {
+            tbody.innerHTML = '';
+
+            sources.forEach((source: any) => {
+              const row = document.createElement('tr');
+              row.innerHTML = `
+                <td>${source.name}</td>
+                <td>${source.count}</td>
+                <td>${source.percentage}%</td>
+              `;
+              tbody.appendChild(row);
+            });
+          }
+        }
+      } catch (error) {
+        console.error('加载统计数据失败:', error);
+      }
+    }
+    
+    // 页面加载时获取数据
+    document.addEventListener('DOMContentLoaded', loadStats);
+  </script>
+  
+  <style>
+    .stats-overview {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    
+    .stat-card h3 {
+      margin: 0 0 10px 0;
+      color: #7f8c8d;
+      font-size: 14px;
+    }
+    
+    .stat-card p {
+      margin: 0;
+      font-size: 24px;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+    
+    .chart-container {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+    
+    .analytics-section {
+      margin-bottom: 30px;
+    }
+    
+    .analytics-section h3 {
+      margin-bottom: 15px;
+      color: #2c3e50;
+    }
+  </style>
+</Layout>

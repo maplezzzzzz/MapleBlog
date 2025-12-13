@@ -26,9 +26,12 @@
     "preview": "astro preview",
     "serve": "astro preview",
     "clean": "rm -rf dist",
-    "build:analyze": "NODE_OPTIONS='--max-old-space-size=4096' astro build --verbose"
+    "build:analyze": "NODE_OPTIONS='--max-old-space-size=4096' astro build --verbose",
+    "admin": "node enhanced-admin-api-server.js",
+    "admin:pm2": "pm2 start enhanced-admin-api-server.js --name admin-panel"
   },
   "dependencies": {
+    "@astrojs/check": "^0.9.6",
     "@astrojs/mdx": "^4.3.0",
     "@astrojs/node": "^9.3.0",
     "@astrojs/react": "^4.3.0",
@@ -48,14 +51,19 @@
     "astro-tooltips": "^0.6.2",
     "clsx": "^2.1.1",
     "codemirror": "^6.0.2",
+    "cors": "^2.8.5",
     "date-fns": "^2.30.0",
     "date-fns-tz": "^2.0.0",
+    "express": "^5.2.1",
+    "formidable": "^3.5.4",
     "fuse.js": "^6.6.2",
     "github-slugger": "^2.0.0",
+    "glob": "^10.5.0",
     "gray-matter": "^4.0.3",
     "js-yaml": "^4.1.0",
     "katex": "^0.16.21",
     "marked": "^6.0.0",
+    "multer": "^2.0.2",
     "prettier-plugin-astro": "^0.11.0",
     "prettier-plugin-tailwindcss": "^0.4.1",
     "prop-types": "^15.8.1",
@@ -91,6 +99,6 @@
     "tailwind-bootstrap-grid": "^5.0.1",
     "tailwindcss": "^3.3.3",
     "tsx": "^4.20.5",
-    "typescript": "5.1.6"
+    "typescript": "^5.1.6"
   }
 }
