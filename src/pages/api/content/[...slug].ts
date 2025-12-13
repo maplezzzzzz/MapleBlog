@@ -5,7 +5,19 @@ import path from 'path';
 import matter from 'gray-matter';
 import { fileURLToPath } from 'url';
 
+// 明确指定此为服务器渲染路由
 export const prerender = false;
+
+// 为动态路由提供静态路径的最小实现，以满足构建系统要求，但实际不生成静态页面
+export async function getStaticPaths() {
+  // 返回一个示例路径以满足构建要求，但不实际生成静态内容
+  return [
+    {
+      params: { slug: "example" },
+      // 不提供props，因为我们使用动态服务器端处理
+    }
+  ];
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,12 +41,6 @@ function getContentConfig(slug: string) {
   } else {
     return { dir: 'blog', ext: '.md' };
   }
-}
-
-// 为动态路由提供静态路径函数，但返回空数组，因为这是API路由
-export async function getStaticPaths() {
-  // 对于API路由返回空数组，因为不需要生成静态文件
-  return [];
 }
 
 export const GET: APIRoute = async ({ params }) => {
