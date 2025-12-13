@@ -31,6 +31,12 @@ function getContentConfig(slug: string) {
   }
 }
 
+// 为动态路由提供静态路径函数，但返回空数组，因为这是API路由
+export async function getStaticPaths() {
+  // 对于API路由返回空数组，因为不需要生成静态文件
+  return [];
+}
+
 export const GET: APIRoute = async ({ params }) => {
   try {
     const slug = params.slug as string;

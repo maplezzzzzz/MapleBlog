@@ -1,6 +1,7 @@
 import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
 import tailwind from "@astrojs/tailwind";
+import cloudflare from "@astrojs/cloudflare";
 import AutoImport from "astro-auto-import";
 import { defineConfig } from "astro/config";
 import remarkCollapse from "remark-collapse";
@@ -32,7 +33,8 @@ export default defineConfig({
   site: getSiteUrl(),
   base: "/",
   trailingSlash: "ignore",
-  output: "static",
+  output: "server", // Cloudflare Pages支持服务器端渲染
+  adapter: cloudflare(), // 使用Cloudflare适配器
   server: {
     // 允许通过本机IP访问开发服务器
     host: true, // 或者使用 '0.0.0.0'
