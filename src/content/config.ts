@@ -39,17 +39,25 @@ const about = defineCollection({
       image: image().optional(),
       imageAlt: z.string().default(""),
       skills: z.array(z.string()).optional(),
-      experience: z.array(z.object({
-        title: z.string(),
-        company: z.string(),
-        period: z.string(),
-        description: z.string().optional(),
-      })).optional(),
-      education: z.array(z.object({
-        degree: z.string(),
-        school: z.string(),
-        period: z.string(),
-      })).optional(),
+      experience: z
+        .array(
+          z.object({
+            title: z.string(),
+            company: z.string(),
+            period: z.string(),
+            description: z.string().optional(),
+          }),
+        )
+        .optional(),
+      education: z
+        .array(
+          z.object({
+            degree: z.string(),
+            school: z.string(),
+            period: z.string(),
+          }),
+        )
+        .optional(),
       social: social.optional(),
     }),
 });
@@ -77,7 +85,10 @@ const blog = defineCollection({
 
 // 分类集合
 const categories = defineCollection({
-  loader: glob({ pattern: "**\/[^_]*.{md,mdx}", base: "./src/content/categories" }),
+  loader: glob({
+    pattern: "**\/[^_]*.{md,mdx}",
+    base: "./src/content/categories",
+  }),
   schema: ({ image }) =>
     baseContent.extend({
       slug: z.string().optional(),
@@ -88,7 +99,6 @@ const categories = defineCollection({
       parentId: z.string().optional(),
     }),
 });
-
 
 // 标签集合
 const tags = defineCollection({
@@ -104,10 +114,14 @@ const notes = defineCollection({
   schema: ({ image }) =>
     baseContent.extend({
       // 支持多张图片
-      images: z.array(z.object({
-        src: image(),
-        alt: z.string().default(""),
-      })).optional(),
+      images: z
+        .array(
+          z.object({
+            src: image(),
+            alt: z.string().default(""),
+          }),
+        )
+        .optional(),
       // 保留单张图片字段以兼容现有内容
       image: image().optional(),
       imageAlt: z.string().default(""),
@@ -116,7 +130,6 @@ const notes = defineCollection({
       location: z.string().optional(),
     }),
 });
-
 
 // 页面集合
 const pages = defineCollection({
@@ -130,8 +143,6 @@ const pages = defineCollection({
     }),
 });
 
-
-
 // 首页集合
 const home = defineCollection({
   loader: glob({ pattern: "-index.{md,mdx}", base: "./src/content/home" }),
@@ -139,33 +150,45 @@ const home = defineCollection({
     baseContent.extend({
       image: image().optional(),
       imageAlt: z.string().default(""),
-      hero: z.object({
-        title: z.string(),
-        subtitle: z.string().optional(),
-        backgroundImage: z.string().optional(),
-        ctaButton: z.object({
-          text: z.string(),
-          link: z.string(),
-        }).optional(),
-      }).optional(),
-      features: z.array(z.object({
-        title: z.string(),
-        description: z.string(),
-        icon: z.string().optional(),
-      })).optional(),
+      hero: z
+        .object({
+          title: z.string(),
+          subtitle: z.string().optional(),
+          backgroundImage: z.string().optional(),
+          ctaButton: z
+            .object({
+              text: z.string(),
+              link: z.string(),
+            })
+            .optional(),
+        })
+        .optional(),
+      features: z
+        .array(
+          z.object({
+            title: z.string(),
+            description: z.string(),
+            icon: z.string().optional(),
+          }),
+        )
+        .optional(),
     }),
- });
+});
 
 // 搜索配置集合
 const search = defineCollection({
   loader: glob({ pattern: "-index.{md,mdx}", base: "./src/content/search" }),
   schema: baseContent.extend({
-    searchableCollections: z.array(z.string()).default(["blog", "notes", "pages"]),
-    searchConfig: z.object({
-      placeholder: z.string().default("搜索内容..."),
-      maxResults: z.number().default(10),
-      enableHighlight: z.boolean().default(true),
-    }).optional(),
+    searchableCollections: z
+      .array(z.string())
+      .default(["blog", "notes", "pages"]),
+    searchConfig: z
+      .object({
+        placeholder: z.string().default("搜索内容..."),
+        maxResults: z.number().default(10),
+        enableHighlight: z.boolean().default(true),
+      })
+      .optional(),
   }),
 });
 
@@ -179,7 +202,6 @@ const socialConfig = defineCollection({
     showInFooter: z.boolean().default(true),
   }),
 });
-
 
 const terms = defineCollection({
   loader: glob({ pattern: "-index.{md,mdx}", base: "./src/content/terms" }),

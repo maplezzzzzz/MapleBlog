@@ -1,4 +1,4 @@
-import type { SearchableEntry } from "@/types"
+import type { SearchableEntry } from "@/types";
 import React, { useEffect, useRef, useState } from "react";
 import { plainify } from "@lib/textConverter";
 import Fuse from "fuse.js";
@@ -91,32 +91,32 @@ const SearchPage = ({ searchList }: Props) => {
                 {inputVal.length < 1
                   ? "“嗖”的一下，就搜出来了！"
                   : inputVal.length < 2
-                  ? "请输入2个以上字符"
-                  : "我没找到呢，试试其他关键词"}
+                    ? "请输入2个以上字符"
+                    : "我没找到呢，试试其他关键词"}
               </p>
             </div>
           ) : (
             searchResults?.map(({ item }, index) => (
-                <div className="py-2 px-0" key={`search-${index}`}>
-                  <div className="h-full glass col-10 lg:col-8 mx-auto rounded-[35px] p-6 intersect:animate-fade opacity-0">
-                    <h4 className="mb-2">
-                      <a href={"/" + getPath(item)}>
-                      {item.data.title}
-                      </a>
-                    </h4>
-                  { item.data.description && (
+              <div className="py-2 px-0" key={`search-${index}`}>
+                <div className="h-full glass col-10 lg:col-8 mx-auto rounded-[35px] p-6 intersect:animate-fade opacity-0">
+                  <h4 className="mb-2">
+                    <a href={"/" + getPath(item)}>{item.data.title}</a>
+                  </h4>
+                  {item.data.description && (
                     <p className="">{item.data.description}</p>
-                    )}
-                  {  !item.data.description && item.body && (
-                    <p className="">{plainify(item.body.slice(0, descriptionLength))}</p>
-                    )}
+                  )}
+                  {!item.data.description && item.body && (
+                    <p className="">
+                      {plainify(item.body.slice(0, descriptionLength))}
+                    </p>
+                  )}
                   {item.data.createdAt && (
                     <p className="text-txt-light dark:text-darkmode-txt-light">
                       {new Date(item.data.createdAt).toLocaleDateString()}
                     </p>
                   )}
-                  </div>
                 </div>
+              </div>
             ))
           )}
         </div>

@@ -17,7 +17,7 @@ marked.use({
 const renderer = new marked.Renderer();
 
 // 自定义标题渲染，添加锚点ID
-renderer.heading = function(text: string, level: number) {
+renderer.heading = function (text: string, level: number) {
   const escapedText = slug(text);
   return `<h${level} id="${escapedText}">
     <a href="#${escapedText}" class="anchor-link">${text}</a>
@@ -25,8 +25,8 @@ renderer.heading = function(text: string, level: number) {
 };
 
 // 自定义代码块渲染，添加语言标识和复制按钮
-renderer.code = function(code: string, language: string | undefined) {
-  const validLang = language && language !== '' ? language : 'text';
+renderer.code = function (code: string, language: string | undefined) {
+  const validLang = language && language !== "" ? language : "text";
   return `<div class="code-block-wrapper">
     <div class="code-block-header">
       <span class="code-language">${validLang}</span>
@@ -42,7 +42,7 @@ renderer.code = function(code: string, language: string | undefined) {
 };
 
 // 自定义表格渲染，添加响应式样式
-renderer.table = function(header: string, body: string) {
+renderer.table = function (header: string, body: string) {
   return `<div class="table-wrapper">
     <table class="markdown-table">
       <thead>${header}</thead>
@@ -52,25 +52,25 @@ renderer.table = function(header: string, body: string) {
 };
 
 // 自定义链接渲染，外部链接添加target="_blank"
-renderer.link = function(href: string, title: string | null, text: string) {
+renderer.link = function (href: string, title: string | null, text: string) {
   // 在服务端渲染时，简单判断是否为外部链接
-  const isExternal = href.startsWith('http://') || href.startsWith('https://');
-  const target = isExternal ? ' target="_blank" rel="noopener noreferrer"' : '';
-  const titleAttr = title ? ` title="${title}"` : '';
+  const isExternal = href.startsWith("http://") || href.startsWith("https://");
+  const target = isExternal ? ' target="_blank" rel="noopener noreferrer"' : "";
+  const titleAttr = title ? ` title="${title}"` : "";
   return `<a href="${href}"${titleAttr}${target}>${text}</a>`;
 };
 
 // 自定义图片渲染，添加懒加载和响应式
-renderer.image = function(href: string, title: string | null, text: string) {
-  const titleAttr = title ? ` title="${title}"` : '';
+renderer.image = function (href: string, title: string | null, text: string) {
+  const titleAttr = title ? ` title="${title}"` : "";
   return `<figure class="markdown-image">
     <img src="${href}" alt="${text}"${titleAttr} loading="lazy" class="responsive-image" />
-    ${text ? `<figcaption>${text}</figcaption>` : ''}
+    ${text ? `<figcaption>${text}</figcaption>` : ""}
   </figure>`;
 };
 
 // 自定义引用块渲染
-renderer.blockquote = function(quote: string) {
+renderer.blockquote = function (quote: string) {
   return `<blockquote class="markdown-blockquote">${quote}</blockquote>`;
 };
 
@@ -78,7 +78,7 @@ marked.setOptions({ renderer });
 
 // slugify
 export const slugify = (content: string) => {
-  if (!content) return '';
+  if (!content) return "";
   return slug(content.toString());
 };
 
@@ -86,7 +86,9 @@ export const slugify = (content: string) => {
 export const markdownify = async (content: string, div?: boolean) => {
   const options = { renderer };
   // content = await extractImageUrls(content);
-  return div ? marked.parse(content, options) : marked.parseInline(content, options);
+  return div
+    ? marked.parse(content, options)
+    : marked.parseInline(content, options);
 };
 
 /**
@@ -97,15 +99,15 @@ async function extractImageUrls(content: string): Promise<string> {
   const regex = /!\[.*?\]\((.*?)\)/g;
   const matches = content.match(regex);
   if (matches) {
-    matches.forEach(match => {
+    matches.forEach((match) => {
       const url = match.match(/\((.*?)\)/)?.[1];
-      console.log("图片URL",url)
+      console.log("图片URL", url);
       if (url) {
         content = content.replace(url, transformImageUrl(url));
       }
     });
   }
-  console.log("替换后的文章内容",content)
+  console.log("替换后的文章内容", content);
   return content;
 }
 
@@ -123,7 +125,7 @@ function transformImageUrl(url: string): string {
 
 // hyphen to space, uppercase only first letter in each word
 export const upperHumanize = (content: string | undefined) => {
-  if (!content) return '';
+  if (!content) return "";
   return content
     .toLowerCase()
     .replace(/-/g, " ")
@@ -132,10 +134,8 @@ export const upperHumanize = (content: string | undefined) => {
 
 // hyphen to space, lowercase all letters
 export const lowerHumanize = (content: string | undefined) => {
-  if (!content) return '';
-  return content
-    .toLowerCase()
-    .replace(/-/g, " ");
+  if (!content) return "";
+  return content.toLowerCase().replace(/-/g, " ");
 };
 
 // plainify

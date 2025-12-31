@@ -13,6 +13,7 @@ tags:
   - 图片上传
 featuredImg: /src/assets/images/uploads/image-1765273656780-186176783.txt
 ---
+
 # 增强編輯器測試文章
 
 這篇文章展示了新編輯器的全部功能。
@@ -36,7 +37,7 @@ featuredImg: /src/assets/images/uploads/image-1765273656780-186176783.txt
 新編輯器支持完整的Markdown格式：
 
 - **粗體文字**
-- *斜體文字*
+- _斜體文字_
 - `代碼塊`
 - 代碼塊：
   ```javascript
@@ -44,5 +45,5 @@ featuredImg: /src/assets/images/uploads/image-1765273656780-186176783.txt
   ```
 
 | 表格 | 支持 |
-|------|------|
+| ---- | ---- |
 | 數據 | 數據 |

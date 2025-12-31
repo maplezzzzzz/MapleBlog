@@ -1,26 +1,33 @@
 ---
 import Layout from '../../../layouts/AdminLayout.astro';
+import { getCollection } from 'astro:content';
 
-const title = '内容管理';
+// 获取所有内容类型的数据
+const blogPosts = await getCollection('blog');
+const pages = await getCollection('pages');
+const categories = await getCollection('categories');
+const tags = await getCollection('tags');
+const notes = await getCollection('notes');
 ---
 
-<Layout title={title}>
+<Layout title="内容管理">
   <div class="admin-container">
     <h2>内容管理</h2>
-    
+
     <div class="admin-tabs">
       <button class="tab-btn active" data-tab="posts">文章</button>
+      <button class="tab-btn" data-tab="notes">动态</button>
       <button class="tab-btn" data-tab="pages">页面</button>
-      <button class="tab-btn" data-tab="media">媒体</button>
       <button class="tab-btn" data-tab="categories">分类</button>
       <button class="tab-btn" data-tab="tags">标签</button>
     </div>
-    
+
+    <!-- 文章管理标签页 -->
     <div class="tab-content active" id="posts-tab">
       <div class="admin-controls">
-        <button class="admin-btn" onclick="createPost()">新建文章</button>
+        <a href="/admin/content/create/blog" class="admin-btn">新建文章</a>
       </div>
-      
+
       <table class="admin-table">
         <thead>
           <tr>
@@ -32,16 +39,65 @@ const title = '内容管理';
           </tr>
         </thead>
         <tbody id="posts-list">
-          <!-- 文章列表将通过JS加载 -->
+          {blogPosts.map(post => (
+            <tr key={post.id}>
+              <td>{post.data.title}</td>
+              <td>
+                <span class={`status-badge ${post.data.status || 'draft'}`}>
+                  {post.data.status || 'draft'}
+                </span>
+              </td>
+              <td>{post.data.categories ? post.data.categories.join(', ') : ''}</td>
+              <td>{post.data.publishedAt ? new Date(post.data.publishedAt).toLocaleDateString() : '未发布'}</td>
+              <td class="admin-table-actions">
+                <button class="admin-btn admin-btn-secondary edit-btn" data-type="post" data-id={post.id}>编辑</button>
+                <button class="admin-btn view-btn" data-type="post" data-slug={post.slug}>查看</button>
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
-    
+
+    <!-- 动态管理标签页 -->
+    <div class="tab-content" id="notes-tab">
+      <div class="admin-controls">
+        <button class="admin-btn" onclick="createNote()">新建动态</button>
+      </div>
+
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>标题</th>
+            <th>心情</th>
+            <th>地点</th>
+            <th>创建时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="notes-list">
+          {notes.map(note => (
+            <tr key={note.id}>
+              <td>{note.data.title}</td>
+              <td>{note.data.mood || ''}</td>
+              <td>{note.data.location || ''}</td>
+              <td>{note.data.createdAt ? new Date(note.data.createdAt).toLocaleDateString() : (note.data.updatedAt ? new Date(note.data.updatedAt).toLocaleDateString() : '')}</td>
+              <td class="admin-table-actions">
+                <button class="admin-btn admin-btn-secondary edit-btn" data-type="note" data-id={note.id}>编辑</button>
+                <button class="admin-btn view-btn" data-type="note" data-slug={note.slug}>查看</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 页面管理标签页 -->
     <div class="tab-content" id="pages-tab">
       <div class="admin-controls">
         <button class="admin-btn" onclick="createPage()">新建页面</button>
       </div>
-      
+
       <table class="admin-table">
         <thead>
           <tr>
@@ -53,7 +109,84 @@ const title = '内容管理';
           </tr>
         </thead>
         <tbody id="pages-list">
-          <!-- 页面列表将通过JS加载 -->
+          {pages.map(page => (
+            <tr key={page.id}>
+              <td>{page.data.title}</td>
+              <td>/{page.slug}</td>
+              <td>
+                <span class={`status-badge ${page.data.status || 'draft'}`}>
+                  {page.data.status || 'draft'}
+                </span>
+              </td>
+              <td>{page.data.createdAt ? new Date(page.data.createdAt).toLocaleDateString() : (page.data.updatedAt ? new Date(page.data.updatedAt).toLocaleDateString() : '')}</td>
+              <td class="admin-table-actions">
+                <button class="admin-btn admin-btn-secondary edit-btn" data-type="page" data-id={page.id}>编辑</button>
+                <button class="admin-btn view-btn" data-type="page" data-slug={page.slug}>查看</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 分类管理标签页 -->
+    <div class="tab-content" id="categories-tab">
+      <div class="admin-controls">
+        <button class="admin-btn" onclick="createCategory()">新建分类</button>
+      </div>
+
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>分类名称</th>
+            <th>颜色</th>
+            <th>创建时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="categories-list">
+          {categories.map(category => (
+            <tr key={category.id}>
+              <td>{category.data.title}</td>
+              <td>{category.data.color || ''}</td>
+              <td>{category.data.createdAt ? new Date(category.data.createdAt).toLocaleDateString() : (category.data.updatedAt ? new Date(category.data.updatedAt).toLocaleDateString() : '')}</td>
+              <td class="admin-table-actions">
+                <button class="admin-btn admin-btn-secondary edit-btn" data-type="category" data-id={category.id}>编辑</button>
+                <button class="admin-btn view-btn" data-type="category" data-slug={category.slug}>查看</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 标签管理标签页 -->
+    <div class="tab-content" id="tags-tab">
+      <div class="admin-controls">
+        <button class="admin-btn" onclick="createTag()">新建标签</button>
+      </div>
+
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>标签名称</th>
+            <th>颜色</th>
+            <th>创建时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="tags-list">
+          {tags.map(tag => (
+            <tr key={tag.id}>
+              <td>{tag.data.title}</td>
+              <td>{tag.data.color || ''}</td>
+              <td>{tag.data.createdAt ? new Date(tag.data.createdAt).toLocaleDateString() : (tag.data.updatedAt ? new Date(tag.data.updatedAt).toLocaleDateString() : '')}</td>
+              <td class="admin-table-actions">
+                <button class="admin-btn admin-btn-secondary edit-btn" data-type="tag" data-id={tag.id}>编辑</button>
+                <button class="admin-btn view-btn" data-type="tag" data-slug={tag.slug}>查看</button>
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
@@ -66,113 +199,80 @@ const title = '内容管理';
         // 移除所有active类
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-        
+
         // 添加active类到当前按钮和内容
         button.classList.add('active');
         const tabId = button.getAttribute('data-tab') + '-tab';
         document.getElementById(tabId).classList.add('active');
       });
     });
-    
-    // 加载文章列表
-    async function loadPosts() {
-      try {
-        const response = await fetch('/api/posts');
-        const posts = await response.json();
-        const tbody = document.getElementById('posts-list');
 
-        if (tbody) {
-          tbody.innerHTML = '';
-
-          posts.forEach((post: any) => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-              <td>${post.title}</td>
-              <td><span class="status-badge ${post.status}">${post.status}</span></td>
-              <td>${post.categories ? post.categories.join(', ') : ''}</td>
-              <td>${post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : '未发布'}</td>
-              <td class="admin-table-actions">
-                <button class="admin-btn admin-btn-secondary" onclick="editPost('${post.id}')">编辑</button>
-                <button class="admin-btn" onclick="viewPost('${post.slug}')">查看</button>
-              </td>
-            `;
-            tbody.appendChild(row);
-          });
-        }
-      } catch (error) {
-        console.error('加载文章列表失败:', error);
-      }
-    }
-
-    // 加载页面列表
-    async function loadPages() {
-      try {
-        const response = await fetch('/api/pages');
-        const pages = await response.json();
-        const tbody = document.getElementById('pages-list');
-
-        if (tbody) {
-          tbody.innerHTML = '';
-
-          pages.forEach((page: any) => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-              <td>${page.title}</td>
-              <td>${page.path}</td>
-              <td><span class="status-badge ${page.status}">${page.status}</span></td>
-              <td>${new Date(page.createdAt).toLocaleDateString()}</td>
-              <td class="admin-table-actions">
-                <button class="admin-btn admin-btn-secondary" onclick="editPage('${page.id}')">编辑</button>
-                <button class="admin-btn" onclick="viewPage('${page.slug}')">查看</button>
-              </td>
-            `;
-            tbody.appendChild(row);
-          });
-        }
-      } catch (error) {
-        console.error('加载页面列表失败:', error);
-      }
-    }
-    
-    // 页面加载时自动加载内容
-    document.addEventListener('DOMContentLoaded', () => {
-      loadPosts();
-      loadPages();
-    });
-    
     // 通用函数占位符
     function createPost() {
-      alert('创建新文章功能将在API完成后实现');
+      window.location.href = '/admin/content/create/blog';
     }
-    
-    function editPost(id) {
-      window.location.href = `/admin/content/edit/post/${id}`;
-    }
-    
-    function viewPost(slug) {
-      window.open(`/blog/${slug}`, '_blank');
-    }
-    
-    function createPage() {
-      alert('创建新页面功能将在API完成后实现');
-    }
-    
-    function editPage(id) {
-      window.location.href = `/admin/content/edit/page/${id}`;
-    }
-    
-    function viewPage(slug) {
-      window.open(`/${slug}`, '_blank');
-    }
+
+    // 使用事件委托处理按钮点击
+    document.addEventListener('click', function(e) {
+      // 处理编辑按钮
+      if (e.target.classList.contains('edit-btn')) {
+        const type = e.target.dataset.type;
+        const id = e.target.dataset.id;
+
+        switch(type) {
+          case 'post':
+            // 移除 .md 扩展名（如果存在）
+            const cleanId = id.replace(/\.md$/, '');
+            window.location.href = `/admin/content/edit/blog/${cleanId}`;
+            break;
+          case 'note':
+            alert('编辑动态: ' + id);
+            break;
+          case 'page':
+            alert('编辑页面: ' + id);
+            break;
+          case 'category':
+            alert('编辑分类: ' + id);
+            break;
+          case 'tag':
+            alert('编辑标签: ' + id);
+            break;
+        }
+      }
+
+      // 处理查看按钮
+      if (e.target.classList.contains('view-btn')) {
+        const type = e.target.dataset.type;
+        const slug = e.target.dataset.slug;
+
+        switch(type) {
+          case 'post':
+            window.open(`/blog/${slug}`, '_blank');
+            break;
+          case 'note':
+            window.open(`/notes/${slug}`, '_blank');
+            break;
+          case 'page':
+            window.open(`/${slug}`, '_blank');
+            break;
+          case 'category':
+            window.open(`/categories/${slug}`, '_blank');
+            break;
+          case 'tag':
+            window.open(`/tags/${slug}`, '_blank');
+            break;
+        }
+      }
+    });
   </script>
-  
+
   <style>
     .admin-tabs {
       display: flex;
       margin-bottom: 20px;
       border-bottom: 1px solid #ddd;
     }
-    
+
     .tab-btn {
       background: none;
       border: none;
@@ -180,43 +280,54 @@ const title = '内容管理';
       cursor: pointer;
       border-bottom: 3px solid transparent;
     }
-    
+
     .tab-btn.active {
       border-bottom: 3px solid #3498db;
       color: #3498db;
     }
-    
+
     .tab-content {
       display: none;
     }
-    
+
     .tab-content.active {
       display: block;
     }
-    
+
     .admin-controls {
       margin-bottom: 20px;
     }
-    
+
     .status-badge {
       padding: 4px 8px;
       border-radius: 4px;
       font-size: 12px;
     }
-    
+
     .status-badge.published {
       background: #d4edda;
       color: #155724;
     }
-    
+
     .status-badge.draft {
       background: #fff3cd;
       color: #856404;
     }
-    
+
     .status-badge.archived {
       background: #f8d7da;
       color: #721c24;
+    }
+
+    .admin-table-actions {
+      display: flex;
+      gap: 5px;
+    }
+
+    .admin-table-actions .admin-btn {
+      padding: 4px 8px;
+      font-size: 12px;
+      margin: 0;
     }
   </style>
 </Layout>

@@ -22,7 +22,7 @@
 }
 
 .markdown-content,
-.markdown-content>*,
+.markdown-content > *,
 .astro-content,
 .tk-comment {
   pre.astro-code {
@@ -123,7 +123,6 @@
     @apply border-l-4 pl-4 italic my-4 text-txt-s dark:text-darkmode-txt-s;
   }
 
-
   // 表格样式 - 直接应用到 table 元素
   table {
     @apply w-full border-collapse mb-6 rounded-lg overflow-hidden;
@@ -182,7 +181,6 @@
       @apply border-gray-600;
     }
   }
-
 
   // 保留原有的包装器样式以兼容
   .table-wrapper {
@@ -391,7 +389,9 @@
     @apply text-slate-700 dark:text-slate-300;
     @apply bg-white/20 dark:bg-gray-900/20;
     border-left: 4px solid #0e7490;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    box-shadow:
+      0 4px 6px -1px rgba(0, 0, 0, 0.1),
+      0 2px 4px -1px rgba(0, 0, 0, 0.06);
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
@@ -411,7 +411,9 @@
     .dark & {
       background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
       border-left-color: #fcd34d;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+      box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.3),
+        0 2px 4px -1px rgba(0, 0, 0, 0.2);
 
       &::after {
         color: rgba(96, 165, 250, 0.15);
@@ -421,11 +423,15 @@
     // 悬停效果
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      box-shadow:
+        0 10px 15px -3px rgba(0, 0, 0, 0.1),
+        0 4px 6px -2px rgba(0, 0, 0, 0.05);
       border-left-color: #1293b7;
 
       .dark & {
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+        box-shadow:
+          0 10px 15px -3px rgba(0, 0, 0, 0.4),
+          0 4px 6px -2px rgba(0, 0, 0, 0.3);
         border-left-color: #ffc400;
       }
 
@@ -474,7 +480,7 @@
   h5,
   h6 {
     &:hover .anchor-link::before {
-      content: '#';
+      content: "#";
       @apply absolute -ml-6 text-gray-400 font-normal;
 
       .dark & {
@@ -509,11 +515,8 @@
     }
   }
 
-
-
   // 响应式设计 - 优化移动端体验
   @media (max-width: 768px) {
-
     // 代码块移动端优化
     // .code-block-wrapper {
     //   @apply mb-4 rounded-lg;
@@ -595,7 +598,6 @@
       @apply text-sm;
 
       .markdown-table {
-
         th,
         td {
           @apply px-2 py-2 text-xs;

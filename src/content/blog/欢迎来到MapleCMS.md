@@ -14,7 +14,6 @@ draft: false
 hideToc: false
 ---
 
-
 # 欢迎来到 MapleBlog 示例文章
 
 > 本文是 MapleBlog 的默认示例，帮助你快速了解如何使用本系统发布内容。
@@ -25,21 +24,25 @@ MapleBlog 是一款轻量级、开源的内容管理系统，专为个人博客�
 
 ## 快速开始
 
-1. 克隆仓库  
+1. 克隆仓库
+
    ```bash
    git clone https://github.com/maplezzzzzz/MapleBlog.git
    cd MapleBlog
    ```
 
-2. 安装依赖  
+2. 安装依赖
+
    ```bash
    npm install
    ```
 
-3. 本地启动  
+3. 本地启动
+
    ```bash
    npm run dev
    ```
+
    浏览器访问 `http://localhost:4321` 即可实时预览。
 
 4. 新建文章  
@@ -64,13 +67,12 @@ MapleBlog 是一款轻量级、开源的内容管理系统，专为个人博客�
 
 5. 撰写正文  
    使用标准 Markdown 语法，支持：
-
    - 代码高亮
    - 数学公式（KaTeX）
    - Mermaid 流程图
    - 自定义组件（`<Image />`、`<Video />` 等）
 
-6. 构建与部署  
+6. 构建与部署
    ```bash
    npm run build
    ```
@@ -86,11 +88,11 @@ MapleBlog 是一款轻量级、开源的内容管理系统，专为个人博客�
 - 📱 响应式设计：适配桌面、平板、手机多端
 - ⚡ 高性能：静态生成 + 边缘缓存，首屏极速加载
 
-
 ## 结语
 
 MapleBlog 追求“够用、好用、轻量”的理念，让创作者把精力放回内容本身。如果你觉得项目有帮助，欢迎 Star ⭐ 与分享！  
 更多进阶玩法，请查阅[官方文档](https://MapleBlog.example.com/docs)。
 
----  
-*最后更新：2025-11-05*
+---
+
+_最后更新：2025-11-05_

@@ -11,6 +11,7 @@ tags:
   - 图文
 featuredImg: /src/assets/images/uploads/image-1765273146318-606850326.txt
 ---
+
 # 编辑器测试文章
 
 这是通过新编辑器创建的测试文章内容。
@@ -26,4 +27,4 @@ featuredImg: /src/assets/images/uploads/image-1765273146318-606850326.txt
 - 列表項目1
 - 列表項目2
 
-**加粗文字** 和 *斜體文字* 也支持。
+**加粗文字** 和 _斜體文字_ 也支持。

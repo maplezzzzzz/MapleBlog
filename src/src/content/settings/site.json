@@ -1,0 +1,24 @@
+{
+  "siteName": "小白天地",
+  "siteUrl": "https://xiaobai.com",
+  "contactEmail": "contact@xiaobai.com",
+  "备案号": "京ICP备XXXXXXXX号",
+  "socialLinks": {
+    "github": "https://github.com/username",
+    "twitter": "https://twitter.com/username",
+    "wechat": "微信号",
+    "xhs": "小红书账号",
+    "weibo": "微博账号",
+    "rss": "/rss.xml"
+  },
+  "theme": {
+    "primaryColor": "#3498db",
+    "secondaryColor": "#2c3e50",
+    "darkMode": true
+  },
+  "features": {
+    "commentSystem": true,
+    "search": true,
+    "newsletter": false
+  }
+}

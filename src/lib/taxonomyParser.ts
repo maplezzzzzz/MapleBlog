@@ -19,7 +19,10 @@ export const getTaxa = async (collection: CollectionKey, name: string) => {
   return taxonomy;
 };
 
-export const getTaxaMultiset = async (collection: CollectionKey, name: string) => {
+export const getTaxaMultiset = async (
+  collection: CollectionKey,
+  name: string,
+) => {
   const entries = await getEntries(collection);
   const taxonomyPages = entries.map((entry: any) => entry.data[name]);
   let taxonomies: string[] = [];
@@ -35,10 +38,13 @@ export const getTaxaMultiset = async (collection: CollectionKey, name: string) =
 };
 
 // 获取分类统计数据（包含文章数量）
-export const getTaxaWithCount = async (collection: CollectionKey, name: string) => {
+export const getTaxaWithCount = async (
+  collection: CollectionKey,
+  name: string,
+) => {
   const entries = await getEntries(collection);
   const taxonomyStats = new Map<string, number>();
-  
+
   entries.forEach((entry: any) => {
     const taxonomyValue = entry.data[name];
     if (taxonomyValue) {
@@ -55,7 +61,7 @@ export const getTaxaWithCount = async (collection: CollectionKey, name: string) 
       }
     }
   });
-  
+
   return Array.from(taxonomyStats.entries())
     .map(([name, count]) => ({
       name,

@@ -8,14 +8,16 @@ let categoriesCount = -1;
 let tagsCount = -1;
 let totalWordCount = -1;
 
-export const getIndex = async (collection: CollectionKey): Promise<GenericEntry | undefined> => {
+export const getIndex = async (
+  collection: CollectionKey,
+): Promise<GenericEntry | undefined> => {
   const index = await getEntry(collection, "-index");
   return index as GenericEntry | undefined;
-}
+};
 
 /**
  * 获取指定集合的所有文章或动态（根据类型），并根据配置进行过滤和排序。
- * 
+ *
  * @param collection 集合键（如 'blog' 或 'notes'）
  * @param sortFunction 可选的排序函数，用于对条目进行自定义排序
  * @param noIndex 是否过滤掉索引页（如 '-index' 开头的条目）
@@ -24,16 +26,18 @@ export const getIndex = async (collection: CollectionKey): Promise<GenericEntry 
  */
 export const getEntries = async (
   collection: CollectionKey,
-  sortFunction?: ((array: any[]) => any[]),
+  sortFunction?: (array: any[]) => any[],
   noIndex = true,
-  noDrafts = true
+  noDrafts = true,
 ): Promise<GenericEntry[]> => {
   let entries: GenericEntry[] = await getCollection(collection);
   entries = noIndex
     ? entries.filter((entry: GenericEntry) => !entry.id.match(/^-/))
     : entries;
   entries = noDrafts
-    ? entries.filter((entry: GenericEntry) => 'draft' in entry.data && !entry.data.draft)
+    ? entries.filter(
+        (entry: GenericEntry) => "draft" in entry.data && !entry.data.draft,
+      )
     : entries;
   entries = sortFunction ? sortFunction(entries) : entries;
   return entries;
@@ -41,7 +45,7 @@ export const getEntries = async (
 
 /**
  * 获取多个集合的所有文章或动态（根据类型），并根据配置进行过滤和排序。
- * 
+ *
  * @param collections 集合键数组（如 ['blog', 'notes']）
  * @param sortFunction 可选的排序函数，用于对条目进行自定义排序
  * @param noIndex 是否过滤掉索引页（如 '-index' 开头的条目）
@@ -50,28 +54,28 @@ export const getEntries = async (
  */
 export const getEntriesBatch = async (
   collections: CollectionKey[],
-  sortFunction?: ((array: any[]) => any[]),
+  sortFunction?: (array: any[]) => any[],
   noIndex = true,
-  noDrafts = true
+  noDrafts = true,
 ): Promise<GenericEntry[]> => {
   const allCollections = await Promise.all(
     collections.map(async (collection) => {
       return await getEntries(collection, sortFunction, noIndex, noDrafts);
-    })
+    }),
   );
   return allCollections.flat();
 };
 
 /**
  * 获取指定集合的所有分类或标签（根据类型），并根据配置进行过滤和排序。
- * 
+ *
  * @param collection 集合键（如 'blog' 或 'notes'）
  * @param sortFunction 可选的排序函数，用于对条目进行自定义排序
  * @returns 符合条件的分类或标签数组
  */
 export const getGroups = async (
   collection: CollectionKey,
-  sortFunction?: ((array: any[]) => any[])
+  sortFunction?: (array: any[]) => any[],
 ): Promise<GenericEntry[]> => {
   let entries = await getEntries(collection, sortFunction, false);
   entries = entries.filter((entry: GenericEntry) => {
@@ -83,7 +87,7 @@ export const getGroups = async (
 
 /**
  * 获取指定集合中指定分类或标签下的所有文章或动态（根据类型），并根据配置进行过滤和排序。
- * 
+ *
  * @param collection 集合键（如 'blog' 或 'notes'）
  * @param groupSlug 分类或标签的 slug 名称（如 'game' 或 'web'）
  * @param sortFunction 可选的排序函数，用于对条目进行自定义排序
@@ -92,12 +96,16 @@ export const getGroups = async (
 export const getEntriesInGroup = async (
   collection: CollectionKey,
   groupSlug: string,
-  sortFunction?: ((array: any[]) => any[]),
+  sortFunction?: (array: any[]) => any[],
 ): Promise<GenericEntry[]> => {
   let entries = await getEntries(collection, sortFunction);
   entries = entries.filter((data: any) => {
     const segments = data.id.split("/");
-    return segments[0] === groupSlug && segments.length > 1 && segments[1] !== "-index";
+    return (
+      segments[0] === groupSlug &&
+      segments.length > 1 &&
+      segments[1] !== "-index"
+    );
   });
   return entries;
 };
@@ -117,7 +125,7 @@ export const getCategoriesCount = async (): Promise<number> => {
   try {
     const blogEntries = await getEntries("blog");
     const categories = new Set<string>();
-    
+
     blogEntries.forEach((entry: any) => {
       // 处理 categories 数组格式
       if (entry.data.categories && Array.isArray(entry.data.categories)) {
@@ -130,7 +138,7 @@ export const getCategoriesCount = async (): Promise<number> => {
         categories.add(entry.data.category);
       }
     });
-    
+
     categoriesCount = categories.size;
     return categoriesCount;
   } catch (error) {
@@ -144,7 +152,7 @@ export const getTagsCount = async (): Promise<number> => {
   try {
     const blogEntries = await getEntries("blog");
     const tags = new Set<string>();
-    
+
     blogEntries.forEach((entry: any) => {
       if (entry.data.tags && Array.isArray(entry.data.tags)) {
         entry.data.tags.forEach((tag: string) => {
@@ -152,7 +160,7 @@ export const getTagsCount = async (): Promise<number> => {
         });
       }
     });
-    
+
     tagsCount = tags.size;
     return tagsCount;
   } catch (error) {
@@ -163,24 +171,24 @@ export const getTagsCount = async (): Promise<number> => {
 // 计算文本字数（中文按字符，英文按单词）
 const countWords = (text: string): number => {
   if (!text) return 0;
-  
+
   // 移除 Markdown 语法和 HTML 标签
   const cleanText = text
-    .replace(/<[^>]*>/g, '') // 移除 HTML 标签
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, '') // 移除图片
-    .replace(/\[[^\]]*\]\([^)]*\)/g, '') // 移除链接
-    .replace(/#{1,6}\s/g, '') // 移除标题标记
-    .replace(/[*_]{1,2}([^*_]+)[*_]{1,2}/g, '$1') // 移除粗体斜体标记
-    .replace(/\n+/g, ' ') // 将换行符替换为空格
+    .replace(/<[^>]*>/g, "") // 移除 HTML 标签
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, "") // 移除图片
+    .replace(/\[[^\]]*\]\([^)]*\)/g, "") // 移除链接
+    .replace(/#{1,6}\s/g, "") // 移除标题标记
+    .replace(/[*_]{1,2}([^*_]+)[*_]{1,2}/g, "$1") // 移除粗体斜体标记
+    .replace(/\n+/g, " ") // 将换行符替换为空格
     .trim();
-  
+
   if (!cleanText) return 0;
-  
+
   // 分离中文字符和英文单词
   const chineseChars = cleanText.match(/[\u4e00-\u9fff]/g) || [];
-  const englishText = cleanText.replace(/[\u4e00-\u9fff]/g, ' ');
+  const englishText = cleanText.replace(/[\u4e00-\u9fff]/g, " ");
   const englishWords = englishText.match(/\b[a-zA-Z]+\b/g) || [];
-  
+
   return chineseChars.length + englishWords.length;
 };
 
@@ -190,21 +198,21 @@ export const getTotalWordCount = async (): Promise<string> => {
   try {
     const [blogEntries, notesEntries] = await Promise.all([
       getEntries("blog"),
-      getEntries("notes").catch(() => []) // notes 集合可能不存在
+      getEntries("notes").catch(() => []), // notes 集合可能不存在
     ]);
-    
+
     let totalWords = 0;
-    
+
     // 统计博客文章字数
     blogEntries.forEach((entry: any) => {
-      totalWords += countWords(entry.body || '');
+      totalWords += countWords(entry.body || "");
     });
-    
+
     // 统计动态字数
     notesEntries.forEach((entry: any) => {
-      totalWords += countWords(entry.body || '');
+      totalWords += countWords(entry.body || "");
     });
-    
+
     // 自动计算数字单位
     if (totalWords >= 1000000) {
       return `${(totalWords / 1000000).toFixed(1)}M`;
@@ -214,7 +222,7 @@ export const getTotalWordCount = async (): Promise<string> => {
     totalWordCount = totalWords;
     return totalWordCount.toString();
   } catch (error) {
-    console.error('Error calculating total word count:', error);
+    console.error("Error calculating total word count:", error);
     return "0";
   }
 };
@@ -228,36 +236,33 @@ export const getSiteRunningDays = (): number => {
     const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24));
     return Math.max(0, daysDiff);
   } catch (error) {
-    console.error('Error calculating site running days:', error);
+    console.error("Error calculating site running days:", error);
     return 0;
   }
 };
 
 // 获取所有统计数据（静态模式）
 export const getSiteStats = async () => {
-  const [blogCount, categoriesCount, tagsCount, totalWords] = await Promise.all([
-    getBlogCount(),
-    getCategoriesCount(),
-    getTagsCount(),
-    getTotalWordCount()
-  ]);
-  
+  const [blogCount, categoriesCount, tagsCount, totalWords] = await Promise.all(
+    [getBlogCount(), getCategoriesCount(), getTagsCount(), getTotalWordCount()],
+  );
+
   const runningDays = getSiteRunningDays();
-  
+
   return {
     articles: blogCount,
     categories: categoriesCount,
     tags: tagsCount,
     totalWords: totalWords,
-    runningDays: runningDays
+    runningDays: runningDays,
   };
 };
 
 // 获取包含草稿的文章（开发环境使用）
 export const getEntriesWithDrafts = async (
   collection: CollectionKey,
-  sortFunction?: ((array: any[]) => any[]),
-  noIndex = true
+  sortFunction?: (array: any[]) => any[],
+  noIndex = true,
 ): Promise<GenericEntry[]> => {
   return await getEntries(collection, sortFunction, noIndex, false); // noDrafts = false
 };
@@ -265,8 +270,8 @@ export const getEntriesWithDrafts = async (
 // 根据环境决定是否显示草稿
 export const getEntriesForEnvironment = async (
   collection: CollectionKey,
-  sortFunction?: ((array: any[]) => any[]),
-  noIndex = true
+  sortFunction?: (array: any[]) => any[],
+  noIndex = true,
 ): Promise<GenericEntry[]> => {
   const isDev = import.meta.env.DEV;
   return await getEntries(collection, sortFunction, noIndex, !isDev); // 开发环境显示草稿

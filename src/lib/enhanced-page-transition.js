@@ -7,7 +7,7 @@ class EnhancedPageTransitionManager {
   constructor(options = {}) {
     this.options = {
       duration: options.duration || 400,
-      easing: options.easing || 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+      easing: options.easing || "cubic-bezier(0.34, 1.56, 0.64, 1)",
       showLoader: options.showLoader !== false,
       loaderDelay: options.loaderDelay || 50,
       fadeInDuration: options.fadeInDuration || 200,
@@ -15,35 +15,41 @@ class EnhancedPageTransitionManager {
     this.isLoading = false;
     this.transitionQueue = [];
     this.isProcessing = false;
-    
+
     this.init();
   }
 
   init() {
     // 监听页面跳转事件
     this.hookNavigationEvents();
-    
+
     // 监听页面加载完成事件
     this.hookPageLoadEvents();
   }
 
   hookNavigationEvents() {
     // 拦截所有链接点击事件
-    document.addEventListener('click', this.handleLinkClick.bind(this));
-    
+    document.addEventListener("click", this.handleLinkClick.bind(this));
+
     // 监听表单提交事件
-    document.addEventListener('submit', this.handleFormSubmit.bind(this));
+    document.addEventListener("submit", this.handleFormSubmit.bind(this));
   }
 
   hookPageLoadEvents() {
     // Astro页面加载事件
-    document.addEventListener('astro:before-preparation', this.handleBeforePreparation.bind(this));
-    document.addEventListener('astro:page-load', this.handlePageLoadComplete.bind(this));
+    document.addEventListener(
+      "astro:before-preparation",
+      this.handleBeforePreparation.bind(this),
+    );
+    document.addEventListener(
+      "astro:page-load",
+      this.handlePageLoadComplete.bind(this),
+    );
   }
 
   handleLinkClick(event) {
     const target = event.target;
-    const link = target.closest('a');
+    const link = target.closest("a");
 
     if (!link) return;
 
@@ -52,9 +58,9 @@ class EnhancedPageTransitionManager {
 
     // 检查是否是外部链接或特殊链接
     if (url.origin !== currentUrl.origin) return;
-    if (link.target === '_blank') return;
-    if (link.href.startsWith('mailto:') || link.href.startsWith('tel:')) return;
-    if (link.getAttribute('href')?.startsWith('#')) return;
+    if (link.target === "_blank") return;
+    if (link.href.startsWith("mailto:") || link.href.startsWith("tel:")) return;
+    if (link.getAttribute("href")?.startsWith("#")) return;
 
     // 如果是相同路径但不同hash，则不执行页面过渡
     if (url.pathname === currentUrl.pathname) {
@@ -72,7 +78,7 @@ class EnhancedPageTransitionManager {
 
   handleFormSubmit(event) {
     const form = event.target;
-    if (form && form.method.toLowerCase() === 'get') {
+    if (form && form.method.toLowerCase() === "get") {
       this.isLoading = true;
       if (this.options.showLoader) {
         this.showLoader();
@@ -97,7 +103,7 @@ class EnhancedPageTransitionManager {
     if (this.options.showLoader) {
       this.hideLoader();
     }
-    
+
     // 触发过渡完成事件
     this.dispatchTransitionCompleteEvent();
   }
@@ -108,9 +114,9 @@ class EnhancedPageTransitionManager {
       this.transitionQueue.push(url);
       return;
     }
-    
+
     this.isProcessing = true;
-    
+
     // 显示加载状态
     this.isLoading = true;
     if (this.options.showLoader) {
@@ -121,12 +127,12 @@ class EnhancedPageTransitionManager {
       // 执行页面过渡
       await this.performSmoothTransition(url);
     } catch (error) {
-      console.error('页面跳转失败:', error);
+      console.error("页面跳转失败:", error);
       // 发生错误时直接跳转
       window.location.href = url;
     } finally {
       this.isProcessing = false;
-      
+
       // 处理队列中的下一个跳转
       if (this.transitionQueue.length > 0) {
         const nextUrl = this.transitionQueue.shift();
@@ -140,99 +146,101 @@ class EnhancedPageTransitionManager {
       // 创建一个临时的半透明覆盖层，避免闪烁
       const overlay = this.createTransitionOverlay();
       document.body.appendChild(overlay);
-      
+
       // 更新浏览器历史记录
-      history.pushState({}, '', url);
-      
+      history.pushState({}, "", url);
+
       // 发起页面请求
       const controller = new AbortController();
-      
+
       fetch(url, {
-        signal: controller.signal
+        signal: controller.signal,
       })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.text();
-      })
-      .then(html => {
-        // 解析新的HTML内容
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        
-        // 提取关键内容部分
-        const newMain = doc.querySelector('main#main-content');
-        const newTitle = doc.querySelector('title');
-        
-        if (newMain && newTitle) {
-          // 更新页面内容
-          const currentMain = document.querySelector('main#main-content');
-          if (currentMain) {
-            // 将新内容添加到DOM中但保持隐藏状态
-            newMain.style.opacity = '0';
-            newMain.style.visibility = 'hidden';
-            currentMain.parentNode?.replaceChild(newMain, currentMain);
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
           }
-          
-          // 更新标题
-          document.title = newTitle.textContent || '';
-          
-          // 更新元数据
-          this.updateMetaTags(doc);
-          
-          // 执行平滑的淡入动画
-          this.performFadeInAnimation(newMain, overlay)
-            .then(() => {
-              this.onTransitionComplete(resolve);
-            })
-            .catch(reject);
-        } else {
-          // 如果无法解析内容，移除覆盖层并跳转
-          if (overlay.parentNode) {
-            overlay.parentNode.removeChild(overlay);
+          return response.text();
+        })
+        .then((html) => {
+          // 解析新的HTML内容
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, "text/html");
+
+          // 提取关键内容部分
+          const newMain = doc.querySelector("main#main-content");
+          const newTitle = doc.querySelector("title");
+
+          if (newMain && newTitle) {
+            // 更新页面内容
+            const currentMain = document.querySelector("main#main-content");
+            if (currentMain) {
+              // 将新内容添加到DOM中但保持隐藏状态
+              newMain.style.opacity = "0";
+              newMain.style.visibility = "hidden";
+              currentMain.parentNode?.replaceChild(newMain, currentMain);
+            }
+
+            // 更新标题
+            document.title = newTitle.textContent || "";
+
+            // 更新元数据
+            this.updateMetaTags(doc);
+
+            // 执行平滑的淡入动画
+            this.performFadeInAnimation(newMain, overlay)
+              .then(() => {
+                this.onTransitionComplete(resolve);
+              })
+              .catch(reject);
+          } else {
+            // 如果无法解析内容，移除覆盖层并跳转
+            if (overlay.parentNode) {
+              overlay.parentNode.removeChild(overlay);
+            }
+            window.location.href = url;
+            reject(new Error("无法解析页面内容"));
           }
-          window.location.href = url;
-          reject(new Error('无法解析页面内容'));
-        }
-      })
-      .catch(error => {
-        if (error.name !== 'AbortError') {
-          console.error('页面加载失败:', error);
-          
-          // 移除覆盖层
-          if (overlay.parentNode) {
-            overlay.parentNode.removeChild(overlay);
+        })
+        .catch((error) => {
+          if (error.name !== "AbortError") {
+            console.error("页面加载失败:", error);
+
+            // 移除覆盖层
+            if (overlay.parentNode) {
+              overlay.parentNode.removeChild(overlay);
+            }
+
+            // 出错时执行完整页面跳转
+            window.location.href = url;
+            reject(error);
           }
-          
-          // 出错时执行完整页面跳转
-          window.location.href = url;
-          reject(error);
-        }
-      });
+        });
     });
   }
 
   createTransitionOverlay() {
-    const overlay = document.createElement('div');
-    overlay.className = 'transition-overlay';
-    overlay.style.position = 'fixed';
-    overlay.style.top = '0';
-    overlay.style.left = '0';
-    overlay.style.width = '100%';
-    overlay.style.height = '100%';
-    overlay.style.backgroundColor = '#ffffff';
-    overlay.style.zIndex = '9998';
-    overlay.style.opacity = '0';
-    overlay.style.visibility = 'hidden';
-    overlay.style.transition = 'opacity 0.2s ease, visibility 0.2s ease';
-    
+    const overlay = document.createElement("div");
+    overlay.className = "transition-overlay";
+    overlay.style.position = "fixed";
+    overlay.style.top = "0";
+    overlay.style.left = "0";
+    overlay.style.width = "100%";
+    overlay.style.height = "100%";
+    overlay.style.backgroundColor = "#ffffff";
+    overlay.style.zIndex = "9998";
+    overlay.style.opacity = "0";
+    overlay.style.visibility = "hidden";
+    overlay.style.transition = "opacity 0.2s ease, visibility 0.2s ease";
+
     // 在暗色模式下使用深色背景
-    if (document.documentElement.classList.contains('dark') || 
-        window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      overlay.style.backgroundColor = '#111111';
+    if (
+      document.documentElement.classList.contains("dark") ||
+      window.matchMedia("(prefers-color-scheme: dark)").matches
+    ) {
+      overlay.style.backgroundColor = "#111111";
     }
-    
+
     return overlay;
   }
 
@@ -241,24 +249,24 @@ class EnhancedPageTransitionManager {
       // 确保DOM已更新
       requestAnimationFrame(() => {
         // 淡出覆盖层
-        overlay.style.opacity = '1';
-        overlay.style.visibility = 'visible';
-        
+        overlay.style.opacity = "1";
+        overlay.style.visibility = "visible";
+
         // 然后淡入新内容
         setTimeout(() => {
           if (newMain) {
-            newMain.style.opacity = '0';
-            newMain.style.visibility = 'visible';
+            newMain.style.opacity = "0";
+            newMain.style.visibility = "visible";
             newMain.style.transition = `opacity ${this.options.fadeInDuration}ms ease-out`;
-            
+
             // 确保在下一帧执行淡入
             requestAnimationFrame(() => {
-              newMain.style.opacity = '1';
-              
+              newMain.style.opacity = "1";
+
               // 等待淡入动画完成后再移除覆盖层
               setTimeout(() => {
                 // 淡出覆盖层
-                overlay.style.opacity = '0';
+                overlay.style.opacity = "0";
                 setTimeout(() => {
                   if (overlay.parentNode) {
                     overlay.parentNode.removeChild(overlay);
@@ -269,7 +277,7 @@ class EnhancedPageTransitionManager {
             });
           } else {
             // 如果没有新内容，直接移除覆盖层
-            overlay.style.opacity = '0';
+            overlay.style.opacity = "0";
             setTimeout(() => {
               if (overlay.parentNode) {
                 overlay.parentNode.removeChild(overlay);
@@ -295,8 +303,8 @@ class EnhancedPageTransitionManager {
   }
 
   dispatchTransitionCompleteEvent() {
-    const event = new CustomEvent('page-transition-complete', {
-      detail: { url: window.location.href }
+    const event = new CustomEvent("page-transition-complete", {
+      detail: { url: window.location.href },
     });
     document.dispatchEvent(event);
   }
@@ -305,36 +313,41 @@ class EnhancedPageTransitionManager {
     // 更新描述
     const newDescription = newDoc.querySelector('meta[name="description"]');
     if (newDescription) {
-      const currentDescription = document.querySelector('meta[name="description"]');
+      const currentDescription = document.querySelector(
+        'meta[name="description"]',
+      );
       if (currentDescription) {
-        currentDescription.setAttribute('content', newDescription.getAttribute('content'));
+        currentDescription.setAttribute(
+          "content",
+          newDescription.getAttribute("content"),
+        );
       } else {
         document.head.appendChild(newDescription.cloneNode(true));
       }
     }
-    
+
     // 更新Open Graph标签
     const ogTags = newDoc.querySelectorAll('meta[property^="og:"]');
-    ogTags.forEach(tag => {
-      const prop = tag.getAttribute('property');
+    ogTags.forEach((tag) => {
+      const prop = tag.getAttribute("property");
       if (prop) {
         const currentTag = document.querySelector(`meta[property="${prop}"]`);
         if (currentTag) {
-          currentTag.setAttribute('content', tag.getAttribute('content'));
+          currentTag.setAttribute("content", tag.getAttribute("content"));
         } else {
           document.head.appendChild(tag.cloneNode(true));
         }
       }
     });
-    
+
     // 更新Twitter Card标签
     const twitterTags = newDoc.querySelectorAll('meta[name^="twitter:"]');
-    twitterTags.forEach(tag => {
-      const name = tag.getAttribute('name');
+    twitterTags.forEach((tag) => {
+      const name = tag.getAttribute("name");
       if (name) {
         const currentTag = document.querySelector(`meta[name="${name}"]`);
         if (currentTag) {
-          currentTag.setAttribute('content', tag.getAttribute('content'));
+          currentTag.setAttribute("content", tag.getAttribute("content"));
         } else {
           document.head.appendChild(tag.cloneNode(true));
         }
@@ -343,7 +356,7 @@ class EnhancedPageTransitionManager {
   }
 
   showLoader() {
-    const loader = document.querySelector('.page-loading');
+    const loader = document.querySelector(".page-loading");
     if (loader) {
       // 随机加载文本
       const texts = [
@@ -353,26 +366,27 @@ class EnhancedPageTransitionManager {
         "🚀 即将起飞...",
         "💫 星辰大海等你来...",
         "🌹 精彩内容准备中...",
-        "🌟 闪亮登场倒计时..."
+        "🌟 闪亮登场倒计时...",
       ];
-      const textElement = loader.querySelector('#loading-text');
+      const textElement = loader.querySelector("#loading-text");
       if (textElement) {
-        textElement.textContent = texts[Math.floor(Math.random() * texts.length)];
+        textElement.textContent =
+          texts[Math.floor(Math.random() * texts.length)];
       }
-      
+
       // 延迟显示，避免快速跳转的闪烁
       setTimeout(() => {
         if (this.isLoading) {
-          loader.classList.add('active');
+          loader.classList.add("active");
         }
       }, 25);
     }
   }
 
   hideLoader() {
-    const loader = document.querySelector('.page-loading');
+    const loader = document.querySelector(".page-loading");
     if (loader) {
-      loader.classList.remove('active');
+      loader.classList.remove("active");
     }
   }
 
@@ -380,17 +394,23 @@ class EnhancedPageTransitionManager {
     const element = document.querySelector(hash);
     if (element) {
       element.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
+        behavior: "smooth",
+        block: "start",
       });
     }
   }
 
   destroy() {
     // 移除事件监听器
-    document.removeEventListener('click', this.handleLinkClick.bind(this));
-    document.removeEventListener('submit', this.handleFormSubmit.bind(this));
-    document.removeEventListener('astro:before-preparation', this.handleBeforePreparation.bind(this));
-    document.removeEventListener('astro:page-load', this.handlePageLoadComplete.bind(this));
+    document.removeEventListener("click", this.handleLinkClick.bind(this));
+    document.removeEventListener("submit", this.handleFormSubmit.bind(this));
+    document.removeEventListener(
+      "astro:before-preparation",
+      this.handleBeforePreparation.bind(this),
+    );
+    document.removeEventListener(
+      "astro:page-load",
+      this.handlePageLoadComplete.bind(this),
+    );
   }
 }

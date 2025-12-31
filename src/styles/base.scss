@@ -78,7 +78,7 @@ hr {
 }
 
 a {
-  // 
+  //
   @apply font-bold;
   @apply relative;
 }
@@ -120,7 +120,7 @@ input::-webkit-inner-spin-button {
 }
 
 /* Firefox */
-input[type=number] {
+input[type="number"] {
   -moz-appearance: textfield;
 }
 
@@ -145,7 +145,10 @@ html.dark .astro-code span {
   transform: translateX(-50%);
 }
 
-.prose :where(ul > li):not(:where([class~="not-prose"], [class~="not-prose"] *))::marker {
+.prose
+  :where(ul > li):not(
+    :where([class~="not-prose"], [class~="not-prose"] *)
+  )::marker {
   @apply text-cyan-700 dark:text-amber-300 !important;
 }
 

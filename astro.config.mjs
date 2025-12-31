@@ -1,7 +1,7 @@
 import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
 import tailwind from "@astrojs/tailwind";
-import cloudflare from "@astrojs/cloudflare";
+import node from "@astrojs/node";
 import AutoImport from "astro-auto-import";
 import { defineConfig } from "astro/config";
 import remarkCollapse from "remark-collapse";
@@ -24,7 +24,7 @@ const getSiteUrl = () => {
     case 'development':
     case 'test':
     default:
-      return "http://localhost:4321";
+      return "http://localhost:3000";
   }
 };
 
@@ -33,12 +33,14 @@ export default defineConfig({
   site: getSiteUrl(),
   base: "/",
   trailingSlash: "ignore",
-  output: "server", // Cloudflare Pages支持服务器端渲染
-  adapter: cloudflare(), // 使用Cloudflare适配器
+  output: "server", // 使用服务端渲染模式，支持动态后台
+  adapter: node({
+    mode: 'standalone'
+  }), 
   server: {
     // 允许通过本机IP访问开发服务器
-    host: true, // 或者使用 '0.0.0.0'
-    port: 4321
+    host: '0.0.0.0', // 强制绑定到所有 IPv4 接口
+    port: 4000
   },
   build: {
     // 静态站点构建优化
@@ -54,13 +56,13 @@ export default defineConfig({
     prefetchAll: isProduction
   },
   integrations: [
-    react(), 
+    react(),
     tailwind({
       applyBaseStyles: false, // 使用自定义的base样式
     }),
     AutoImport({
       imports: ["@components/common/Button.astro", "@shortcodes/Accordion", "@shortcodes/Notice", "@shortcodes/Youtube", "@shortcodes/Tabs", "@shortcodes/Tab"]
-    }), 
+    }),
     mdx()
   ],
   markdown: {

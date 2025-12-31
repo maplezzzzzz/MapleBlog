@@ -4,10 +4,10 @@
 @tailwind utilities;
 
 @font-face {
-  font-family: '寒蝉半圆体';
+  font-family: "寒蝉半圆体";
   // font-family: "PingFang SC", " Hiragino Sans GB", " Microsoft YaHei";
   font-weight: 400;
-  src: url('/fonts/hanchan/ChillRoundM.woff2') format('woff2');
+  src: url("/fonts/hanchan/ChillRoundM.woff2") format("woff2");
 }
 
 @layer base {

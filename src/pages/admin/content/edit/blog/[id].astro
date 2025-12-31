@@ -1,0 +1,603 @@
+---
+import Layout from '../../../../../layouts/AdminLayout.astro';
+import { getCollection, getEntry } from 'astro:content';
+import MarkdownEditor from '../../../../../components/MarkdownEditor.jsx';
+
+// 从URL参数获取文章ID
+const articleId = Astro.params.id;
+let article = null;
+let errorMessage = null;
+
+try {
+  if (articleId) {
+    // 尝获取特定文章
+    const allBlogPosts = await getCollection('blog');
+    // 首先尝试使用ID查找（包含扩展名）
+    let foundPost = allBlogPosts.find(post => post.id === articleId);
+
+    // 如果没找到，尝试去掉扩展名后查找
+    if (!foundPost) {
+      const cleanId = articleId.replace(/\.md$/, '').replace(/\.mdx$/, '');
+      foundPost = allBlogPosts.find(post => post.id === cleanId || post.slug === cleanId);
+    }
+
+    if (foundPost) {
+      article = foundPost;
+    } else {
+      errorMessage = `未找到ID为 "${articleId}" 的文章`;
+    }
+  } else {
+    errorMessage = '未提供文章ID';
+  }
+} catch (error) {
+  errorMessage = `加载文章时出错: ${error.message}`;
+  console.error('加载文章时出错:', error);
+}
+---
+
+<Layout title={article ? `编辑文章: ${article.data.title}` : "新建文章"}>
+  <div class="admin-container">
+    {errorMessage ? (
+      <div class="error-message">
+        <p>{errorMessage}</p>
+        <a href="/admin/content" class="admin-btn">返回内容管理</a>
+      </div>
+    ) : (
+      <div>
+        <h2>{article ? `编辑文章: ${article.data.title}` : "新建文章"}</h2>
+        
+        <form id="article-form" class="edit-form">
+          <div class="form-group">
+            <label for="title">标题 *</label>
+            <input type="text" id="title" name="title" value={article?.data.title || ''} required />
+          </div>
+          
+          <div class="form-group">
+            <label for="slug">URL路径 *</label>
+            <input type="text" id="slug" name="slug" value={article?.slug || ''} required />
+          </div>
+          
+          <div class="form-group">
+            <label for="description">摘要</label>
+            <textarea id="description" name="description" rows="3">{article?.data.description || ''}</textarea>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="status">状态</label>
+              <select id="status" name="status">
+                <option value="draft" {(!article || article.data.status === 'draft') ? 'selected' : ''}>草稿</option>
+                <option value="published" {(article && article.data.status === 'published') ? 'selected' : ''}>已发布</option>
+                <option value="archived" {(article && article.data.status === 'archived') ? 'selected' : ''}>归档</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="author">作者</label>
+              <input type="text" id="author" name="author" value={article?.data.author || '小白'} />
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="categories">分类</label>
+            <select id="categories" name="categories" class="select-input">
+              <option value="">选择分类</option>
+              <option value="技术" {(article?.data.categories || []).includes('技术') ? 'selected' : ''}>技术</option>
+              <option value="教程" {(article?.data.categories || []).includes('教程') ? 'selected' : ''}>教程</option>
+              <option value="前端" {(article?.data.categories || []).includes('前端') ? 'selected' : ''}>前端</option>
+              <option value="后端" {(article?.data.categories || []).includes('后端') ? 'selected' : ''}>后端</option>
+              <option value="生活" {(article?.data.categories || []).includes('生活') ? 'selected' : ''}>生活</option>
+              <option value="感悟" {(article?.data.categories || []).includes('感悟') ? 'selected' : ''}>感悟</option>
+              <option value="随笔" {(article?.data.categories || []).includes('随笔') ? 'selected' : ''}>随笔</option>
+              <option value="分享" {(article?.data.categories || []).includes('分享') ? 'selected' : ''}>分享</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="tags">标签</label>
+            <div class="multiselect-container">
+              <div class="multiselect-selected" onclick="toggleTagMultiselect()">
+                <span class="multiselect-label">
+                  {article?.data.tags && article.data.tags.length > 0 ? article.data.tags.join(', ') : '选择标签'}
+                </span>
+                <span class="multiselect-arrow">▼</span>
+              </div>
+              <div id="tagMultiselectDropdown" class="multiselect-dropdown" style="display: none;">
+                <div class="multiselect-option">
+                  <label>
+                    <input type="checkbox" value="技术" {(article?.data.tags || []).includes('技术') ? 'checked' : ''} onchange="updateSelectedTag(this)">
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-label">技术</span>
+                  </label>
+                </div>
+                <div class="multiselect-option">
+                  <label>
+                    <input type="checkbox" value="教程" {(article?.data.tags || []).includes('教程') ? 'checked' : ''} onchange="updateSelectedTag(this)">
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-label">教程</span>
+                  </label>
+                </div>
+                <div class="multiselect-option">
+                  <label>
+                    <input type="checkbox" value="前端" {(article?.data.tags || []).includes('前端') ? 'checked' : ''} onchange="updateSelectedTag(this)">
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-label">前端</span>
+                  </label>
+                </div>
+                <div class="multiselect-option">
+                  <label>
+                    <input type="checkbox" value="后端" {(article?.data.tags || []).includes('后端') ? 'checked' : ''} onchange="updateSelectedTag(this)">
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-label">后端</span>
+                  </label>
+                </div>
+                <div class="multiselect-option">
+                  <label>
+                    <input type="checkbox" value="生活" {(article?.data.tags || []).includes('生活') ? 'checked' : ''} onchange="updateSelectedTag(this)">
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-label">生活</span>
+                  </label>
+                </div>
+                <div class="multiselect-option">
+                  <label>
+                    <input type="checkbox" value="感悟" {(article?.data.tags || []).includes('感悟') ? 'checked' : ''} onchange="updateSelectedTag(this)">
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-label">感悟</span>
+                  </label>
+                </div>
+                <div class="multiselect-option">
+                  <label>
+                    <input type="checkbox" value="JavaScript" {(article?.data.tags || []).includes('JavaScript') ? 'checked' : ''} onchange="updateSelectedTag(this)">
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-label">JavaScript</span>
+                  </label>
+                </div>
+                <div class="multiselect-option">
+                  <label>
+                    <input type="checkbox" value="CSS" {(article?.data.tags || []).includes('CSS') ? 'checked' : ''} onchange="updateSelectedTag(this)">
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-label">CSS</span>
+                  </label>
+                </div>
+                <div class="multiselect-option">
+                  <label>
+                    <input type="checkbox" value="HTML" {(article?.data.tags || []).includes('HTML') ? 'checked' : ''} onchange="updateSelectedTag(this)">
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-label">HTML</span>
+                  </label>
+                </div>
+                <div class="multiselect-option">
+                  <label>
+                    <input type="checkbox" value="Node.js" {(article?.data.tags || []).includes('Node.js') ? 'checked' : ''} onchange="updateSelectedTag(this)">
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-label">Node.js</span>
+                  </label>
+                </div>
+              </div>
+              <input type="hidden" id="tags" name="tags" value={article?.data.tags ? article.data.tags.join(',') : ''} />
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="featuredImg">封面图片</label>
+            <div class="image-upload-container">
+              <div class="selected-featured-img" onclick="toggleFeaturedImgDropdown()">
+                {article?.data.featuredImg || article?.data.image ? (article.data.featuredImg || article.data.image) : '点击选择封面图片'}
+              </div>
+              <div id="featuredImgDropdown" class="dropdown-content" style="display: none;">
+                <div class="image-option" onclick="selectFeaturedImage('/assets/uploads/cover1.jpg')">
+                  <img src="/assets/uploads/cover1.jpg" alt="封面图片1" style="width: 100px; height: 60px; object-fit: cover;" />
+                  <span>封面图片1</span>
+                </div>
+                <div class="image-option" onclick="selectFeaturedImage('/assets/uploads/cover2.jpg')">
+                  <img src="/assets/uploads/cover2.jpg" alt="封面图片2" style="width: 100px; height: 60px; object-fit: cover;" />
+                  <span>封面图片2</span>
+                </div>
+                <div class="image-option" onclick="selectFeaturedImage('/assets/uploads/cover3.jpg')">
+                  <img src="/assets/uploads/cover3.jpg" alt="封面图片3" style="width: 100px; height: 60px; object-fit: cover;" />
+                  <span>封面图片3</span>
+                </div>
+                <div class="image-option" onclick="selectFeaturedImage('/assets/uploads/cover4.jpg')">
+                  <img src="/assets/uploads/cover4.jpg" alt="封面图片4" style="width: 100px; height: 60px; object-fit: cover;" />
+                  <span>封面图片4</span>
+                </div>
+                <div class="image-option" onclick="selectFeaturedImage('/assets/uploads/cover5.jpg')">
+                  <img src="/assets/uploads/cover5.jpg" alt="封面图片5" style="width: 100px; height: 60px; object-fit: cover;" />
+                  <span>封面图片5</span>
+                </div>
+              </div>
+              <input type="file" id="featuredImgUpload" accept="image/*" style="display: none;" onchange="handleFeaturedImageUpload(event)">
+              <button type="button" class="admin-btn admin-btn-secondary" onclick="document.getElementById('featuredImgUpload').click()">上传新图片</button>
+              <div id="featuredImgPreview" class="image-preview">
+                {(article?.data.featuredImg || article?.data.image) ? (
+                  <img src={article.data.featuredImg || article.data.image} alt="封面图片预览" style="max-width: 200px; max-height: 200px;" />
+                ) : (
+                  <p>暂无预览</p>
+                )}
+              </div>
+              <input type="hidden" id="featuredImg" name="featuredImg" value={article?.data.featuredImg || article?.data.image || ''} />
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="publishedAt">发布时间</label>
+            <input type="datetime-local" id="publishedAt" name="publishedAt" 
+              value={article?.data.publishedAt ? new Date(article.data.publishedAt).toISOString().slice(0, 16) : ''} />
+          </div>
+          
+          <div class="form-group checkbox-group">
+            <label>
+              <input type="checkbox" name="featured" {article?.data.featured ? 'checked' : ''} />
+              设为特色文章
+            </label>
+          </div>
+          
+          <div class="form-group checkbox-group">
+            <label>
+              <input type="checkbox" name="recommended" {article?.data.recommended ? 'checked' : ''} />
+              设为推荐文章
+            </label>
+          </div>
+          
+          <div class="form-group checkbox-group">
+            <label>
+              <input type="checkbox" name="hideToc" {article?.data.hideToc ? 'checked' : ''} />
+              隐藏目录
+            </label>
+          </div>
+          
+          <div class="form-group">
+            <label for="content">内容 *</label>
+            <input type="hidden" id="content" name="content" value={article?.body || ''} />
+            <MarkdownEditor client:only="react" value={article?.body || ''} inputId="content" height={600} />
+          </div>
+          
+          <div class="form-actions">
+            <button type="submit" class="admin-btn">保存文章</button>
+            <a href="/admin/content" class="admin-btn admin-btn-secondary">取消</a>
+          </div>
+        </form>
+      </div>
+    )}
+  </div>
+
+  <script is:inline>
+    // 使用 is:inline 确保脚本在浏览器端执行，并且可以访问全局变量
+    
+    // 表单提交处理
+    const form = document.getElementById('article-form');
+    if (form) {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(e.target);
+        const articleData = Object.fromEntries(formData);
+
+        // 确保 content 字段有值（MarkdownEditor 会更新隐藏的 input）
+        const contentInput = document.getElementById('content');
+        if (contentInput) {
+          articleData.content = contentInput.value;
+        }
+
+        // 从下拉选择获取分类值
+        const categorySelect = document.getElementById('categories');
+        articleData.categories = categorySelect.value ? [categorySelect.value] : [];
+
+        // 从隐藏输入字段获取标签值
+        articleData.tags = document.getElementById('tags').value ? document.getElementById('tags').value.split(',').filter(tag => tag.trim()) : [];
+
+        // 处理复选框
+        articleData.featured = formData.get('featured') === 'on';
+        articleData.recommended = formData.get('recommended') === 'on';
+        articleData.hideToc = formData.get('hideToc') === 'on';
+
+        // 处理日期时间
+        if (articleData.publishedAt) {
+          articleData.publishedAt = new Date(articleData.publishedAt).toISOString();
+        } else if (articleData.status === 'published') {
+          articleData.publishedAt = new Date().toISOString();
+        }
+
+        // 设置草稿状态
+        articleData.draft = articleData.status === 'draft';
+
+        try {
+          let response;
+          if (window.location.pathname.includes('/edit/')) {
+            // 编辑现有文章
+            const articleId = window.location.pathname.split('/').pop();
+            response = await fetch(`/api/content/blog/${encodeURIComponent(articleId)}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(articleData)
+            });
+          } else {
+            // 创建新文章
+            response = await fetch('/api/content/blog', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(articleData)
+            });
+          }
+
+          if (response.ok) {
+            const result = await response.json();
+            alert('文章保存成功！');
+            window.location.href = '/admin/content';
+          } else {
+            const error = await response.json();
+            alert('保存失败: ' + error.error);
+          }
+        } catch (error) {
+          console.error('保存文章时出错:', error);
+          alert('保存失败，请检查控制台错误信息');
+        }
+      });
+    }
+
+    // 切换标签多选下拉显示/隐藏
+    window.toggleTagMultiselect = function() {
+      const dropdown = document.getElementById('tagMultiselectDropdown');
+      if (dropdown.style.display === 'block') {
+        dropdown.style.display = 'none';
+      } else {
+        dropdown.style.display = 'block';
+      }
+    }
+
+    // 更新选中的标签
+    window.updateSelectedTag = function(checkbox) {
+      const selectedTagsSpan = document.querySelector('.multiselect-label');
+      const hiddenInput = document.getElementById('tags');
+      const selectedTags = Array.from(document.querySelectorAll('#tagMultiselectDropdown input[type="checkbox"]:checked'))
+        .map(cb => cb.value);
+
+      // 更新隐藏输入框的值
+      hiddenInput.value = selectedTags.join(',');
+
+      // 更新显示文本
+      selectedTagsSpan.textContent = selectedTags.length > 0 ? selectedTags.join(', ') : '选择标签';
+    }
+
+    // 点击其他地方隐藏标签多选下拉框
+    document.addEventListener('click', function(event) {
+      const tagMultiselectDropdown = document.getElementById('tagMultiselectDropdown');
+      const tagMultiselectSelector = document.querySelector('.multiselect-selected');
+      
+      if (tagMultiselectDropdown && tagMultiselectSelector) {
+        if (!tagMultiselectSelector.contains(event.target) && !tagMultiselectDropdown.contains(event.target)) {
+          tagMultiselectDropdown.style.display = 'none';
+        }
+      }
+      
+      // 同样处理封面图片下拉
+      const featuredImgDropdown = document.getElementById('featuredImgDropdown');
+      const featuredImgSelector = document.querySelector('.selected-featured-img');
+      
+      if (featuredImgDropdown && featuredImgSelector) {
+         if (!featuredImgSelector.contains(event.target) && !featuredImgDropdown.contains(event.target)) {
+            featuredImgDropdown.style.display = 'none';
+         }
+      }
+    });
+
+    // 封面图片相关函数
+    window.toggleFeaturedImgDropdown = function() {
+      const dropdown = document.getElementById('featuredImgDropdown');
+      if (dropdown.style.display === 'block') {
+        dropdown.style.display = 'none';
+      } else {
+        dropdown.style.display = 'block';
+      }
+    }
+    
+    window.selectFeaturedImage = function(url) {
+       document.getElementById('featuredImg').value = url;
+       
+       // 更新预览
+       const previewDiv = document.getElementById('featuredImgPreview');
+       previewDiv.innerHTML = `<img src="${url}" alt="封面图片预览" style="max-width: 200px; max-height: 200px;" />`;
+       
+       // 更新显示文字
+       const displayDiv = document.querySelector('.selected-featured-img');
+       const imageName = url.split('/').pop();
+       displayDiv.innerText = imageName; 
+       
+       // 关闭下拉
+       document.getElementById('featuredImgDropdown').style.display = 'none';
+    }
+
+    // 处理封面图片上传 (转换为 Base64，不通过网络上传)
+    window.handleFeaturedImageUpload = function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      // 简单验证
+      if (!file.type.startsWith('image/')) {
+        alert('请选择图片文件');
+        return;
+      }
+
+      // 限制文件大小 (10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        alert('文件大小不能超过10MB');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const base64 = e.target.result;
+        
+        // 设置封面图片URL到输入框
+        document.getElementById('featuredImg').value = base64;
+
+        // 显示预览图片
+        const previewDiv = document.getElementById('featuredImgPreview');
+        previewDiv.innerHTML = `<img src="${base64}" alt="封面图片预览" style="max-width: 200px; max-height: 200px;" />`;
+        
+        // 更新显示文字
+        const displayDiv = document.querySelector('.selected-featured-img');
+        displayDiv.innerText = file.name + ' (Base64)'; // 显示文件名
+
+        // 重置文件输入
+        event.target.value = '';
+
+        alert('封面图片已加载！');
+      };
+      
+      reader.onerror = function() {
+        console.error('读取文件失败');
+        alert('读取图片失败');
+      };
+
+      reader.readAsDataURL(file);
+    }
+  </script>
+
+  <style>
+    .form-row {
+      display: flex;
+      gap: 20px;
+    }
+    
+    .form-row .form-group {
+      flex: 1;
+    }
+    
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+    }
+    
+    .checkbox-group input[type="checkbox"] {
+      width: auto;
+      margin-right: 8px;
+    }
+    
+    .error-message {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    
+    .error-message p {
+      color: #dc3545;
+      margin-bottom: 20px;
+    }
+
+    .select-input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      background-color: white;
+    }
+
+    .select-input:focus {
+      outline: none;
+      border-color: #3498db;
+      box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+    }
+
+    /* Multiselect & Dropdown Styles */
+    .multiselect-container, .image-upload-container {
+      position: relative;
+      width: 100%;
+    }
+
+    .multiselect-selected, .selected-featured-img {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      cursor: pointer;
+      background-color: white;
+      min-height: 38px;
+    }
+
+    .multiselect-selected:hover, .selected-featured-img:hover {
+      border-color: #3498db;
+    }
+
+    .multiselect-label {
+      flex: 1;
+      text-align: left;
+    }
+
+    .multiselect-dropdown, .dropdown-content {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background-color: white;
+      border: 1px solid #ddd;
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+      z-index: 1000;
+      max-height: 200px;
+      overflow-y: auto;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .multiselect-option, .image-option {
+      padding: 8px 12px;
+      border-bottom: 1px solid #f0f0f0;
+      cursor: pointer;
+    }
+
+    .multiselect-option:hover, .image-option:hover {
+      background-color: #f8f9fa;
+    }
+
+    .multiselect-option label {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      margin: 0;
+    }
+
+    .checkbox-custom {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      margin-right: 8px;
+      position: relative;
+    }
+
+    input[type="checkbox"]:checked + .checkbox-custom {
+      background-color: #3498db;
+      border-color: #3498db;
+    }
+
+    input[type="checkbox"]:checked + .checkbox-custom::after {
+      content: '✓';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 12px;
+    }
+
+    .image-option {
+      display: flex;
+      align-items: center;
+    }
+    
+    .image-option img {
+      margin-right: 10px;
+    }
+
+    .image-preview {
+      margin-top: 10px;
+    }
+  </style>
+</Layout>
