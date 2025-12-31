@@ -18,7 +18,7 @@ try {
     // 如果没找到，尝试去掉扩展名后查找
     if (!foundPost) {
       const cleanId = articleId.replace(/\.md$/, '').replace(/\.mdx$/, '');
-      foundPost = allBlogPosts.find(post => post.id === cleanId || post.slug === cleanId);
+      foundPost = allBlogPosts.find(post => post.id === cleanId);
     }
 
     if (foundPost) {
@@ -30,7 +30,7 @@ try {
     errorMessage = '未提供文章ID';
   }
 } catch (error) {
-  errorMessage = `加载文章时出错: ${error.message}`;
+  errorMessage = `加载文章时出错: ${error instanceof Error ? error.message : '未知错误'}`;
   console.error('加载文章时出错:', error);
 }
 ---
@@ -54,7 +54,7 @@ try {
           
           <div class="form-group">
             <label for="slug">URL路径 *</label>
-            <input type="text" id="slug" name="slug" value={article?.slug || ''} required />
+            <input type="text" id="slug" name="slug" value={article?.id || ''} required />
           </div>
           
           <div class="form-group">
@@ -66,9 +66,9 @@ try {
             <div class="form-group">
               <label for="status">状态</label>
               <select id="status" name="status">
-                <option value="draft" {(!article || article.data.status === 'draft') ? 'selected' : ''}>草稿</option>
-                <option value="published" {(article && article.data.status === 'published') ? 'selected' : ''}>已发布</option>
-                <option value="archived" {(article && article.data.status === 'archived') ? 'selected' : ''}>归档</option>
+                <option value="draft" {(article && article.data.status === 'draft') || (!article) ? 'selected' : ''}>草稿</option>
+                <option value="published" {article?.data.status === 'published' ? 'selected' : ''}>已发布</option>
+                <option value="archived" {article?.data.status === 'archived' ? 'selected' : ''}>归档</option>
               </select>
             </div>
             
@@ -82,14 +82,14 @@ try {
             <label for="categories">分类</label>
             <select id="categories" name="categories" class="select-input">
               <option value="">选择分类</option>
-              <option value="技术" {(article?.data.categories || []).includes('技术') ? 'selected' : ''}>技术</option>
-              <option value="教程" {(article?.data.categories || []).includes('教程') ? 'selected' : ''}>教程</option>
-              <option value="前端" {(article?.data.categories || []).includes('前端') ? 'selected' : ''}>前端</option>
-              <option value="后端" {(article?.data.categories || []).includes('后端') ? 'selected' : ''}>后端</option>
-              <option value="生活" {(article?.data.categories || []).includes('生活') ? 'selected' : ''}>生活</option>
-              <option value="感悟" {(article?.data.categories || []).includes('感悟') ? 'selected' : ''}>感悟</option>
-              <option value="随笔" {(article?.data.categories || []).includes('随笔') ? 'selected' : ''}>随笔</option>
-              <option value="分享" {(article?.data.categories || []).includes('分享') ? 'selected' : ''}>分享</option>
+              <option value="技术" {article?.data.categories?.includes('技术') ? 'selected' : ''}>技术</option>
+              <option value="教程" {article?.data.categories?.includes('教程') ? 'selected' : ''}>教程</option>
+              <option value="前端" {article?.data.categories?.includes('前端') ? 'selected' : ''}>前端</option>
+              <option value="后端" {article?.data.categories?.includes('后端') ? 'selected' : ''}>后端</option>
+              <option value="生活" {article?.data.categories?.includes('生活') ? 'selected' : ''}>生活</option>
+              <option value="感悟" {article?.data.categories?.includes('感悟') ? 'selected' : ''}>感悟</option>
+              <option value="随笔" {article?.data.categories?.includes('随笔') ? 'selected' : ''}>随笔</option>
+              <option value="分享" {article?.data.categories?.includes('分享') ? 'selected' : ''}>分享</option>
             </select>
           </div>
           
@@ -105,70 +105,70 @@ try {
               <div id="tagMultiselectDropdown" class="multiselect-dropdown" style="display: none;">
                 <div class="multiselect-option">
                   <label>
-                    <input type="checkbox" value="技术" {(article?.data.tags || []).includes('技术') ? 'checked' : ''} onchange="updateSelectedTag(this)">
+                    <input type="checkbox" value="技术" {article?.data.tags?.includes('技术') ? 'checked' : ''} onchange="updateSelectedTag(this)">
                     <span class="checkbox-custom"></span>
                     <span class="checkbox-label">技术</span>
                   </label>
                 </div>
                 <div class="multiselect-option">
                   <label>
-                    <input type="checkbox" value="教程" {(article?.data.tags || []).includes('教程') ? 'checked' : ''} onchange="updateSelectedTag(this)">
+                    <input type="checkbox" value="教程" {article?.data.tags?.includes('教程') ? 'checked' : ''} onchange="updateSelectedTag(this)">
                     <span class="checkbox-custom"></span>
                     <span class="checkbox-label">教程</span>
                   </label>
                 </div>
                 <div class="multiselect-option">
                   <label>
-                    <input type="checkbox" value="前端" {(article?.data.tags || []).includes('前端') ? 'checked' : ''} onchange="updateSelectedTag(this)">
+                    <input type="checkbox" value="前端" {article?.data.tags?.includes('前端') ? 'checked' : ''} onchange="updateSelectedTag(this)">
                     <span class="checkbox-custom"></span>
                     <span class="checkbox-label">前端</span>
                   </label>
                 </div>
                 <div class="multiselect-option">
                   <label>
-                    <input type="checkbox" value="后端" {(article?.data.tags || []).includes('后端') ? 'checked' : ''} onchange="updateSelectedTag(this)">
+                    <input type="checkbox" value="后端" {article?.data.tags?.includes('后端') ? 'checked' : ''} onchange="updateSelectedTag(this)">
                     <span class="checkbox-custom"></span>
                     <span class="checkbox-label">后端</span>
                   </label>
                 </div>
                 <div class="multiselect-option">
                   <label>
-                    <input type="checkbox" value="生活" {(article?.data.tags || []).includes('生活') ? 'checked' : ''} onchange="updateSelectedTag(this)">
+                    <input type="checkbox" value="生活" {article?.data.tags?.includes('生活') ? 'checked' : ''} onchange="updateSelectedTag(this)">
                     <span class="checkbox-custom"></span>
                     <span class="checkbox-label">生活</span>
                   </label>
                 </div>
                 <div class="multiselect-option">
                   <label>
-                    <input type="checkbox" value="感悟" {(article?.data.tags || []).includes('感悟') ? 'checked' : ''} onchange="updateSelectedTag(this)">
+                    <input type="checkbox" value="感悟" {article?.data.tags?.includes('感悟') ? 'checked' : ''} onchange="updateSelectedTag(this)">
                     <span class="checkbox-custom"></span>
                     <span class="checkbox-label">感悟</span>
                   </label>
                 </div>
                 <div class="multiselect-option">
                   <label>
-                    <input type="checkbox" value="JavaScript" {(article?.data.tags || []).includes('JavaScript') ? 'checked' : ''} onchange="updateSelectedTag(this)">
+                    <input type="checkbox" value="JavaScript" {article?.data.tags?.includes('JavaScript') ? 'checked' : ''} onchange="updateSelectedTag(this)">
                     <span class="checkbox-custom"></span>
                     <span class="checkbox-label">JavaScript</span>
                   </label>
                 </div>
                 <div class="multiselect-option">
                   <label>
-                    <input type="checkbox" value="CSS" {(article?.data.tags || []).includes('CSS') ? 'checked' : ''} onchange="updateSelectedTag(this)">
+                    <input type="checkbox" value="CSS" {article?.data.tags?.includes('CSS') ? 'checked' : ''} onchange="updateSelectedTag(this)">
                     <span class="checkbox-custom"></span>
                     <span class="checkbox-label">CSS</span>
                   </label>
                 </div>
                 <div class="multiselect-option">
                   <label>
-                    <input type="checkbox" value="HTML" {(article?.data.tags || []).includes('HTML') ? 'checked' : ''} onchange="updateSelectedTag(this)">
+                    <input type="checkbox" value="HTML" {article?.data.tags?.includes('HTML') ? 'checked' : ''} onchange="updateSelectedTag(this)">
                     <span class="checkbox-custom"></span>
                     <span class="checkbox-label">HTML</span>
                   </label>
                 </div>
                 <div class="multiselect-option">
                   <label>
-                    <input type="checkbox" value="Node.js" {(article?.data.tags || []).includes('Node.js') ? 'checked' : ''} onchange="updateSelectedTag(this)">
+                    <input type="checkbox" value="Node.js" {article?.data.tags?.includes('Node.js') ? 'checked' : ''} onchange="updateSelectedTag(this)">
                     <span class="checkbox-custom"></span>
                     <span class="checkbox-label">Node.js</span>
                   </label>
@@ -227,21 +227,21 @@ try {
           
           <div class="form-group checkbox-group">
             <label>
-              <input type="checkbox" name="featured" {article?.data.featured ? 'checked' : ''} />
+              <input type="checkbox" name="featured" {article?.data.featured === true ? 'checked' : ''} />
               设为特色文章
             </label>
           </div>
-          
+
           <div class="form-group checkbox-group">
             <label>
-              <input type="checkbox" name="recommended" {article?.data.recommended ? 'checked' : ''} />
+              <input type="checkbox" name="recommended" {article?.data.recommended === true ? 'checked' : ''} />
               设为推荐文章
             </label>
           </div>
-          
+
           <div class="form-group checkbox-group">
             <label>
-              <input type="checkbox" name="hideToc" {article?.data.hideToc ? 'checked' : ''} />
+              <input type="checkbox" name="hideToc" {article?.data.hideToc === true ? 'checked' : ''} />
               隐藏目录
             </label>
           </div>
