@@ -19,10 +19,13 @@ const EnhancedMarkdownEditor = ({ value, onChange, inputId, ...props }) => {
 
     // 同步到隐藏输入框
     if (inputId) {
-      const input = document.getElementById(inputId);
-      if (input) {
-        input.value = val;
-        input.dispatchEvent(new Event('input', { bubbles: true }));
+      // 在客户端环境中访问DOM
+      if (typeof window !== 'undefined') {
+        const input = document.getElementById(inputId);
+        if (input) {
+          input.value = val;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
       }
     }
   };
