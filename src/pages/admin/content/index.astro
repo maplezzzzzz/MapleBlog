@@ -50,8 +50,8 @@ const notes = await getCollection('notes');
               <td>{post.data.categories ? post.data.categories.join(', ') : ''}</td>
               <td>{post.data.publishedAt ? new Date(post.data.publishedAt).toLocaleDateString() : '未发布'}</td>
               <td class="admin-table-actions">
-                <button class="admin-btn admin-btn-secondary edit-btn" data-type="post" data-id={post.id}>编辑</button>
-                <button class="admin-btn view-btn" data-type="post" data-slug={post.slug}>查看</button>
+                <button class="admin-btn admin-btn-secondary edit-btn" data-type="post" data-id={post.id.replace(/\.md$/, '')}>编辑</button>
+                <button class="admin-btn view-btn" data-type="post" data-slug={post.slug || post.id.replace(/\.md$/, '')}>查看</button>
               </td>
             </tr>
           ))}

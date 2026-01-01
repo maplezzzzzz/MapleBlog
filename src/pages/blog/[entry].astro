@@ -2,35 +2,31 @@
 import { getCollection, type CollectionEntry, render } from "astro:content";
 import EntryLayout from "@components/blog/EntryLayout.astro";
 
-export async function getStaticPaths() {
-  const isDev = import.meta.env.DEV;
-
-  const blogEntries = await getCollection("blog", ({ data }) => {
-    // 生产环境只显示已发布的非草稿文章
-    // 开发环境显示所有文章（包括草稿）
-    if (isDev) {
-      return true; // 开发环境显示所有文章
-    }
-    return data.draft !== true;
-  });
-
-  const paths = blogEntries.map((entry) => ({
-    params: { entry: entry.id },
-    props: { entry },
-  }));
-
-  console.log("paths", paths);
-  return paths;
-}
-
 interface Props {
-  entry: CollectionEntry<"blog">;
+  entry: string;
 }
 
-const { entry } = Astro.props;
-const { Content } = await render(entry);
+const { entry: slugOrId } = Astro.props;
+
+// 根据slug或ID获取文章
+let blogEntry: CollectionEntry<"blog"> | undefined = undefined;
+
+try {
+  // 首先尝试通过slug获取
+  const blogCollection = await getCollection('blog');
+  blogEntry = blogCollection.find(post => post.slug === slugOrId || post.id.replace(/\.md$/, '') === slugOrId);
+} catch (e) {
+  console.error("获取博客文章时出错:", e);
+}
+
+if (!blogEntry) {
+  // 如果条目未定义，显示错误信息
+  return <div>文章未找到</div>;
+}
+
+const { Content } = await render(blogEntry);
 ---
 
-<EntryLayout entry={entry}>
+<EntryLayout entry={blogEntry}>
   <Content />
 </EntryLayout>

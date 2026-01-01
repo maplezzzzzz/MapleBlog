@@ -77,6 +77,18 @@ const ArticleEditor = ({ initialEditId = null }) => {
         } finally {
           setLoading(false);
         }
+      } else {
+        // 如果没有initialEditId（新建文章），清空所有字段
+        setTitle('');
+        setContent('');
+        setCoverImage('');
+        setSeoTitle('');
+        setSeoDescription('');
+        setSeoKeywords([]);
+        setAllowComments(true);
+        setIsPublished(false);
+        setSelectedCategories([]);
+        setSelectedTags([]);
       }
     };
 
@@ -100,9 +112,7 @@ const ArticleEditor = ({ initialEditId = null }) => {
     };
 
     loadMetadata();
-    if (initialEditId) {
-      loadArticleData();
-    }
+    loadArticleData(); // 无论是否有initialEditId都调用此函数
   }, [initialEditId]);
   
   // 自动保存草稿
@@ -400,27 +410,29 @@ const ArticleEditor = ({ initialEditId = null }) => {
     setLoading(false);
   };
   
-  // 从localStorage恢复草稿
+  // 从localStorage恢复草稿（仅在没有initialEditId时，即新建文章时）
   useEffect(() => {
-    const draft = localStorage.getItem('articleDraft');
-    if (draft) {
-      try {
-        const parsedDraft = JSON.parse(draft);
-        setTitle(parsedDraft.title || '');
-        setContent(parsedDraft.content || '');
-        setSelectedCategories(parsedDraft.selectedCategories || []);
-        setSelectedTags(parsedDraft.selectedTags || []);
-        setCoverImage(parsedDraft.coverImage || '');
-        setSeoTitle(parsedDraft.seoTitle || '');
-        setSeoDescription(parsedDraft.seoDescription || '');
-        setSeoKeywords(parsedDraft.seoKeywords || []);
-        setAllowComments(parsedDraft.allowComments !== undefined ? parsedDraft.allowComments : true);
-        setIsPublished(parsedDraft.isPublished || false);
-      } catch (e) {
-        console.error('恢复草稿失败:', e);
+    if (!initialEditId) { // 只有在新建文章时才恢复草稿
+      const draft = localStorage.getItem('articleDraft');
+      if (draft) {
+        try {
+          const parsedDraft = JSON.parse(draft);
+          setTitle(parsedDraft.title || '');
+          setContent(parsedDraft.content || '');
+          setSelectedCategories(parsedDraft.selectedCategories || []);
+          setSelectedTags(parsedDraft.selectedTags || []);
+          setCoverImage(parsedDraft.coverImage || '');
+          setSeoTitle(parsedDraft.seoTitle || '');
+          setSeoDescription(parsedDraft.seoDescription || '');
+          setSeoKeywords(parsedDraft.seoKeywords || []);
+          setAllowComments(parsedDraft.allowComments !== undefined ? parsedDraft.allowComments : true);
+          setIsPublished(parsedDraft.isPublished || false);
+        } catch (e) {
+          console.error('恢复草稿失败:', e);
+        }
       }
     }
-  }, []);
+  }, [initialEditId]);
   
   return (
     <div className="article-editor-container">
