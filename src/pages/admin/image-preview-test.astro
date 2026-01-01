@@ -1,0 +1,19 @@
+---
+import Layout from '../../../layouts/AdminLayout.astro';
+import EnhancedMarkdownEditorWithPreview from '../../../components/EnhancedMarkdownEditorWithPreview.jsx';
+---
+
+<Layout title="图片预览测试">
+  <div class="admin-container">
+    <h2>图片预览功能测试</h2>
+    <p>这个页面用于测试图片上传和预览功能。请上传一张图片并切换到预览模式查看效果。</p>
+    
+    <div style="margin-top: 20px;">
+      <EnhancedMarkdownEditorWithPreview 
+        value="# 图片预览测试\n\n上传图片后，在预览模式下应该能看到图片显示。\n\n![示例图片](/assets/uploads/)" 
+        inputId="image-preview-test" 
+        height={600} 
+      />
+    </div>
+  </div>
+</Layout>

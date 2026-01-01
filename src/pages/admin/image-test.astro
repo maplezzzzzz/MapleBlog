@@ -1,0 +1,78 @@
+---
+import Layout from '../../layouts/AdminLayout.astro';
+---
+
+<Layout title="图片上传测试">
+  <div class="admin-container">
+    <h2>图片上传和预览测试</h2>
+    <p>此页面用于测试图片上传和预览功能</p>
+    
+    <div>
+      <h3>直接访问图片测试</h3>
+      <p>以下图片应该能直接显示：</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <h4>截图.jpg</h4>
+          <img src="/uploads/截图.jpg" alt="截图" style="max-width: 200px; height: auto;" onerror="console.error('截图.jpg 加载失败')">
+        </div>
+        <div>
+          <h4>截图3.jpg</h4>
+          <img src="/uploads/截图3.jpg" alt="截图3" style="max-width: 200px; height: auto;" onerror="console.error('截图3.jpg 加载失败')">
+        </div>
+        <div>
+          <h4>picture.jpg</h4>
+          <img src="/uploads/picture.jpg" alt="picture" style="max-width: 200px; height: auto;" onerror="console.error('picture.jpg 加载失败')">
+        </div>
+      </div>
+    </div>
+    
+    <div style="margin-top: 30px;">
+      <h3>测试新上传的图片</h3>
+      <p>上传新图片后，图片将显示在这里：</p>
+      <div id="uploaded-image-container"></div>
+    </div>
+  </div>
+  
+  <script>
+    // 简单的图片上传测试
+    async function testUpload() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      
+      input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const formData = new FormData();
+        formData.append('image', file);
+        
+        try {
+          const response = await fetch('/api/upload/temp-image', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const result = await response.json();
+          if (result.errno === 0) {
+            const container = document.getElementById('uploaded-image-container');
+            container.innerHTML = `<img src="${result.data.url}" alt="上传的图片" style="max-width: 300px; height: auto;">`;
+            console.log('上传成功:', result.data.url);
+          } else {
+            console.error('上传失败:', result);
+          }
+        } catch (error) {
+          console.error('上传错误:', error);
+        }
+      };
+      
+      input.click();
+    }
+    
+    // 添加上传按钮
+    const button = document.createElement('button');
+    button.textContent = '上传测试图片';
+    button.onclick = testUpload;
+    document.querySelector('.admin-container').appendChild(button);
+  </script>
+</Layout>

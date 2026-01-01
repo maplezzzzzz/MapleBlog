@@ -1,0 +1,19 @@
+---
+import Layout from '../../../layouts/AdminLayout.astro';
+import EnhancedMarkdownEditorWithPreview from '../../../components/EnhancedMarkdownEditorWithPreview.jsx';
+---
+
+<Layout title="编辑器预览功能测试">
+  <div class="admin-container">
+    <h2>增强版Markdown编辑器测试</h2>
+    <p>这个页面用于测试新的增强版Markdown编辑器，具有预览和图片上传URL复制功能。</p>
+    
+    <div style="margin-top: 20px;">
+      <EnhancedMarkdownEditorWithPreview 
+        value="# 测试编辑器\n\n这是测试内容。" 
+        inputId="test-editor" 
+        height={600} 
+      />
+    </div>
+  </div>
+</Layout>

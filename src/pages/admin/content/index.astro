@@ -25,7 +25,7 @@ const notes = await getCollection('notes');
     <!-- 文章管理标签页 -->
     <div class="tab-content active" id="posts-tab">
       <div class="admin-controls">
-        <a href="/admin/content/create/blog" class="admin-btn">新建文章</a>
+        <a href="/admin/article-editor" class="admin-btn">新建文章</a>
       </div>
 
       <table class="admin-table">
@@ -209,7 +209,7 @@ const notes = await getCollection('notes');
 
     // 通用函数占位符
     function createPost() {
-      window.location.href = '/admin/content/create/blog';
+      window.location.href = '/admin/article-editor';
     }
 
     // 使用事件委托处理按钮点击
@@ -223,7 +223,8 @@ const notes = await getCollection('notes');
           case 'post':
             // 移除 .md 扩展名（如果存在）
             const cleanId = id.replace(/\.md$/, '');
-            window.location.href = `/admin/content/edit/blog/${cleanId}`;
+            // 跳转到新的文章编辑器，并传递文章ID
+            window.location.href = `/admin/article-editor?edit=${encodeURIComponent(cleanId)}`;
             break;
           case 'note':
             alert('编辑动态: ' + id);
