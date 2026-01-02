@@ -24,13 +24,23 @@ const notes = await getCollection('notes');
 
     <!-- 文章管理标签页 -->
     <div class="tab-content active" id="posts-tab">
-      <div class="admin-controls">
+      <div class="admin-controls flex items-center gap-4">
         <a href="/admin/article-editor" class="admin-btn">新建文章</a>
+        
+        <div class="batch-actions hidden" id="batch-actions-toolbar">
+          <span class="selected-count mr-2">已选择 0 项</span>
+          <button class="admin-btn admin-btn-danger batch-btn" data-action="delete">批量删除</button>
+          <button class="admin-btn admin-btn-success batch-btn" data-action="publish">批量发布</button>
+          <button class="admin-btn admin-btn-warning batch-btn" data-action="unpublish">批量取消发布</button>
+        </div>
       </div>
 
       <table class="admin-table">
         <thead>
           <tr>
+            <th class="w-10 text-center">
+              <input type="checkbox" id="select-all-posts" class="cursor-pointer align-middle">
+            </th>
             <th>标题</th>
             <th>状态</th>
             <th>分类</th>
@@ -41,6 +51,9 @@ const notes = await getCollection('notes');
         <tbody id="posts-list">
           {blogPosts.map(post => (
             <tr key={post.id}>
+              <td class="text-center">
+                <input type="checkbox" class="post-checkbox cursor-pointer align-middle" data-id={post.id}>
+              </td>
               <td>{post.data.title}</td>
               <td>
                 <span class={`status-badge ${post.data.status || 'draft'}`}>
@@ -52,6 +65,12 @@ const notes = await getCollection('notes');
               <td class="admin-table-actions">
                 <button class="admin-btn admin-btn-secondary edit-btn" data-type="post" data-id={post.id.replace(/\.md$/, '')}>编辑</button>
                 <button class="admin-btn view-btn" data-type="post" data-slug={post.slug || post.id.replace(/\.md$/, '')}>查看</button>
+                {post.data.status === 'published' ? (
+                  <button class="admin-btn admin-btn-warning action-btn" data-action="unpublish" data-id={post.id}>取消发布</button>
+                ) : (
+                  <button class="admin-btn admin-btn-success action-btn" data-action="publish" data-id={post.id}>发布</button>
+                )}
+                <button class="admin-btn admin-btn-danger action-btn" data-action="delete" data-id={post.id}>删除</button>
               </td>
             </tr>
           ))}
@@ -193,6 +212,104 @@ const notes = await getCollection('notes');
   </div>
 
   <script>
+    // 批量操作逻辑
+    const selectAllCheckbox = document.getElementById('select-all-posts');
+    const postCheckboxes = document.querySelectorAll('.post-checkbox');
+    const batchActionsToolbar = document.getElementById('batch-actions-toolbar');
+    const selectedCountSpan = document.querySelector('.selected-count');
+    
+    // 更新批量操作UI状态
+    function updateBatchUI() {
+      const selectedboxes = document.querySelectorAll('.post-checkbox:checked');
+      const count = selectedboxes.length;
+      
+      if (count > 0) {
+        batchActionsToolbar.classList.remove('hidden');
+        batchActionsToolbar.style.display = 'flex';
+        selectedCountSpan.textContent = `已选择 ${count} 项`;
+      } else {
+        batchActionsToolbar.classList.add('hidden');
+        batchActionsToolbar.style.display = 'none';
+      }
+    }
+
+    // 全选/反选
+    if (selectAllCheckbox) {
+      selectAllCheckbox.addEventListener('change', (e) => {
+        const isChecked = e.target.checked;
+        postCheckboxes.forEach(cb => cb.checked = isChecked);
+        updateBatchUI();
+      });
+    }
+
+    // 单个复选框变更
+    postCheckboxes.forEach(cb => {
+      cb.addEventListener('change', updateBatchUI);
+    });
+
+    // 执行API操作
+    async function performAction(action, ids) {
+       const actionMap = {
+        'delete': '删除',
+        'publish': '发布',
+        'unpublish': '取消发布'
+      };
+      
+      const actionName = actionMap[action] || action;
+      
+      if (!confirm(`确定要对 ${ids.length} 篇文章执行 "${actionName}" 操作吗？${action === 'delete' ? '此操作不可撤销。' : ''}`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/content/blog/batch', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            action: action,
+            ids: ids
+          })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          alert(result.message);
+          window.location.reload();
+        } else {
+          alert('操作失败: ' + (result.error || JSON.stringify(result.errors)));
+        }
+      } catch (error) {
+        console.error('操作出错:', error);
+        alert('操作出错，请查看控制台');
+      }
+    }
+
+    // 绑定批量操作按钮事件
+    document.querySelectorAll('.batch-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const action = btn.dataset.action;
+        const selectedIds = Array.from(document.querySelectorAll('.post-checkbox:checked'))
+          .map(cb => cb.dataset.id);
+        
+        if (selectedIds.length === 0) return;
+        performAction(action, selectedIds);
+      });
+    });
+
+    // 绑定单行操作按钮事件 (使用事件委托)
+    document.querySelector('#posts-list').addEventListener('click', (e) => {
+      if (e.target.classList.contains('action-btn')) {
+        const action = e.target.dataset.action;
+        const id = e.target.dataset.id;
+        if (action && id) {
+          performAction(action, [id]);
+        }
+      }
+    });
+
     // 切换标签页
     document.querySelectorAll('.tab-btn').forEach(button => {
       button.addEventListener('click', () => {
@@ -268,6 +385,83 @@ const notes = await getCollection('notes');
   </script>
 
   <style>
+    .batch-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 4px 10px;
+      border-radius: 4px;
+    }
+    
+    .batch-actions.hidden {
+      display: none;
+    }
+
+    .selected-count {
+      font-weight: 500;
+      color: #495057;
+      margin-right: 5px;
+    }
+
+    .admin-btn-danger {
+      background-color: #dc3545;
+      color: white;
+    }
+    
+    .admin-btn-danger:hover {
+      background-color: #c82333;
+    }
+
+    .admin-btn-success {
+      background-color: #28a745;
+      color: white;
+    }
+    
+    .admin-btn-success:hover {
+      background-color: #218838;
+    }
+    
+    .admin-btn-warning {
+      background-color: #ffc107;
+      color: #212529;
+    }
+    
+    .admin-btn-warning:hover {
+      background-color: #e0a800;
+    }
+
+    .flex {
+      display: flex;
+    }
+    
+    .items-center {
+      align-items: center;
+    }
+    
+    .gap-4 {
+      gap: 1rem;
+    }
+    
+    .mr-2 {
+      margin-right: 0.5rem;
+    }
+
+    .w-10 {
+      width: 2.5rem;
+    }
+    
+    .text-center {
+      text-align: center;
+    }
+    
+    .cursor-pointer {
+      cursor: pointer;
+    }
+    
+    .align-middle {
+      vertical-align: middle;
+    }
+
     .admin-tabs {
       display: flex;
       margin-bottom: 20px;

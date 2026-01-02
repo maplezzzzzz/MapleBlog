@@ -1,7 +1,7 @@
 ---
 title: 编辑器测试文章
 description: 这是通过新编辑器创建的测试文章
-status: published
+status: draft
 createdAt: 2025-01-03T00:00:00.000Z
 categories:
   - 编辑器
@@ -10,7 +10,12 @@ tags:
   - 新功能
   - 图文
 featuredImg: /src/assets/images/uploads/image-1765273146318-606850326.txt
+draft: true
+updatedAt: '2026-01-02T12:07:00.723Z'
 ---
+
+
+
 
 # 编辑器测试文章
 
