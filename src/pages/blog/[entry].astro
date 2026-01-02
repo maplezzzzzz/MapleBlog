@@ -2,26 +2,55 @@
 import { getCollection, type CollectionEntry, render } from "astro:content";
 import EntryLayout from "@components/blog/EntryLayout.astro";
 
-interface Props {
-  entry: string;
+// getStaticPaths 仅在构建时生成路径，或者在 output: 'static' / prerender = true 时使用
+export async function getStaticPaths() {
+  const isDev = import.meta.env.DEV;
+
+  const blogEntries = await getCollection("blog", ({ data, id }) => {
+    // 排除可能有问题的特殊文件名
+    if (id.startsWith('_') || id.startsWith('-')) {
+      return false; 
+    }
+    if (isDev) {
+      return true; 
+    }
+    return data.draft !== true;
+  });
+
+  const paths = blogEntries.map((entry) => {
+    // 统一处理 slug 生成逻辑
+    const slug = entry.slug || entry.id.replace(/\.(md|mdx)$/, '');
+    return {
+      params: { entry: slug },
+      props: { entry },
+    };
+  });
+
+  return paths;
 }
 
-const { entry: slugOrId } = Astro.props;
+interface Props {
+  entry: CollectionEntry<"blog"> | undefined;
+}
 
-// 根据slug或ID获取文章
-let blogEntry: CollectionEntry<"blog"> | undefined = undefined;
+// 尝试从 props 获取 (SSG / getStaticPaths)
+let { entry: blogEntry } = Astro.props;
+const { entry } = Astro.params;
 
-try {
-  // 首先尝试通过slug获取
-  const blogCollection = await getCollection('blog');
-  blogEntry = blogCollection.find(post => post.slug === slugOrId || post.id.replace(/\.md$/, '') === slugOrId);
-} catch (e) {
-  console.error("获取博客文章时出错:", e);
+// 如果 props 中没有（SSR 动态请求），则根据 URL 参数动态查找
+if (!blogEntry && entry) {
+  const allEntries = await getCollection("blog");
+  blogEntry = allEntries.find(e => {
+    // 1. 匹配显式的 slug
+    if (e.slug === entry) return true;
+    // 2. 匹配处理过后缀的 ID (兼容 .md 和 .mdx)
+    const idSlug = e.id.replace(/\.(md|mdx)$/, '');
+    return idSlug === entry;
+  });
 }
 
 if (!blogEntry) {
-  // 如果条目未定义，显示错误信息
-  return <div>文章未找到</div>;
+  return Astro.redirect('/404');
 }
 
 const { Content } = await render(blogEntry);
