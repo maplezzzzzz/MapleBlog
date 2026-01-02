@@ -7,9 +7,8 @@ import yaml from "js-yaml";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-// 假设结构是 src/pages/api/content/blog/batch.ts
-// 需要向上回溯到项目根目录
-const ROOT_DIR = path.resolve(__dirname, "../../../..//..");
+// 使用 process.cwd() 获取项目根目录，这比相对路径回溯更可靠
+const ROOT_DIR = process.cwd();
 const CONTENT_DIR = path.join(ROOT_DIR, "src", "content", "blog");
 
 export const POST: APIRoute = async ({ request }) => {

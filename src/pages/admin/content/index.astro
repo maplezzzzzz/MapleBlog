@@ -24,14 +24,27 @@ const notes = await getCollection('notes');
 
     <!-- 文章管理标签页 -->
     <div class="tab-content active" id="posts-tab">
-      <div class="admin-controls flex items-center gap-4">
-        <a href="/admin/article-editor" class="admin-btn">新建文章</a>
-        
-        <div class="batch-actions hidden" id="batch-actions-toolbar">
-          <span class="selected-count mr-2">已选择 0 项</span>
-          <button class="admin-btn admin-btn-danger batch-btn" data-action="delete">批量删除</button>
-          <button class="admin-btn admin-btn-success batch-btn" data-action="publish">批量发布</button>
-          <button class="admin-btn admin-btn-warning batch-btn" data-action="unpublish">批量取消发布</button>
+      <div class="admin-controls flex flex-col gap-4">
+        <div class="flex justify-between items-center w-full">
+            <div class="flex items-center gap-4">
+                <a href="/admin/article-editor" class="admin-btn">新建文章</a>
+                <!-- 筛选和搜索 -->
+                <div class="flex items-center gap-2">
+                    <select id="status-filter" class="form-select text-sm py-1 px-2 border rounded">
+                        <option value="all">所有状态</option>
+                        <option value="published">已发布</option>
+                        <option value="draft">草稿/未发布</option>
+                    </select>
+                    <input type="text" id="post-search" placeholder="搜索文章标题..." class="form-input text-sm py-1 px-2 border rounded w-64">
+                </div>
+            </div>
+            
+            <div class="batch-actions hidden" id="batch-actions-toolbar">
+              <span class="selected-count mr-2 text-sm text-gray-600">已选 0</span>
+              <button class="admin-btn admin-btn-danger batch-btn text-xs px-2" data-action="delete">删除</button>
+              <button class="admin-btn admin-btn-success batch-btn text-xs px-2" data-action="publish">发布</button>
+              <button class="admin-btn admin-btn-warning batch-btn text-xs px-2" data-action="unpublish">取消发布</button>
+            </div>
         </div>
       </div>
 
@@ -50,7 +63,7 @@ const notes = await getCollection('notes');
         </thead>
         <tbody id="posts-list">
           {blogPosts.map(post => (
-            <tr key={post.id}>
+            <tr key={post.id} class="post-row" data-title={post.data.title.toLowerCase()} data-status={post.data.status || 'draft'}>
               <td class="text-center">
                 <input type="checkbox" class="post-checkbox cursor-pointer align-middle" data-id={post.id}>
               </td>
@@ -217,6 +230,37 @@ const notes = await getCollection('notes');
     const postCheckboxes = document.querySelectorAll('.post-checkbox');
     const batchActionsToolbar = document.getElementById('batch-actions-toolbar');
     const selectedCountSpan = document.querySelector('.selected-count');
+    const statusFilter = document.getElementById('status-filter');
+    const postSearch = document.getElementById('post-search');
+    
+    // 筛选和搜索逻辑
+    function filterPosts() {
+        const status = statusFilter.value;
+        const searchText = postSearch.value.toLowerCase().trim();
+        const rows = document.querySelectorAll('.post-row');
+        
+        rows.forEach(row => {
+            const rowStatus = row.dataset.status;
+            const rowTitle = row.dataset.title; // 已经是小写了
+            
+            let statusMatch = (status === 'all') || (status === 'published' && rowStatus === 'published') || (status === 'draft' && rowStatus !== 'published');
+            let searchMatch = rowTitle.includes(searchText);
+            
+            if (statusMatch && searchMatch) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    if (statusFilter) {
+        statusFilter.addEventListener('change', filterPosts);
+    }
+
+    if (postSearch) {
+        postSearch.addEventListener('input', filterPosts);
+    }
     
     // 更新批量操作UI状态
     function updateBatchUI() {
@@ -460,6 +504,53 @@ const notes = await getCollection('notes');
     
     .align-middle {
       vertical-align: middle;
+    }
+
+    .w-64 {
+      width: 16rem;
+    }
+
+    .form-select, .form-input {
+      background-color: white;
+      border: 1px solid #ced4da;
+    }
+    
+    .text-sm {
+      font-size: 0.875rem;
+    }
+    
+    .text-xs {
+      font-size: 0.75rem;
+    }
+    
+    .text-gray-600 {
+      color: #718096;
+    }
+    
+    .py-1 {
+      padding-top: 0.25rem;
+      padding-bottom: 0.25rem;
+    }
+    
+    .px-2 {
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+    
+    .rounded {
+      border-radius: 0.25rem;
+    }
+    
+    .flex-col {
+      flex-direction: column;
+    }
+    
+    .w-full {
+      width: 100%;
+    }
+    
+    .gap-2 {
+      gap: 0.5rem;
     }
 
     .admin-tabs {
