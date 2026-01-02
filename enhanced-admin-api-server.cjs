@@ -68,8 +68,8 @@ app.post('/api/upload/image', upload.single('image'), (req, res) => {
   }
 });
 
-// 从现有的python-integration.js导入Python集成功能
-const { addPythonIntegrationEndpoints } = require('./python-integration.js');
+// 从现有的python-integration.cjs导入Python集成功能
+const { addPythonIntegrationEndpoints } = require('./python-integration.cjs');
 
 // 添加Python集成端点
 addPythonIntegrationEndpoints(app);
@@ -79,11 +79,8 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// 为管理后台提供服务
-app.get('/admin/*', (req, res) => {
-  // 由于Astro会处理这些路由，我们返回index.html让前端路由处理
-  res.sendFile(path.join(__dirname, 'dist', 'admin', 'index.html'));
-});
+// 管理后台路由已移除，由Astro应用处理
+// API路由仍由Express提供
 
 // 启动服务器
 app.listen(PORT, () => {

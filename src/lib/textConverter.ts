@@ -85,43 +85,13 @@ export const slugify = (content: string) => {
 // markdownify
 export const markdownify = async (content: string, div?: boolean) => {
   const options = { renderer };
+  // 注释掉 extractImageUrls 函数调用以避免正则表达式问题
   // content = await extractImageUrls(content);
   return div
     ? marked.parse(content, options)
     : marked.parseInline(content, options);
 };
 
-/**
- * 将文章内容中的图片地址,替换为"/_image?href=http://xxx.com"格式
- * 地址形如：`![上传界面](https://mmbiz.qpic.cn/mmbiz_png/iblROEu41FIHTtPeEX2Aic9T4lzVGX4eNtibP1Eg8vjvpficwz5DrUtS5Iib5cAploCOgIrv7SkxF2t8HasphOlEfqQ/640?wx_fmt=png&from=appmsg&tp=webp&wxfrom=5&wx_lazy=1)`
- */
-async function extractImageUrls(content: string): Promise<string> {
-  const regex = /!\[.*?\]\((.*?)\)/g;
-  const matches = content.match(regex);
-  if (matches) {
-    matches.forEach((match) => {
-      const url = match.match(/\((.*?)\)/)?.[1];
-      console.log("图片URL", url);
-      if (url) {
-        content = content.replace(url, transformImageUrl(url));
-      }
-    });
-  }
-  console.log("替换后的文章内容", content);
-  return content;
-}
-
-/**
- * 将图片转化为/_image?href=http://xxxx.com格式
- * @param url - 原始图片URL
- * @returns 转换后的URL
- */
-function transformImageUrl(url: string): string {
-  if (url.indexOf("/_image?href=") !== -1) {
-    return url;
-  }
-  return `/_image?href=${encodeURI(url)}`;
-}
 
 // hyphen to space, uppercase only first letter in each word
 export const upperHumanize = (content: string | undefined) => {

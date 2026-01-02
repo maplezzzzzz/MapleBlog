@@ -28,8 +28,8 @@
     "serve": "astro preview",
     "clean": "rm -rf dist",
     "build:analyze": "NODE_OPTIONS='--max-old-space-size=4096' astro build --verbose",
-    "admin": "node enhanced-admin-api-server.js",
-    "admin:pm2": "pm2 start enhanced-admin-api-server.js --name admin-panel"
+    "admin": "node enhanced-admin-api-server.cjs",
+    "admin:pm2": "pm2 start enhanced-admin-api-server.cjs --name admin-panel"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.6",
