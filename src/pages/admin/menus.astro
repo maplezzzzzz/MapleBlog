@@ -1,0 +1,767 @@
+--- 
+import Layout from '../../layouts/AdminLayout.astro';
+import fs from 'fs';
+import path from 'path';
+
+const MENUS_FILE = path.join(process.cwd(), "src", "data", "menus.json");
+let initialMenus = { header: [], footer: [] };
+
+if (fs.existsSync(MENUS_FILE)) {
+    try {
+        const fileContent = fs.readFileSync(MENUS_FILE, "utf-8");
+        if (fileContent.trim()) {
+            initialMenus = JSON.parse(fileContent);
+        }
+    } catch (e) {
+        console.error("Error loading menus.json:", e);
+    }
+}
+
+// 确保基本结构存在
+if (!initialMenus.header) initialMenus.header = [];
+if (!initialMenus.footer) initialMenus.footer = [];
+---
+
+<Layout title="导航管理">
+  <div class="admin-container">
+    <h2>🧭 导航菜单管理</h2>
+    
+    <div class="menus-grid">
+        <!-- 顶部导航 -->
+        <div class="menu-section">
+            <div class="section-header">
+                <h3>顶部主菜单 (Header)</h3>
+                <button id="add-header-btn" class="admin-btn admin-btn-sm">+ 添加一级菜单</button>
+            </div>
+            <div id="header-menu-list" class="menu-list">
+                <!-- 列表由 JS 渲染 -->
+                <div class="text-gray-500 text-center py-4">加载中...</div>
+            </div>
+        </div>
+        
+        <!-- 底部导航 -->
+        <div class="menu-section">
+            <div class="section-header">
+                <h3>底部菜单 (Footer)</h3>
+                <button id="add-footer-btn" class="admin-btn admin-btn-sm">+ 添加一级菜单</button>
+            </div>
+            <div id="footer-menu-list" class="menu-list">
+                <!-- 列表由 JS 渲染 -->
+                <div class="text-gray-500 text-center py-4">加载中...</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="sticky-bottom">
+        <button id="save-menus-btn" class="admin-btn admin-btn-primary">保存所有更改</button>
+    </div>
+  </div>
+
+  <!-- 链接选择弹窗 -->
+  <div id="link-selector-modal" class="modal hidden">
+    <div class="modal-content link-selector-content">
+        <div class="flex justify-between items-center mb-4 pb-2 border-b">
+            <h3 class="m-0 text-lg">选择内部链接</h3>
+            <button class="text-gray-500 hover:text-black" id="close-link-modal-btn">×</button>
+        </div>
+        <div class="link-search mb-3">
+            <input type="text" id="link-search-input" class="form-input" placeholder="搜索页面或文章...">
+        </div>
+        <div id="link-options-container" class="link-options-list">
+            <div class="text-center py-4 text-gray-500">加载中...</div>
+        </div>
+    </div>
+  </div>
+
+  <script define:vars={{ initialMenus }}>
+    // 初始化数据
+    let menus = { header: [], footer: [] };
+    
+    try {
+        // 深度拷贝，防止引用问题
+        menus = JSON.parse(JSON.stringify(initialMenus));
+    } catch (e) {
+        console.error("Error parsing initialMenus:", e);
+    }
+
+    // 确保数据结构完整
+    const normalize = (items) => {
+        if (!Array.isArray(items)) return [];
+        return items.map(i => ({
+            ...i, 
+            children: Array.isArray(i.children) ? normalize(i.children) : [] 
+        }));
+    };
+    
+    menus.header = normalize(menus.header);
+    menus.footer = normalize(menus.footer);
+
+    // 状态变量
+    let expandedItem = null; // { type: 'header'|'footer', index: number }
+    let linkOptions = [];
+    let currentEditingItem = null; // { type, index, childIndex }
+
+    // --- 渲染逻辑 ---
+
+    function render() {
+        renderList('header', menus.header);
+        renderList('footer', menus.footer);
+    }
+
+    function renderList(type, items) {
+        const container = document.getElementById(`${type}-menu-list`);
+        if (!container) return;
+
+        if (!items || items.length === 0) {
+            container.innerHTML = '<div class="empty-state">暂无菜单项</div>';
+            return;
+        }
+
+        container.innerHTML = items.map((item, index) => {
+            const isExpanded = expandedItem && expandedItem.type === type && expandedItem.index === index;
+            const hasChildren = item.children && item.children.length > 0;
+            const showCreateBtn = item.url && item.url.startsWith('/') && item.url !== '/';
+
+            // 子菜单 HTML 生成
+            const childrenHtml = isExpanded ? `
+                <div class="children-container">
+                    <div class="children-header">
+                        <span class="text-xs text-gray-500">子菜单</span>
+                        <button class="text-xs text-blue-500 add-child-btn" data-type="${type}" data-index="${index}">+ 添加子项</button>
+                    </div>
+                    <div class="children-list">
+                        ${item.children.length === 0 ? '<div class="text-xs text-gray-400 py-2 pl-4">暂无子菜单</div>' : 
+                            item.children.map((child, childIndex) => {
+                                const showChildCreateBtn = child.url && child.url.startsWith('/') && child.url !== '/';
+                                return `
+                                <div class="menu-item level-2">
+                                    <span class="sub-arrow">↳</span>
+                                    <div class="item-content">
+                                        <div class="form-row">
+                                            <input type="text" class="form-input item-name" value="${child.name || ''}" placeholder="名称" oninput="window.updateChildItem(this, '${type}', ${index}, ${childIndex}, 'name', this.value)">
+                                            <div class="url-input-wrapper flex-2 flex items-center">
+                                                <input type="text" class="form-input item-url rounded-r-none border-r-0" value="${child.url || ''}" placeholder="URL" oninput="window.updateChildItem(this, '${type}', ${index}, ${childIndex}, 'url', this.value)">
+                                                <button class="select-link-btn" onclick="window.openLinkSelector('${type}', ${index}, ${childIndex})" title="选择链接">🔗</button>
+                                                ${showChildCreateBtn ? `<button class="create-page-btn ml-1" onclick="window.createPageFromMenu('${child.name}', '${child.url}')" title="自动创建此页面">✨</button>` : ''}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button class="delete-btn" onclick="window.deleteChildItem('${type}', ${index}, ${childIndex})">×</button>
+                                </div>
+                            `}).join('')
+                        }
+                    </div>
+                </div>
+            ` : '';
+
+            return `
+            <div class="menu-wrapper">
+                <div class="menu-item level-1" draggable="true" data-type="${type}" data-index="${index}">
+                    <div class="drag-handle">☰</div>
+                    <div class="item-content">
+                        <div class="form-row">
+                            <input type="text" class="form-input item-name" value="${item.name || ''}" placeholder="名称" oninput="window.updateItem(this, '${type}', ${index}, 'name', this.value)">
+                            <div class="url-input-wrapper flex-2 flex items-center">
+                                <input type="text" class="form-input item-url rounded-r-none border-r-0" value="${item.url || ''}" placeholder="URL" oninput="window.updateItem(this, '${type}', ${index}, 'url', this.value)">
+                                <button class="select-link-btn" onclick="window.openLinkSelector('${type}', ${index})" title="选择链接">🔗</button>
+                                ${showCreateBtn ? `<button class="create-page-btn ml-1" onclick="window.createPageFromMenu('${item.name}', '${item.url}')" title="自动创建此页面">✨</button>` : ''}
+                            </div>
+                            <button class="icon-btn ${isExpanded ? 'active' : ''}" onclick="window.toggleChildren('${type}', ${index})" title="管理子菜单">
+                                ↳ 子菜单 (${item.children.length})
+                            </button>
+                        </div>
+                    </div>
+                    <button class="delete-btn" onclick="window.deleteItem('${type}', ${index})">×</button>
+                </div>
+                ${childrenHtml}
+            </div>
+            `;
+        }).join('');
+
+        // 重新绑定添加子菜单按钮事件
+        container.querySelectorAll('.add-child-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const t = e.target.dataset.type;
+                const i = parseInt(e.target.dataset.index);
+                window.addChildItem(t, i);
+            });
+        });
+        
+        setupDragAndDrop(type);
+    }
+
+    // --- 全局操作函数 (挂载到 window) ---
+
+    window.addMenuItem = (type) => {
+        menus[type].push({ name: '新链接', url: '/', type: 'internal', children: [] });
+        render();
+    };
+
+    window.addChildItem = (type, parentIndex) => {
+        menus[type][parentIndex].children.push({ name: '新子链接', url: '/', type: 'internal' });
+        render();
+    };
+
+    window.deleteItem = (type, index) => {
+        if(confirm('确定删除此项及其所有子菜单吗？')) {
+            menus[type].splice(index, 1);
+            if (expandedItem && expandedItem.type === type && expandedItem.index === index) {
+                expandedItem = null;
+            }
+            render();
+        }
+    };
+
+    window.deleteChildItem = (type, parentIndex, childIndex) => {
+        menus[type][parentIndex].children.splice(childIndex, 1);
+        render();
+    };
+
+    window.updateItem = (el, type, index, field, value) => {
+        const item = menus[type][index];
+        const oldName = item.name;
+        item[field] = value;
+        
+        // 智能 URL 同步逻辑
+        if (field === 'name') {
+            const currentUrl = item.url;
+            if (!currentUrl || currentUrl === '/' || currentUrl === `/${oldName}`) {
+                // 仅保留字母、数字、中文，其他字符替换为短横线
+                const slug = value.trim().replace(/[^\w\u4e00-\u9fa5]+/g, '-').replace(/^-+|-+$/g, '');
+                if (slug) {
+                    const newUrl = '/' + slug;
+                    item.url = newUrl;
+                    
+                    const row = el.closest('.form-row');
+                    const urlInput = row.querySelector('.item-url');
+                    if (urlInput) {
+                        urlInput.value = newUrl;
+                    }
+                }
+            }
+        }
+    };
+
+    window.updateChildItem = (el, type, parentIndex, childIndex, field, value) => {
+        const child = menus[type][parentIndex].children[childIndex];
+        const oldName = child.name;
+        child[field] = value;
+
+        if (field === 'name') {
+            const currentUrl = child.url;
+            if (!currentUrl || currentUrl === '/' || currentUrl === `/${oldName}`) {
+                // 仅保留字母、数字、中文
+                const slug = value.trim().replace(/[^\w\u4e00-\u9fa5]+/g, '-').replace(/^-+|-+$/g, '');
+                if (slug) {
+                    const newUrl = '/' + slug;
+                    child.url = newUrl;
+                    
+                    const row = el.closest('.form-row');
+                    const urlInput = row.querySelector('.item-url');
+                    if (urlInput) {
+                        urlInput.value = newUrl;
+                    }
+                }
+            }
+        }
+    };
+
+    window.toggleChildren = (type, index) => {
+        if (expandedItem && expandedItem.type === type && expandedItem.index === index) {
+            expandedItem = null;
+        } else {
+            expandedItem = { type, index };
+        }
+        render();
+    };
+
+    window.createPageFromMenu = async (name, url) => {
+        if (!url.startsWith('/') || url === '/') {
+            alert('只能为非首页的内部路径创建页面');
+            return;
+        }
+        
+        if (!confirm(`确定要为 "${name}" 创建新页面 (${url}) 吗？`)) return;
+        
+        try {
+            const res = await fetch('/api/pages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: name, slug: url })
+            });
+            
+            const result = await res.json();
+            
+            if (res.ok) {
+                window.showToast('页面创建成功！', 'success');
+            } else {
+                window.showToast('创建失败: ' + result.error, 'error');
+            }
+        } catch (e) {
+            window.showToast('出错: ' + e.message, 'error');
+        }
+    };
+
+    // --- 链接选择器逻辑 ---
+
+    window.openLinkSelector = (type, index, childIndex = null) => {
+        currentEditingItem = { type, index, childIndex };
+        const modal = document.getElementById('link-selector-modal');
+        modal.classList.remove('hidden');
+        const input = document.getElementById('link-search-input');
+        input.value = '';
+        input.focus();
+        if (linkOptions.length === 0) loadLinkOptions();
+        else renderLinkOptions();
+    };
+
+    window.selectLink = (url, label) => {
+        if (!currentEditingItem) return;
+        const { type, index, childIndex } = currentEditingItem;
+        
+        if (childIndex !== null && childIndex !== undefined) {
+            menus[type][index].children[childIndex].url = url;
+            if (!menus[type][index].children[childIndex].name) {
+                menus[type][index].children[childIndex].name = label;
+            }
+        } else {
+            menus[type][index].url = url;
+            if (!menus[type][index].name) {
+                menus[type][index].name = label;
+            }
+        }
+        
+        render();
+        document.getElementById('link-selector-modal').classList.add('hidden');
+        currentEditingItem = null;
+    };
+
+    async function loadLinkOptions() {
+        const container = document.getElementById('link-options-container');
+        container.innerHTML = '<div class="text-center py-4 text-gray-500">加载数据中...</div>';
+        
+        try {
+            const res = await fetch('/api/link-options');
+            if (res.ok) {
+                linkOptions = await res.json();
+                renderLinkOptions();
+            } else {
+                container.innerHTML = '<div class="text-center py-4 text-red-500">加载失败</div>';
+            }
+        } catch (e) {
+            console.error('Failed to load link options', e);
+            container.innerHTML = '<div class="text-center py-4 text-red-500">加载出错</div>';
+        }
+    }
+
+    function renderLinkOptions(filter = '') {
+        const container = document.getElementById('link-options-container');
+        const filterLower = filter.toLowerCase();
+        
+        let html = '';
+        linkOptions.forEach(group => {
+            const filteredOptions = group.options.filter(opt => 
+                opt.label.toLowerCase().includes(filterLower) || 
+                opt.value.toLowerCase().includes(filterLower)
+            );
+            
+            if (filteredOptions.length > 0) {
+                html += `<div class="link-group">
+                    <div class="link-group-title">${group.label}</div>
+                    ${filteredOptions.map(opt => `
+                        <div class="link-option" onclick="window.selectLink('${opt.value}', '${opt.label.replace(/'/g, "\'")}')">
+                            <span class="link-label">${opt.label}</span>
+                            <span class="link-value">${opt.value}</span>
+                        </div>
+                    `).join('')}
+                </div>`;
+            }
+        });
+        
+        if (html === '') {
+            html = '<div class="text-center py-4 text-gray-500">未找到匹配项</div>';
+        }
+        
+        container.innerHTML = html;
+    }
+
+    // --- 拖拽逻辑 ---
+    
+    function setupDragAndDrop(type) {
+        const container = document.getElementById(`${type}-menu-list`);
+        const items = container.querySelectorAll('.menu-item.level-1');
+        
+        items.forEach(item => {
+            item.addEventListener('dragstart', e => {
+                e.dataTransfer.setData('text/plain', JSON.stringify({
+                    type: item.dataset.type,
+                    index: parseInt(item.dataset.index)
+                }));
+                item.classList.add('dragging');
+            });
+            
+            item.addEventListener('dragend', () => {
+                item.classList.remove('dragging');
+                document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('drag-over'));
+            });
+            
+            item.addEventListener('dragover', e => {
+                e.preventDefault();
+                item.classList.add('drag-over');
+            });
+            
+            item.addEventListener('dragleave', () => {
+                item.classList.remove('drag-over');
+            });
+            
+            item.addEventListener('drop', e => {
+                e.preventDefault();
+                const dataStr = e.dataTransfer.getData('text/plain');
+                if (!dataStr) return;
+                
+                const data = JSON.parse(dataStr);
+                const fromType = data.type;
+                const fromIndex = data.index;
+                const toType = item.dataset.type;
+                const toIndex = parseInt(item.dataset.index);
+                
+                if (fromType !== toType) return;
+                if (fromIndex === toIndex) return;
+                
+                const list = menus[toType];
+                const [movedItem] = list.splice(fromIndex, 1);
+                list.splice(toIndex, 0, movedItem);
+                
+                if (expandedItem && expandedItem.type === type && expandedItem.index === fromIndex) {
+                    expandedItem.index = toIndex;
+                }
+                
+                render();
+            });
+        });
+    }
+
+    // --- 事件监听绑定 ---
+
+    document.getElementById('add-header-btn').addEventListener('click', () => window.addMenuItem('header'));
+    document.getElementById('add-footer-btn').addEventListener('click', () => window.addMenuItem('footer'));
+    
+    // 保存逻辑
+    document.getElementById('save-menus-btn').addEventListener('click', async (e) => {
+        const btn = e.target;
+        const originalText = btn.textContent;
+        
+        try {
+            btn.disabled = true;
+            btn.textContent = '正在同步页面...';
+            
+            // 1. 收集所有需要检查/创建的页面
+            const itemsToProcess = [];
+            const collectItems = (items) => {
+                items.forEach(item => {
+                    // 宽松检查：只要 URL 以 / 开头且不是首页，就尝试创建
+                    const isInternal = item.type !== 'external' && item.url && item.url.startsWith('/') && item.url !== '/';
+                    
+                    if (isInternal) {
+                        itemsToProcess.push({ title: item.name, slug: item.url });
+                    }
+                    if (item.children && item.children.length > 0) {
+                        collectItems(item.children);
+                    }
+                });
+            };
+            
+            collectItems(menus.header);
+            collectItems(menus.footer);
+            
+            // 2. 并发创建页面 (API 已支持幂等性)
+            const createPromises = itemsToProcess.map(item => 
+                fetch('/api/pages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(item)
+                }).then(res => res.json())
+            );
+            
+            await Promise.all(createPromises);
+            
+            // 3. 保存菜单配置
+            const response = await fetch('/api/menus', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(menus)
+            });
+            
+            if (response.ok) {
+                window.showToast('菜单及页面已同步更新', 'success');
+            } else {
+                window.showToast('保存菜单失败', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            window.showToast('出错: ' + err.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    });
+
+    document.getElementById('link-search-input').addEventListener('input', (e) => {
+        renderLinkOptions(e.target.value);
+    });
+    
+    document.getElementById('close-link-modal-btn').addEventListener('click', () => {
+        document.getElementById('link-selector-modal').classList.add('hidden');
+    });
+
+    // 初始渲染
+    render();
+  </script>
+
+  <style>
+    .menus-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 30px;
+        margin-bottom: 80px;
+    }
+    
+    @media (min-width: 1024px) {
+        .menus-grid { grid-template-columns: 1fr 1fr; }
+    }
+    
+    .menu-section {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .menu-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        min-height: 50px;
+    }
+    
+    .menu-wrapper {
+        border: 1px solid #eee;
+        border-radius: 6px;
+        background: #f8f9fa;
+        overflow: hidden;
+    }
+    
+    .menu-item {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+    }
+    
+    .menu-item.level-1 {
+        background: #fff;
+    }
+    
+    .menu-item.level-2 {
+        background: #f1f3f5;
+        padding-left: 20px;
+        border-top: 1px solid #eee;
+    }
+    
+    .children-container {
+        background: #f8f9fa;
+        border-top: 1px solid #eee;
+        padding-bottom: 10px;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+    }
+    
+    .children-header {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 15px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .drag-handle {
+        cursor: move;
+        padding: 0 10px;
+        color: #adb5bd;
+    }
+    
+    .sub-arrow {
+        color: #adb5bd;
+        margin-right: 10px;
+    }
+    
+    .item-content { flex: 1; margin-right: 10px; }
+    
+    .form-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+    
+    .item-name { flex: 1; }
+    
+    /* URL 输入框组样式 */
+    .url-input-wrapper {
+        display: flex;
+        flex: 2;
+    }
+    .url-input-wrapper .form-input {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+        border-right: 0;
+    }
+    .select-link-btn, .create-page-btn {
+        padding: 0 10px;
+        background: #eee;
+        border: 1px solid #ddd;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+        height: 34px; /* Match input height roughly */
+    }
+    .select-link-btn {
+        border-radius: 0 4px 4px 0;
+        border-left: 1px solid #ddd;
+    }
+    .select-link-btn:hover { background: #e0e0e0; }
+    
+    .create-page-btn {
+        margin-left: 5px;
+        border-radius: 4px;
+        background: #e3f2fd;
+        border-color: #90caf9;
+        color: #1976d2;
+    }
+    .create-page-btn:hover { background: #bbdefb; }
+    
+    .icon-btn {
+        background: none;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-size: 12px;
+        cursor: pointer;
+        white-space: nowrap;
+        color: #666;
+    }
+    
+    .icon-btn:hover { background: #f0f0f0; }
+    .icon-btn.active { background: #e3f2fd; color: #3498db; border-color: #3498db; }
+    
+    .form-input {
+        padding: 6px 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 13px;
+        width: 100%;
+        height: 34px;
+    }
+    
+    .delete-btn {
+        background: none;
+        border: none;
+        color: #e74c3c;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 0 5px;
+        opacity: 0.6;
+    }
+    
+    .text-xs { font-size: 12px; }
+    .text-gray-500 { color: #6b7280; }
+    .text-blue-500 { color: #3b82f6; }
+    
+    .sticky-bottom {
+        position: fixed;
+        bottom: 20px;
+        right: 40px;
+        z-index: 100;
+    }
+    
+    .admin-btn-primary {
+        background-color: #3498db;
+        color: white;
+        padding: 10px 24px;
+        box-shadow: 0 4px 6px rgba(52,152,219,0.3);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 20px;
+        color: #999;
+        font-style: italic;
+        background: #f9f9f9;
+        border-radius: 4px;
+    }
+    
+    /* Modal Styles */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+    .modal.hidden { display: none; }
+    
+    .modal-content.link-selector-content {
+        width: 500px;
+        max-height: 80vh;
+        display: flex;
+        flex-direction: column;
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    
+    .link-options-list {
+        overflow-y: auto;
+        flex: 1;
+        border: 1px solid #eee;
+        border-radius: 4px;
+    }
+    
+    .link-group-title {
+        padding: 8px 12px;
+        background: #f8f9fa;
+        font-weight: 600;
+        font-size: 13px;
+        color: #6c757d;
+        border-bottom: 1px solid #eee;
+        position: sticky;
+        top: 0;
+    }
+    
+    .link-option {
+        padding: 8px 12px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #f1f1f1;
+    }
+    .link-option:hover { background: #f0f7ff; color: #3498db; }
+    
+    .link-label { font-weight: 500; }
+    .link-value { font-size: 12px; color: #adb5bd; }
+  </style>
+</Layout>

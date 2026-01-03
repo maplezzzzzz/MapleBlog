@@ -8,7 +8,10 @@ import "@/styles/loading-enhanced.scss";
 import Background from "@/components/base/Background.astro";
 import { Tooltips } from "astro-tooltips";
 import { SITE_INFO } from "@lib/config";
+import { getSiteSettings } from "@/utils/settings";
 import { isDevelopment } from "@lib/env";
+
+const dynamicSettings = getSiteSettings();
 
 // types for frontmatters
 export interface Props {
@@ -29,19 +32,19 @@ let customSettings: any = {};
 
 // 基础设置变量
 // console.log("网站基础信息：", basicSettings);
-const siteTitle = SITE_INFO.SITE_NAME;
+const siteTitle = dynamicSettings.site.title || SITE_INFO.SITE_NAME;
 const siteSubTitle = SITE_INFO.SUBNAME;
 const siteImage = SITE_INFO.LOGO_IMAGE || "/favicon.ico";
-const baseUrl = SITE_INFO.URL || "/";
+const baseUrl = dynamicSettings.site.url || SITE_INFO.URL || "/";
 const siteKeywords = basicSettings?.site_keywords || "";
 const siteTagline = basicSettings?.site_tagline || "";
 
 // SEO设置变量
 const metaTitle = seoSettings?.seo_meta_title || "";
-const metaDescription = description || SITE_INFO.DESCRIPTION;
-const metaKeywords = keywords || SITE_INFO.KEY_WORDS;
-const googleAnalyticsId = SITE_INFO.GOOGLE_ANALYTICS_ID || "";
-const baiduAnalyticsId = SITE_INFO.BAIDU_ANALYTICS_ID || "";
+const metaDescription = description || dynamicSettings.site.description || SITE_INFO.DESCRIPTION;
+const metaKeywords = keywords || dynamicSettings.seo.keywords || SITE_INFO.KEY_WORDS;
+const googleAnalyticsId = dynamicSettings.seo.googleVerification || SITE_INFO.GOOGLE_ANALYTICS_ID || "";
+const baiduAnalyticsId = dynamicSettings.seo.baiduVerification || SITE_INFO.BAIDU_ANALYTICS_ID || "";
 
 // 自定义代码设置变量
 const customHeaderCode = customSettings?.custom_header_code || "";

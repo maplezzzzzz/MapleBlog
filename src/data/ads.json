@@ -1,0 +1,18 @@
+[
+  {
+    "id": "sidebar-1",
+    "name": "侧边栏广告",
+    "type": "image",
+    "content": "/assets/ads/sidebar.jpg",
+    "link": "https://example.com",
+    "active": true
+  },
+  {
+    "id": "ad-1767369993457",
+    "name": "新广告位",
+    "type": "image",
+    "content": "",
+    "link": "",
+    "active": true
+  }
+]

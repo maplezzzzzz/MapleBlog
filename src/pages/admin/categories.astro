@@ -1,0 +1,281 @@
+---
+import Layout from '../../layouts/AdminLayout.astro';
+import { getCollection } from 'astro:content';
+
+const categories = await getCollection('categories');
+---
+
+<Layout title="网站栏目管理">
+  <div class="admin-container">
+    <div class="flex justify-between items-center mb-6">
+        <h2>📂 网站栏目管理 (分类)</h2>
+        <button class="admin-btn" onclick="openModal()">+ 新建分类</button>
+    </div>
+    
+    <div class="categories-grid">
+        {categories.map(cat => (
+            <div class="category-card" style={`border-left-color: ${cat.data.color || '#ccc'}`}>
+                <div class="card-header">
+                    <span class="cat-icon">{cat.data.icon || '📁'}</span>
+                    <h3>{cat.data.title}</h3>
+                </div>
+                <div class="card-body">
+                    <p class="desc">{cat.data.description || '无描述'}</p>
+                    <div class="meta">
+                        <span class="slug">/{cat.slug}</span>
+                        <span class="color-dot" style={`background: ${cat.data.color || '#ccc'}`}></span>
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <button class="action-btn edit" onclick={`editCategory('${cat.id}', '${cat.data.title}', '${cat.data.description || ''}', '${cat.data.color || '#007bff'}', '${cat.data.icon || ''}')`}>编辑</button>
+                    <button class="action-btn delete" onclick={`deleteCategory('${cat.id}')`}>删除</button>
+                </div>
+            </div>
+        ))}
+    </div>
+  </div>
+
+  <!-- 编辑/新建弹窗 -->
+  <div id="category-modal" class="modal hidden">
+    <div class="modal-content">
+        <h3 id="modal-title">新建分类</h3>
+        <form id="category-form">
+            <input type="hidden" id="cat-id" name="id">
+            <div class="form-group">
+                <label>分类名称</label>
+                <input type="text" id="cat-title" name="title" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label>Slug (URL路径)</label>
+                <input type="text" id="cat-slug" name="slug" class="form-input" placeholder="例如: tech, life" required>
+                <p class="text-xs text-gray-500 mt-1">创建后无法修改</p>
+            </div>
+            <div class="form-group">
+                <label>父级分类 (可选)</label>
+                <select id="cat-parent" name="parentId" class="form-input">
+                    <option value="">无 (顶级分类)</option>
+                    <!-- 动态生成 -->
+                </select>
+            </div>
+            <div class="form-group">
+                <label>描述</label>
+                <textarea id="cat-desc" name="description" class="form-input" rows="3"></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group half">
+                    <label>图标 (Emoji)</label>
+                    <input type="text" id="cat-icon" name="icon" class="form-input" placeholder="📁">
+                </div>
+                <div class="form-group half">
+                    <label>颜色</label>
+                    <div class="flex items-center gap-2">
+                        <input type="color" id="cat-color" name="color" class="h-10 w-full p-1 border rounded" value="#007bff">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="admin-btn admin-btn-secondary" onclick="closeModal()">取消</button>
+                <button type="submit" class="admin-btn admin-btn-primary">保存</button>
+            </div>
+        </form>
+    </div>
+  </div>
+
+  <script>
+    const modal = document.getElementById('category-modal');
+    const form = document.getElementById('category-form');
+    
+    window.openModal = () => {
+        document.getElementById('modal-title').textContent = '新建分类';
+        form.reset();
+        document.getElementById('cat-id').value = '';
+        document.getElementById('cat-slug').disabled = false;
+        modal.classList.remove('hidden');
+    };
+    
+    window.closeModal = () => {
+        modal.classList.add('hidden');
+    };
+    
+    window.editCategory = (id, title, desc, color, icon) => {
+        document.getElementById('modal-title').textContent = '编辑分类';
+        document.getElementById('cat-id').value = id;
+        document.getElementById('cat-title').value = title;
+        // slug 从 id 获取 (去除 .md)
+        const slug = id.replace(/\.(md|mdx)$/, '');
+        const slugInput = document.getElementById('cat-slug');
+        slugInput.value = slug;
+        slugInput.disabled = true; // 编辑时不允许修改文件名
+        
+        document.getElementById('cat-desc').value = desc;
+        document.getElementById('cat-color').value = color;
+        document.getElementById('cat-icon').value = icon;
+        
+        modal.classList.remove('hidden');
+    };
+    
+    window.deleteCategory = async (id) => {
+        if(!confirm(`确定删除分类 "${id}" 吗？这将物理删除对应的文件。`)) return;
+        
+        try {
+            const res = await fetch('/api/categories', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            if(res.ok) {
+                window.showToast('删除成功', 'success');
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                window.showToast('删除失败', 'error');
+            }
+        } catch(e) {
+            window.showToast('出错: ' + e.message, 'error');
+        }
+    };
+    
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData);
+        const isEdit = !!data.id;
+        
+        try {
+            const res = await fetch('/api/categories', {
+                method: isEdit ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await res.json();
+            
+            if(res.ok) {
+                window.showToast(isEdit ? '分类已更新' : '分类已创建', 'success');
+                closeModal();
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                window.showToast('保存失败: ' + result.error, 'error');
+            }
+        } catch(e) {
+            window.showToast('出错: ' + e.message, 'error');
+        }
+    });
+  </script>
+
+  <style>
+    .categories-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+    }
+    
+    .category-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        padding: 20px;
+        border-left: 4px solid #ccc;
+        transition: transform 0.2s;
+    }
+    
+    .category-card:hover { transform: translateY(-2px); }
+    
+    .card-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .cat-icon { font-size: 1.5rem; }
+    .card-header h3 { margin: 0; font-size: 1.1rem; color: #2c3e50; }
+    
+    .desc {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 15px;
+        height: 2.7rem;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+    
+    .meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.8rem;
+        color: #adb5bd;
+        margin-bottom: 15px;
+        background: #f8f9fa;
+        padding: 4px 8px;
+        border-radius: 4px;
+    }
+    
+    .color-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+    }
+    
+    .card-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .action-btn {
+        flex: 1;
+        padding: 6px;
+        border: 1px solid #dee2e6;
+        background: white;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+    }
+    
+    .action-btn.edit:hover { background: #e3f2fd; color: #3498db; border-color: #3498db; }
+    .action-btn.delete:hover { background: #ffebee; color: #e74c3c; border-color: #e74c3c; }
+
+    /* Modal */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+    .modal.hidden { display: none; }
+    
+    .modal-content {
+        background: white;
+        padding: 30px;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    
+    .modal-content h3 { margin-top: 0; margin-bottom: 20px; }
+    
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
+    .form-input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+    
+    .form-row { display: flex; gap: 15px; }
+    .half { flex: 1; }
+    
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 25px;
+    }
+  </style>
+</Layout>

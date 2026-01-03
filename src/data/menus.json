@@ -1,0 +1,87 @@
+{
+  "header": [
+    {
+      "name": "首页",
+      "url": "/",
+      "type": "internal",
+      "children": []
+    },
+    {
+      "name": "曾经",
+      "url": "/blog",
+      "type": "internal",
+      "children": [
+        {
+          "name": "记忆",
+          "url": "/categories/memory",
+          "type": "internal",
+          "children": []
+        },
+        {
+          "name": "光影",
+          "url": "/photo-gallery",
+          "type": "internal",
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "未来",
+      "url": "/future",
+      "type": "internal",
+      "children": [
+        {
+          "name": "计划",
+          "url": "/ji-h",
+          "type": "internal",
+          "children": []
+        },
+        {
+          "name": "读书",
+          "url": "/du-s",
+          "type": "internal",
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "工具",
+      "url": "/tools",
+      "type": "internal",
+      "children": [
+        {
+          "name": "生活",
+          "url": "/sheng-h",
+          "type": "internal",
+          "children": []
+        },
+        {
+          "name": "其他",
+          "url": "/qi-t",
+          "type": "internal",
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "关于",
+      "url": "/about",
+      "type": "internal",
+      "children": []
+    }
+  ],
+  "footer": [
+    {
+      "name": "隐私政策",
+      "url": "/terms",
+      "type": "internal",
+      "children": []
+    },
+    {
+      "name": "GitHub",
+      "url": "https://github.com",
+      "type": "external",
+      "children": []
+    }
+  ]
+}

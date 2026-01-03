@@ -5,15 +5,14 @@ import { getEntry } from "astro:content";
 import { getSiteStats, getTotalWordCount } from "@lib/contentParser";
 import GlassButton from "@components/ui/GlassButton.astro";
 import { SITE_INFO } from "@lib/config";
+import { getSiteMenus } from "@/utils/menus";
 
-// 静态底部菜单
-const footerMenus = [
+// 动态获取底部菜单
+const siteMenus = getSiteMenus();
+const footerMenus = siteMenus.footer.length > 0 ? siteMenus.footer : [
   { name: "首页", url: "/", target: "_self" },
   { name: "博客", url: "/blog", target: "_self" },
   { name: "关于", url: "/about", target: "_self" },
-  { name: "搜索", url: "/search", target: "_self" },
-  { name: "条款", url: "/terms", target: "_self" },
-  { name: "友链", url: "/links", target: "_self" },
 ];
 
 // 从content获取社交信息

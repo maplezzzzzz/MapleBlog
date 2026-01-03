@@ -5,118 +5,35 @@ import logoImage from "@assets/image/logo.png";
 import LiquidGlass from "@components/common/LiquidGlassLess.astro";
 import GlassButton from "@components/ui/GlassButton.astro";
 import { SITE_INFO } from "@lib/config";
+import { getSiteSettings } from "@/utils/settings";
+import { getSiteMenus } from "@/utils/menus";
 import { Image } from "astro:assets";
 
 const { pathname } = Astro.url;
+const dynamicSettings = getSiteSettings();
+const siteMenus = getSiteMenus();
 
 const stickyHeader = true;
 
 // 获取网站基本信息
-let siteName = SITE_INFO?.SITE_NAME || ""; // 优先读取配置项，若无则使用默认
+let siteName = dynamicSettings.site.title || SITE_INFO?.SITE_NAME || ""; 
 let siteLogoUrl = SITE_INFO?.LOGO_IMAGE || logoImage.src || "";
 
-// 静态菜单数据
-const menu = [
+// 使用动态菜单数据，如果有的话
+const menu = siteMenus.header.length > 0 ? siteMenus.header : [
   {
-    id: 1,
     name: "首页",
     url: "/",
-    target: "_self",
-    position: "header",
-    parent_id: null,
-    sort_order: 1,
     children: [],
   },
   {
-    id: 2,
-    name: "记忆",
-    url: "/blog/categories/生活感悟",
-    target: "_self",
-    position: "header",
-    parent_id: null,
-    sort_order: 2,
-    children: [
-      {
-        id: 21,
-        name: "生活",
-        url: "/blog/categories/生活感悟",
-        target: "_self",
-        position: "submenu",
-        parent_id: 2,
-        sort_order: 1,
-        children: [],
-      },
-      {
-        id: 22,
-        name: "光影",
-        url: "/光影",
-        target: "_self",
-        position: "submenu",
-        parent_id: 2,
-        sort_order: 2,
-        children: [],
-      },
-      {
-        id: 23,
-        name: "工作",
-        url: "/blog/categories/工作",
-        target: "_self",
-        position: "submenu",
-        parent_id: 2,
-        sort_order: 3,
-        children: [],
-      },
-    ],
-  },
-  {
-    id: 3,
-    name: "未来",
-    url: "/blog/categories/计划",
-    target: "_self",
-    position: "header",
-    parent_id: null,
-    sort_order: 3,
-    children: [
-      {
-        id: 31,
-        name: "计划",
-        url: "/blog/categories/计划",
-        target: "_self",
-        position: "submenu",
-        parent_id: 3,
-        sort_order: 1,
-        children: [],
-      },
-      {
-        id: 32,
-        name: "工作",
-        url: "/blog/categories/工作",
-        target: "_self",
-        position: "submenu",
-        parent_id: 3,
-        sort_order: 2,
-        children: [],
-      },
-    ],
-  },
-  {
-    id: 4,
-    name: "工具",
-    url: "/tools",
-    target: "_self",
-    position: "header",
-    parent_id: null,
-    sort_order: 4,
+    name: "博客",
+    url: "/blog",
     children: [],
   },
   {
-    id: 5,
     name: "关于",
     url: "/about",
-    target: "_self",
-    position: "header",
-    parent_id: null,
-    sort_order: 5,
     children: [],
   },
 ];
@@ -201,8 +118,8 @@ const menu = [
               class={`flex items-center justify-center h-full my-4 md:my-0 border-none gap-2 px-4 py-2 font-bold text-txt-p transition-all duration-300 dark:text-darkmode-txt-p rounded-full z-10 text-lg 
                 group-hover:text-orange-500
                 ${
-                  pathname.includes(item.url) ||
-                  (item.children && item.children.some((child: any) => pathname.includes(child.url)))
+                  (item.url === '/' ? pathname === '/' : pathname.startsWith(item.url)) ||
+                  (item.children && item.children.some((child: any) => child.url !== '/' && pathname.startsWith(child.url)))
                     ? "text-orange-500"
                     : ""
                 }`}
@@ -211,8 +128,8 @@ const menu = [
                 class={`absolute inset-0 rounded-full transition-all duration-300 
                   group-hover:bg-white/30 group-hover:dark:bg-white/10 group-hover:backdrop-blur-sm
                   ${
-                    pathname.includes(item.url) ||
-                    (item.children && item.children.some((child: any) => pathname.includes(child.url)))
+                    (item.url === '/' ? pathname === '/' : pathname.startsWith(item.url)) ||
+                    (item.children && item.children.some((child: any) => child.url !== '/' && pathname.startsWith(child.url)))
                       ? "bg-white/30 dark:bg-white/10 backdrop-blur-sm"
                       : ""
                   }`}
@@ -304,23 +221,33 @@ const menu = [
   <style>
     /* 桌面端悬停显示下拉菜单和父菜单高亮 */
     @media (min-width: 768px) {
-      /* 悬停时下拉菜单显现 */
-      .group:hover .submenu {
-        opacity: 1 !important;
-        visibility: visible !important;
+      /* 增加伪元素填补间隙，防止鼠标移出时菜单消失 */
+      .group > a::after {
+        content: '';
+        position: absolute;
+        bottom: -20px; /* 延伸到底部 */
+        left: 0;
+        width: 100%;
+        height: 20px;
       }
 
-      /* 保持下拉菜单的平滑过渡效果 */
-      .submenu {
-        transition: opacity 0.2s ease, transform 0.2s ease !important;
-        transform: translateY(10px);
-        /* 使用更精确的定位，让下拉菜单中心与菜单项中心对齐 */
-        left: 50% !important;
-        right: auto !important;
-        transform: translateX(-50%) translateY(10px) !important;
-      }
+      /* 悬停时下拉菜单显现 */
       .group:hover .submenu {
-        transform: translateX(-50%) translateY(0) !important;
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(-50%) translateY(0);
+      }
+
+      /* 下拉菜单基础样式 */
+      .submenu {
+        transition: all 0.2s ease;
+        /* 初始状态：向下偏移并隐藏 */
+        transform: translateX(-50%) translateY(10px);
+        left: 50%;
+        opacity: 0;
+        visibility: hidden;
+        /* 增加顶部 padding 以便于鼠标过渡 */
+        padding-top: 0.5rem; 
       }
     }
 

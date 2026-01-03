@@ -9,8 +9,8 @@ const baseContent = z.object({
   title: z.string(),
   description: z.string().optional(),
   draft: z.boolean().default(false),
-  createdAt: z.date().optional(),
-  updatedAt: z.date().optional(),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
 });
 
 // 社交媒体链接结构

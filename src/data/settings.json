@@ -1,0 +1,17 @@
+{
+  "site": {
+    "title": "小白世界",
+    "description": "一个记录生活感悟、分享人生体验的个人空间。大萨达",
+    "author": "小白",
+    "url": "https://example.com"
+  },
+  "appearance": {
+    "theme": "auto",
+    "primaryColor": "#3498db"
+  },
+  "features": {
+    "comments": true,
+    "search": true,
+    "darkMode": true
+  }
+}

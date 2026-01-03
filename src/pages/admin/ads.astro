@@ -1,0 +1,333 @@
+---
+import Layout from '../../layouts/AdminLayout.astro';
+import fs from 'fs';
+import path from 'path';
+
+const ADS_FILE = path.join(process.cwd(), "src", "data", "ads.json");
+let initialAds = [];
+
+if (fs.existsSync(ADS_FILE)) {
+    try {
+        initialAds = JSON.parse(fs.readFileSync(ADS_FILE, "utf-8"));
+    } catch (e) {
+        console.error("Error reading ads file:", e);
+    }
+}
+---
+
+<Layout title="广告管理">
+  <div class="admin-container">
+    <div class="flex justify-between items-center mb-6">
+        <h2>📢 广告管理</h2>
+        <button class="admin-btn" onclick="addNewAd()">+ 新增广告位</button>
+    </div>
+    
+    <div id="ads-container">
+        <!-- 广告列表将由JS渲染，或直接SSR渲染初始状态 -->
+        {initialAds.length === 0 ? (
+            <div class="empty-state">暂无广告位，点击右上角添加。</div>
+        ) : (
+            <div class="ads-grid">
+                {initialAds.map((ad, index) => (
+                    <div class="ad-card" data-id={ad.id}>
+                        <div class="ad-header">
+                            <span class="ad-name">{ad.name}</span>
+                            <span class={`status-badge ${ad.active ? 'published' : 'archived'}`}>
+                                {ad.active ? '启用' : '禁用'}
+                            </span>
+                        </div>
+                        <div class="ad-body">
+                            <div class="form-group">
+                                <label>类型</label>
+                                <select class="form-select ad-type" onchange="updateAdField(this, 'type')">
+                                    <option value="image" selected={ad.type === 'image'}>图片链接</option>
+                                    <option value="html" selected={ad.type === 'html'}>HTML 代码 / Google Ads</option>
+                                    <option value="text" selected={ad.type === 'text'}>纯文本</option>
+                                </select>
+                            </div>
+                             <div class="form-group">
+                                <label>{ad.type === 'html' ? 'HTML / Script 代码' : '内容 / 图片URL'}</label>
+                                <div class="flex gap-2">
+                                    {ad.type === 'html' ? (
+                                        <textarea class="form-input ad-content" rows="4" onchange="updateAdField(this, 'content')" placeholder="在此粘贴 Google AdSense 或其他广告代码...">{ad.content}</textarea>
+                                    ) : (
+                                        <input type="text" class="form-input ad-content" value={ad.content} onchange="updateAdField(this, 'content')" placeholder="输入URL或上传图片">
+                                    )}
+                                    
+                                    {ad.type === 'image' && (
+                                        <label class="admin-btn admin-btn-secondary cursor-pointer whitespace-nowrap" style="padding: 6px 12px; height: 38px;">
+                                            上传
+                                            <input type="file" class="hidden" accept="image/*" onchange="uploadAdImage(this)">
+                                        </label>
+                                    )}
+                                </div>
+                                {ad.type === 'image' && ad.content && (
+                                    <div class="mt-2 p-2 border rounded bg-gray-50 text-center">
+                                        <img src={ad.content} alt="预览" style="max-height: 100px; max-width: 100%; object-fit: contain;" onerror="this.style.display='none'">
+                                    </div>
+                                )}
+                            </div>
+                             {ad.type !== 'html' && (
+                                <div class="form-group">
+                                    <label>跳转链接</label>
+                                    <input type="text" class="form-input ad-link" value={ad.link} onchange="updateAdField(this, 'link')">
+                                </div>
+                             )}
+                        </div>
+                        <div class="ad-footer">
+                            <button class="text-red-500 text-sm" onclick={`deleteAd('${index}')`}>删除</button>
+                            <label class="flex items-center gap-2 text-sm">
+                                <input type="checkbox" checked={ad.active} onchange="updateAdField(this, 'active')"> 启用
+                            </label>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        )}
+    </div>
+    
+    <div class="sticky-bottom">
+        <button class="admin-btn admin-btn-primary" id="save-ads-btn">保存所有更改</button>
+    </div>
+  </div>
+
+  <script define:vars={{ initialAds }}>
+    let ads = initialAds;
+
+    window.addNewAd = () => {
+        const newAd = {
+            id: 'ad-' + Date.now(),
+            name: '新广告位',
+            type: 'image',
+            content: '',
+            link: '',
+            active: true
+        };
+        ads.push(newAd);
+        renderAds();
+    };
+
+    window.deleteAd = (index) => {
+        if(confirm('确定删除此广告位吗？')) {
+            ads.splice(index, 1);
+            renderAds();
+        }
+    };
+
+    window.uploadAdImage = async (input) => {
+        if (!input.files || !input.files[0]) return;
+        
+        const file = input.files[0];
+        const formData = new FormData();
+        formData.append('image', file);
+        
+        const btn = input.parentElement;
+        const originalText = btn.childNodes[0].nodeValue; // Get text node "上传"
+        
+        try {
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            // 假设我们复用之前提到的 enhanced-admin-api-server 的上传接口
+            // 或者我们可以创建一个新的 Astro API 端点
+            // 这里我们使用项目现有的上传路径，通常是 /api/upload/image (如果 express 服务在运行)
+            // 或者我们需要实现一个 Astro 版本的上传 API
+            
+            // 为了确保稳健性，我建议先尝试调用 Astro API (如果我还没创建，稍后会创建)
+            // 让我们先假设有一个 /api/upload 端点
+            
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok && result.url) {
+                // 找到对应的文本输入框
+                const textInput = input.parentElement.previousElementSibling;
+                textInput.value = result.url;
+                // 触发 change 事件以更新数据模型
+                updateAdField(textInput, 'content');
+                
+                // 刷新预览图 (重新渲染会处理，或者手动更新 DOM)
+                const previewContainer = input.closest('.form-group').querySelector('img');
+                if (previewContainer) {
+                    previewContainer.src = result.url;
+                    previewContainer.style.display = 'block';
+                } else {
+                    // 如果还没有预览图，刷新页面或重新渲染
+                    renderAds(); 
+                }
+                window.showToast('图片上传成功', 'success');
+            } else {
+                window.showToast('上传失败: ' + (result.error || '未知错误'), 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            window.showToast('上传出错，请确保后台上传服务正常运行', 'error');
+        } finally {
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            input.value = ''; // Reset input
+        }
+    };
+
+    window.updateAdField = (el, field) => {
+        const card = el.closest('.ad-card');
+        const index = Array.from(card.parentElement.children).indexOf(card);
+        
+        if (field === 'active') {
+            ads[index][field] = el.checked;
+            // 更新状态徽章
+            const badge = card.querySelector('.status-badge');
+            badge.className = `status-badge ${el.checked ? 'published' : 'archived'}`;
+            badge.textContent = el.checked ? '启用' : '禁用';
+        } else {
+            ads[index][field] = el.value;
+        }
+    };
+
+    function renderAds() {
+        // 这里为了简化，直接刷新页面或使用简单的DOM操作会更好
+        // 但由于使用了 Astro，我们尽量利用 state。
+        // 由于这里是纯客户端逻辑更新数据然后统一保存，我们可以重新生成HTML字符串
+        // 或者更简单：保存后刷新。
+        
+        // 为了体验，我们简单实现一个基于当前数据的保存逻辑
+        saveAds(false); // 保存但不弹窗，然后刷新
+        window.location.reload();
+    }
+
+    async function saveAds(showMsg = true) {
+        const btn = document.getElementById('save-ads-btn');
+        try {
+            if(btn) {
+                btn.disabled = true;
+                btn.textContent = '保存中...';
+            }
+            
+            const response = await fetch('/api/ads', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(ads)
+            });
+            
+            if (response.ok) {
+                if(showMsg) window.showToast('广告设置已保存', 'success');
+            } else {
+                window.showToast('保存失败', 'error');
+            }
+        } catch(e) {
+            console.error(e);
+            window.showToast('保存出错', 'error');
+        } finally {
+            if(btn) {
+                btn.disabled = false;
+                btn.textContent = '保存所有更改';
+            }
+        }
+    }
+    
+    document.getElementById('save-ads-btn')?.addEventListener('click', () => saveAds(true));
+  </script>
+
+  <style>
+    .ads-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        padding-bottom: 80px;
+    }
+    
+    .ad-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        overflow: hidden;
+        border: 1px solid #eee;
+    }
+    
+    .ad-header {
+        padding: 15px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .ad-name {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+    
+    .ad-body {
+        padding: 15px;
+    }
+    
+    .ad-footer {
+        padding: 10px 15px;
+        background: #f8f9fa;
+        border-top: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .form-group {
+        margin-bottom: 10px;
+    }
+    
+    .form-group label {
+        display: block;
+        font-size: 12px;
+        color: #6c757d;
+        margin-bottom: 4px;
+    }
+    
+    .form-input, .form-select {
+        width: 100%;
+        padding: 6px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+    
+    .text-red-500 { color: #dc3545; }
+    .text-sm { font-size: 12px; }
+    .flex { display: flex; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .mb-6 { margin-bottom: 1.5rem; }
+    .gap-2 { gap: 0.5rem; }
+    
+    .status-badge {
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 11px;
+    }
+    
+    .status-badge.published { background: #d4edda; color: #155724; }
+    .status-badge.archived { background: #f8d7da; color: #721c24; }
+
+    .sticky-bottom {
+        position: fixed;
+        bottom: 20px;
+        right: 40px;
+        z-index: 100;
+    }
+    
+    .admin-btn-primary {
+        background-color: #3498db;
+        color: white;
+        padding: 10px 24px;
+        box-shadow: 0 4px 6px rgba(52,152,219,0.3);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #6c757d;
+        background: white;
+        border-radius: 8px;
+    }
+  </style>
+</Layout>

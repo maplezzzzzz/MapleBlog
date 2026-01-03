@@ -1,0 +1,108 @@
+---
+import { getCollection, type CollectionEntry, render } from "astro:content";
+import BaseLayout from "@components/base/BaseLayout.astro";
+import { getSiteMenus } from "@/utils/menus";
+
+// 这是一个捕获所有路由，用于处理根目录下的动态页面
+// 注意：这可能会与现有的静态路由（如 /about, /blog）冲突，Astro 会优先匹配静态路由
+
+export async function getStaticPaths() {
+  const pages = await getCollection("pages");
+  
+  return pages.map((page) => {
+    // 处理 slug：有些文件可能是中文名
+    const slug = page.slug || page.id.replace(/\.(md|mdx)$/, '');
+    return {
+      params: { slug },
+      props: { page },
+    };
+  });
+}
+
+interface Props {
+  page: CollectionEntry<"pages">;
+}
+
+// SSR 模式下的动态查找
+let { page } = Astro.props;
+const { slug } = Astro.params;
+
+console.log(`[Slug Route] Request slug: "${slug}"`);
+
+if (!page && slug) {
+  const pages = await getCollection("pages");
+  // console.log(`[Slug Route] Available pages: ${pages.map(p => p.id).join(', ')}`);
+  
+  page = pages.find((p) => {
+    const pSlug = p.slug || p.id.replace(/\.(md|mdx)$/, '');
+    const decodedSlug = decodeURIComponent(slug || '');
+    
+    // 宽松匹配：忽略斜杠
+    const normalizedPSlug = pSlug.replace(/^\//, '').replace(/\/$/, '');
+    const normalizedSlug = decodedSlug.replace(/^\//, '').replace(/\/$/, '');
+    
+    const match = normalizedPSlug === normalizedSlug;
+    if (match) {
+        console.log(`[Slug Route] Match found: ${p.id} for slug ${slug}`);
+    }
+    return match;
+  });
+}
+
+if (!page) {
+  console.log(`[Slug Route] No page found for slug: "${slug}". Checking pages collection...`);
+  return Astro.redirect("/404");
+}
+
+const { Content } = await render(page);
+
+// --- 自动子导航逻辑 ---
+const siteMenus = getSiteMenus();
+const currentPath = `/${slug}`; // 假设 slug 不带前导斜杠
+
+// 查找当前页面是否有子菜单
+let subMenuItems = [];
+// 遍历 header 菜单寻找匹配项
+const findSubMenus = (items) => {
+    for (const item of items) {
+        // 宽松匹配 URL
+        if (item.url === currentPath || item.url === currentPath + '/' || item.url.replace(/^\//, '') === slug) {
+            if (item.children && item.children.length > 0) {
+                return item.children;
+            }
+        }
+        // 递归查找（虽然通常只在二级显示子菜单，但逻辑通用）
+        if (item.children && item.children.length > 0) {
+            const result = findSubMenus(item.children);
+            if (result) return result;
+        }
+    }
+    return null;
+};
+
+subMenuItems = findSubMenus(siteMenus.header) || [];
+---
+
+<BaseLayout title={page.data.title} description={page.data.description}>
+  <section class="container pt-10 pb-20">
+    <div class="prose dark:prose-invert max-w-4xl mx-auto px-4">
+      <h1 class="text-3xl md:text-4xl font-bold mb-8">{page.data.title}</h1>
+      
+      <Content />
+      
+      {subMenuItems.length > 0 && (
+        <div class="sub-navigation mt-12 pt-8 border-t dark:border-gray-700">
+            <h2 class="text-2xl font-bold mb-6">相关内容</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {subMenuItems.map(item => (
+                    <a href={item.url} class="block p-6 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-lg transition-all duration-300 group bg-white dark:bg-gray-800 no-underline">
+                        <h3 class="text-xl font-bold mb-2 group-hover:text-blue-500 transition-colors mt-0">{item.name}</h3>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm mb-0">点击查看详细内容 →</p>
+                    </a>
+                ))}
+            </div>
+        </div>
+      )}
+    </div>
+  </section>
+</BaseLayout>

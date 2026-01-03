@@ -1,0 +1,253 @@
+---
+import Layout from '../../layouts/AdminLayout.astro';
+
+// 服务端预取数据，用于SSR渲染初始状态
+import fs from "fs";
+import path from "path";
+
+const SETTINGS_FILE = path.join(process.cwd(), "src", "data", "settings.json");
+let initialSettings = {
+  site: { title: "", description: "", author: "", url: "" },
+  appearance: { theme: "auto", primaryColor: "#3498db" },
+  features: { comments: true, search: true, darkMode: true }
+};
+
+if (fs.existsSync(SETTINGS_FILE)) {
+  try {
+    initialSettings = JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf-8"));
+  } catch (e) {
+    console.error("Error reading settings file:", e);
+  }
+}
+---
+
+<Layout title="网站设置">
+  <div class="admin-container">
+    <h2>⚙️ 网站设置</h2>
+    
+    <div class="settings-form" id="settings-app">
+      <form id="settings-form">
+        <!-- 基本信息 -->
+        <div class="form-section">
+          <h3>基本信息</h3>
+          <div class="form-group">
+            <label>网站名称</label>
+            <input type="text" name="site.title" class="form-input" value={initialSettings.site.title} required>
+          </div>
+          <div class="form-group">
+            <label>网站描述</label>
+            <textarea name="site.description" class="form-input" rows="3">{initialSettings.site.description}</textarea>
+          </div>
+          <div class="form-group">
+              <label>作者名称</label>
+              <input type="text" name="site.author" class="form-input" value={initialSettings.site.author}>
+          </div>
+           <div class="form-group">
+              <label>网站 URL</label>
+              <input type="url" name="site.url" class="form-input" value={initialSettings.site.url} placeholder="https://example.com">
+          </div>
+        </div>
+
+        <!-- 外观设置 -->
+        <div class="form-section">
+          <h3>外观设置</h3>
+          <div class="form-group">
+            <label>主题模式</label>
+            <select name="appearance.theme" class="form-select" data-value={initialSettings.appearance.theme}>
+              <option value="auto">自动 (跟随系统)</option>
+              <option value="light">明亮</option>
+              <option value="dark">暗黑</option>
+            </select>
+          </div>
+           <div class="form-group">
+            <label>主色调</label>
+            <div class="flex items-center gap-2">
+                <input type="color" name="appearance.primaryColor" class="h-10 w-20 p-1 rounded border cursor-pointer" value={initialSettings.appearance.primaryColor}>
+                <span class="text-sm text-gray-500">{initialSettings.appearance.primaryColor}</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 功能开关 -->
+        <div class="form-section">
+            <h3>功能开关</h3>
+            <div class="checkbox-group">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" name="features.comments" checked={initialSettings.features.comments}>
+                    启用评论系统
+                </label>
+            </div>
+            <div class="checkbox-group mt-2">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" name="features.search" checked={initialSettings.features.search}>
+                    启用搜索功能
+                </label>
+            </div>
+            <div class="checkbox-group mt-2">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" name="features.darkMode" checked={initialSettings.features.darkMode}>
+                    启用暗黑模式切换
+                </label>
+            </div>
+        </div>
+
+        <div class="form-actions sticky-bottom">
+          <button type="submit" class="admin-btn admin-btn-primary" id="save-btn">保存修改</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // 初始化 Select 选中状态
+    document.querySelectorAll('select[data-value]').forEach(select => {
+        const val = select.getAttribute('data-value');
+        if (val) select.value = val;
+    });
+
+    // 颜色选择器联动
+    document.querySelector('input[type="color"]').addEventListener('input', (e) => {
+        e.target.nextElementSibling.textContent = e.target.value;
+    });
+
+    // 表单提交
+    document.getElementById('settings-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('save-btn');
+      const originalText = btn.textContent;
+      
+      try {
+        btn.disabled = true;
+        btn.textContent = '保存中...';
+        
+        const formData = new FormData(e.target);
+        const settings = {
+            site: {
+                title: formData.get('site.title'),
+                description: formData.get('site.description'),
+                author: formData.get('site.author'),
+                url: formData.get('site.url'),
+            },
+            appearance: {
+                theme: formData.get('appearance.theme'),
+                primaryColor: formData.get('appearance.primaryColor'),
+            },
+            features: {
+                comments: formData.get('features.comments') === 'on',
+                search: formData.get('features.search') === 'on',
+                darkMode: formData.get('features.darkMode') === 'on',
+            }
+        };
+
+        const response = await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settings)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            window.showToast('设置已保存！', 'success');
+        } else {
+            throw new Error(result.error);
+        }
+        
+      } catch (error) {
+        window.showToast('保存失败: ' + error.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    });
+  </script>
+
+  <style>
+    .settings-form {
+      max-width: 800px;
+      background: white;
+      padding: 30px;
+      padding-bottom: 80px; /* Space for sticky button */
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      margin-top: 20px;
+      position: relative;
+    }
+
+    .form-section {
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .form-section h3 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: #2c3e50;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #495057;
+    }
+
+    .form-input, .form-select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    .form-input:focus, .form-select:focus {
+        border-color: #3498db;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(52,152,219,0.2);
+    }
+
+    .text-hint {
+      color: #e67e22;
+      font-size: 0.9em;
+      margin-bottom: 10px;
+    }
+    
+    .sticky-bottom {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 20px 30px;
+        background: rgba(255,255,255,0.9);
+        border-top: 1px solid #eee;
+        border-bottom-left-radius: 8px;
+        border-bottom-right-radius: 8px;
+        backdrop-filter: blur(5px);
+        text-align: right;
+    }
+    
+    .flex { display: flex; }
+    .items-center { align-items: center; }
+    .gap-2 { gap: 0.5rem; }
+    .mt-2 { margin-top: 0.5rem; }
+    .text-sm { font-size: 0.875rem; }
+    .text-gray-500 { color: #6b7280; }
+    .cursor-pointer { cursor: pointer; }
+    
+    .admin-btn-primary {
+        background-color: #3498db;
+        color: white;
+        padding: 10px 24px;
+        font-size: 16px;
+    }
+    
+    .admin-btn-primary:hover {
+        background-color: #2980b9;
+    }
+  </style>
+</Layout>

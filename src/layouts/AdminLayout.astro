@@ -24,6 +24,8 @@ const { title = '管理后台' } = Astro.props as Props;
       <nav class="admin-nav">
         <a href="/admin/" class="nav-link">仪表板</a>
         <a href="/admin/content" class="nav-link">内容管理</a>
+        <a href="/admin/categories" class="nav-link">栏目管理</a>
+        <a href="/admin/menus" class="nav-link">导航管理</a>
         <a href="/admin/analytics" class="nav-link">访问统计</a>
         <a href="/admin/seo" class="nav-link">SEO优化</a>
         <a href="/admin/ads" class="nav-link">广告管理</a>
@@ -40,5 +42,103 @@ const { title = '管理后台' } = Astro.props as Props;
       </div>
     </main>
   </div>
+
+  <!-- 全局 Toast 容器 -->
+  <div id="toast-container"></div>
+
+  <script is:inline>
+    // 全局 Toast 函数
+    window.showToast = (message, type = 'success') => {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      const icons = {
+        success: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>',
+        error: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>',
+        info: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+      };
+
+      const colors = {
+        success: 'bg-green-500',
+        error: 'bg-red-500',
+        info: 'bg-blue-500'
+      };
+
+      toast.className = `toast-item ${type}`;
+      toast.innerHTML = `
+        <div class="toast-icon">${icons[type] || icons.info}</div>
+        <div class="toast-message">${message}</div>
+      `;
+
+      container.appendChild(toast);
+
+      // 动画进入
+      requestAnimationFrame(() => {
+        toast.classList.add('show');
+      });
+
+      // 3秒后移除
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+          container.removeChild(toast);
+        }, 300);
+      }, 3000);
+    };
+  </script>
+
+  <style is:global>
+    #toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toast-item {
+      display: flex;
+      align-items: center;
+      min-width: 300px;
+      padding: 12px 16px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transform: translateX(120%);
+      transition: transform 0.3s ease-out;
+      border-left: 4px solid #3498db;
+    }
+
+    .toast-item.show {
+      transform: translateX(0);
+    }
+
+    .toast-item.success { border-left-color: #2ecc71; }
+    .toast-item.error { border-left-color: #e74c3c; }
+    .toast-item.info { border-left-color: #3498db; }
+
+    .toast-icon {
+      margin-right: 12px;
+      display: flex;
+      align-items: center;
+    }
+    
+    .toast-icon svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .toast-item.success .toast-icon { color: #2ecc71; }
+    .toast-item.error .toast-icon { color: #e74c3c; }
+    .toast-item.info .toast-icon { color: #3498db; }
+
+    .toast-message {
+      color: #333;
+      font-size: 14px;
+      font-weight: 500;
+    }
+  </style>
 </body>
 </html>
