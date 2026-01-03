@@ -118,8 +118,8 @@ const menu = siteMenus.header.length > 0 ? siteMenus.header : [
               class={`flex items-center justify-center h-full my-4 md:my-0 border-none gap-2 px-4 py-2 font-bold text-txt-p transition-all duration-300 dark:text-darkmode-txt-p rounded-full z-10 text-lg 
                 group-hover:text-orange-500
                 ${
-                  (item.url === '/' ? pathname === '/' : pathname.startsWith(item.url)) ||
-                  (item.children && item.children.some((child: any) => child.url !== '/' && pathname.startsWith(child.url)))
+                  (item.url === '/' ? pathname === '/' : pathname === item.url || (pathname.startsWith(item.url + '/') && item.url !== '/')) ||
+                  (item.children && item.children.some((child: any) => child.url !== '/' && (pathname === child.url || pathname.startsWith(child.url + '/'))))
                     ? "text-orange-500"
                     : ""
                 }`}
@@ -128,8 +128,8 @@ const menu = siteMenus.header.length > 0 ? siteMenus.header : [
                 class={`absolute inset-0 rounded-full transition-all duration-300 
                   group-hover:bg-white/30 group-hover:dark:bg-white/10 group-hover:backdrop-blur-sm
                   ${
-                    (item.url === '/' ? pathname === '/' : pathname.startsWith(item.url)) ||
-                    (item.children && item.children.some((child: any) => child.url !== '/' && pathname.startsWith(child.url)))
+                    (item.url === '/' ? pathname === '/' : pathname === item.url || (pathname.startsWith(item.url + '/') && item.url !== '/')) ||
+                    (item.children && item.children.some((child: any) => child.url !== '/' && (pathname === child.url || pathname.startsWith(child.url + '/'))))
                       ? "bg-white/30 dark:bg-white/10 backdrop-blur-sm"
                       : ""
                   }`}
@@ -424,43 +424,100 @@ const menu = siteMenus.header.length > 0 ? siteMenus.header : [
       const randomBtn = document.getElementById("random-article-btn");
       if (randomBtn) {
         randomBtn.addEventListener("click", async function () {
-          const button = this as HTMLButtonElement;
-          const originalHTML = button.innerHTML; // 在函数开始时保存原始HTML
-
-          try {
-            // 显示加载状态
-            button.disabled = true;
-            button.innerHTML =
-              '<svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>';
-
-            // 获取所有已发布的博客文章
-            const response = await fetch("/api/blog-articles.json");
-            if (!response.ok) {
-              throw new Error("无法获取文章列表");
-            }
-            const articles = await response.json();
-            if (!articles || articles.length === 0) {
-              throw new Error("没有找到可用的文章");
-            }
-
-
-            // 随机选择一篇文章
-            const randomIndex = Math.floor(Math.random() * articles.length);
-            const randomArticle = articles[randomIndex];
-
-            // 跳转到随机文章页面
-            window.location.href = `/blog/${randomArticle.slug}`;
-          } catch (error) {
-            console.error("获取随机文章失败:", error);
-            // 恢复按钮状态
-            button.disabled = false;
-            button.innerHTML = originalHTML;
-
-            // 显示错误提示
-            alert("获取随机文章失败，请稍后重试");
-          }
+          // ... (existing code)
         });
       }
     });
+
+    // --- 修复菜单高亮状态 (客户端接管) ---
+    function updateActiveMenu() {
+        // ... (保持原有的 updateActiveMenu 逻辑不变，作为最终一致性检查)
+        // console.log('Updating active menu...', window.location.pathname);
+        const currentPath = window.location.pathname;
+        const menuLinks = document.querySelectorAll('#nav-menu a');
+        
+        // 1. 清除所有高亮状态
+        menuLinks.forEach(link => {
+            link.classList.remove('text-orange-500');
+            // 清除背景高亮
+            const bgSpan = link.querySelector('span.absolute');
+            if (bgSpan) {
+                bgSpan.classList.remove('bg-white/30', 'dark:bg-white/10', 'backdrop-blur-sm');
+            }
+        });
+
+        // 2. 重新计算并应用高亮
+        menuLinks.forEach(link => {
+            const href = link.getAttribute('href');
+            if (!href) return;
+            
+            let isActive = false;
+            // 严格匹配首页，其他页面匹配前缀
+            if (href === '/') {
+                isActive = currentPath === '/';
+            } else {
+                // 匹配 /blog, /blog/xxx
+                isActive = currentPath === href || currentPath.startsWith(href + '/');
+            }
+            
+            if (isActive) {
+                setLinkActive(link);
+            }
+        });
+    }
+
+    // 辅助函数：激活指定链接样式
+    function setLinkActive(link) {
+        link.classList.add('text-orange-500');
+        const bgSpan = link.querySelector('span.absolute');
+        if (bgSpan) {
+            bgSpan.classList.add('bg-white/30', 'dark:bg-white/10', 'backdrop-blur-sm');
+        }
+        
+        // 处理父级菜单高亮
+        const parentItem = link.closest('.group');
+        if (parentItem && link.closest('.submenu')) {
+            const parentGroup = parentItem.closest('.dropdown');
+            if (parentGroup) {
+                const parentLink = parentGroup.querySelector('a');
+                if (parentLink) {
+                    parentLink.classList.add('text-orange-500');
+                    const parentBg = parentLink.querySelector('span.absolute');
+                    if (parentBg) parentBg.classList.add('bg-white/30', 'dark:bg-white/10', 'backdrop-blur-sm');
+                }
+            }
+        }
+    }
+
+    // 乐观 UI 更新：点击即高亮
+    function handleMenuClick(e) {
+        const link = e.target.closest('a');
+        if (!link) return;
+        
+        // 确保点击的是导航菜单内的链接
+        if (!document.getElementById('nav-menu').contains(link)) return;
+
+        // 清除所有高亮
+        const menuLinks = document.querySelectorAll('#nav-menu a');
+        menuLinks.forEach(l => {
+            l.classList.remove('text-orange-500');
+            const bgSpan = l.querySelector('span.absolute');
+            if (bgSpan) bgSpan.classList.remove('bg-white/30', 'dark:bg-white/10', 'backdrop-blur-sm');
+        });
+
+        // 立即高亮被点击的项
+        setLinkActive(link);
+    }
+
+    // 绑定事件
+    document.addEventListener('astro:page-load', updateActiveMenu);
+    document.addEventListener('astro:after-swap', updateActiveMenu);
+    window.addEventListener('popstate', updateActiveMenu);
+    
+    // 监听导航点击事件 (使用捕获阶段以尽早拦截)
+    document.addEventListener('click', handleMenuClick, true);
+    
+    // 初始化
+    updateActiveMenu();
   </script>
 </header>

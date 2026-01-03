@@ -85,11 +85,18 @@ const galleries = [
     const elements = document.querySelectorAll('.js-typewriter');
     
     elements.forEach(el => {
-      const text = el.getAttribute('data-text') || '';
+      // 避免重复初始化
+      if (el.hasAttribute('data-typed')) return;
+      
+      const text = el.getAttribute('data-text');
+      if (!text) return;
+      
       const delay = parseFloat(el.getAttribute('data-delay') || '0') * 1000;
       
-      // 清空初始内容
-      el.textContent = '';
+      // 标记为已初始化
+      el.setAttribute('data-typed', 'true');
+      el.textContent = ''; // 清空内容准备打字
+      el.style.opacity = '1'; // 确保可见
       
       setTimeout(() => {
         let charIndex = 0;
@@ -97,7 +104,6 @@ const galleries = [
           if (charIndex < text.length) {
             el.textContent += text.charAt(charIndex);
             charIndex++;
-            // 模拟真人打字速度，略有随机感
             setTimeout(typeChar, 100 + Math.random() * 50);
           }
         };
@@ -108,7 +114,14 @@ const galleries = [
 
   // 支持 Astro 的页面切换
   document.addEventListener('DOMContentLoaded', initTypewriter);
-  document.addEventListener('astro:page-load', initTypewriter);
+  // 对于 View Transitions，每次页面加载都要运行
+  document.addEventListener('astro:page-load', () => {
+      // 重置所有状态以便重新打字（可选）
+      document.querySelectorAll('.js-typewriter').forEach(el => {
+          el.removeAttribute('data-typed');
+      });
+      initTypewriter();
+  });
 </script>
 
 <style>
@@ -153,5 +166,11 @@ const galleries = [
   /* 字体修饰 */
   .font-serif {
     font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", serif;
+  }
+  
+  /* 确保打字机容器有高度，防止布局跳动 */
+  .js-typewriter {
+      min-height: 1.5em;
+      display: block;
   }
 </style>

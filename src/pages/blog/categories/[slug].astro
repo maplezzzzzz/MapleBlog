@@ -58,7 +58,7 @@ export async function getStaticPaths() {
   return paths;
 }
 
-const {
+let {
   categoryName,
   categoryPosts,
   pageCount,
@@ -66,11 +66,61 @@ const {
   totalArticleCount,
 } = Astro.props;
 
-console.log("当前页面数据：", categoryPosts);
-
 const { slug, page = "1" } = Astro.params;
+
+// SSR 模式下的数据获取回退逻辑
+if (!categoryPosts && slug) {
+  const allPosts = await getCollection("blog", ({ data }) => {
+    return data.status === "published" && !data.draft;
+  });
+  
+  // 找到匹配 slug 的分类名称
+  // 注意：slugify(name) 应该等于 slug
+  // 这里我们需要反向查找，或者遍历所有文章来匹配
+  const matchedPosts = allPosts.filter(post => {
+    const cats = post.data.categories;
+    if (!cats) return false;
+    // 假设 categories 是数组或字符串
+    // 这里简化处理，假设是单个分类名或数组包含
+    const catArray = Array.isArray(cats) ? cats : [cats];
+    return catArray.some(c => slugify(c.toString()) === slug);
+  });
+
+  if (matchedPosts.length > 0) {
+    // 获取真实的分类名称（取第一篇文章的对应分类）
+    const firstPostCats = Array.isArray(matchedPosts[0].data.categories) ? matchedPosts[0].data.categories : [matchedPosts[0].data.categories];
+    categoryName = firstPostCats.find(c => slugify(c.toString()) === slug) || slug;
+    
+    // 排序
+    matchedPosts.sort((a, b) => {
+        const dateA = a.data.publishedAt || a.data.createdAt;
+        const dateB = b.data.publishedAt || b.data.createdAt;
+        if (!dateA || !dateB) return 0;
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
+    });
+
+    const entriesPerPage = getPageSize("blog");
+    totalArticleCount = matchedPosts.length;
+    pageCount = Math.ceil(totalArticleCount / entriesPerPage);
+    currentPageIndex = parseInt(page);
+    
+    const start = (currentPageIndex - 1) * entriesPerPage;
+    const end = start + entriesPerPage;
+    categoryPosts = matchedPosts.slice(start, end);
+  } else {
+    // 分类不存在或无文章
+    categoryPosts = [];
+    categoryName = slug;
+    totalArticleCount = 0;
+    pageCount = 0;
+    currentPageIndex = 1;
+  }
+}
+
+console.log("当前页面数据：", categoryPosts?.length || 0);
+
 // 转换为组件需要的格式
-const entries: BlogEntry[] = categoryPosts.map((post: any) => ({
+const entries: BlogEntry[] = (categoryPosts || []).map((post: any) => ({
   id: post.id,
   // slug: post.id,
   collection: "blog",
