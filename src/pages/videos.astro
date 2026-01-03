@@ -1,0 +1,31 @@
+---
+import BaseLayout from "@components/base/BaseLayout.astro";
+import AfilmoryGrid from "@components/gallery/AfilmoryGrid.astro";
+import fs from 'fs';
+import path from 'path';
+
+const GALLERY_FILE = path.join(process.cwd(), "src", "data", "gallery.json");
+let videos = [];
+
+if (fs.existsSync(GALLERY_FILE)) {
+    const data = JSON.parse(fs.readFileSync(GALLERY_FILE, "utf-8"));
+    videos = data.videos || [];
+}
+
+// 适配数据结构：video 的 cover -> image
+const items = videos.map(v => ({
+    ...v,
+    image: v.cover
+}));
+---
+
+<BaseLayout title="精彩视频" description="视频精选">
+  <section class="container pt-16 pb-20 px-4">
+    <div class="text-center mb-12">
+      <h1 class="text-3xl font-bold">精彩视频</h1>
+      <div class="w-16 h-1 bg-red-500 mx-auto mt-4 rounded-full"></div>
+    </div>
+    
+    <AfilmoryGrid items={items} type="video" />
+  </section>
+</BaseLayout>

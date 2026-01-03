@@ -1,0 +1,38 @@
+{
+  "moments": [
+    {
+      "title": "日落时刻",
+      "image": "https://images.unsplash.com/photo-1616036740257-9449ea1f6605?q=80&w=1000&auto=format&fit=crop",
+      "date": "2025-12-01",
+      "description": "城市天际线的完美日落"
+    },
+    {
+      "title": "雨后街头",
+      "image": "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?q=80&w=1000&auto=format&fit=crop",
+      "date": "2025-11-15",
+      "description": "倒影中的霓虹灯"
+    },
+    {
+      "title": "静谧森林",
+      "image": "https://images.unsplash.com/photo-1448375240586-dfd8f3793300?q=80&w=1000&auto=format&fit=crop",
+      "date": "2025-10-20",
+      "description": "清晨的第一缕阳光"
+    }
+  ],
+  "videos": [
+    {
+      "title": "我的旅行Vlog",
+      "cover": "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=1000&auto=format&fit=crop",
+      "link": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "platform": "YouTube",
+      "date": "2026-01-01"
+    },
+    {
+      "title": "生活记录",
+      "cover": "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=1000&auto=format&fit=crop",
+      "link": "https://www.douyin.com",
+      "platform": "Douyin",
+      "date": "2025-12-25"
+    }
+  ]
+}

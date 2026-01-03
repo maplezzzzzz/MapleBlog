@@ -1,379 +1,157 @@
 ---
-title: "光影"
-description: "记录生活中的光影瞬间 - 照片与视频"
-layout: "@/components/base/BaseLayout.astro"
+import BaseLayout from "@components/base/BaseLayout.astro";
+
+const galleries = [
+  {
+    id: "moments",
+    title: "美好瞬间",
+    link: "/moments",
+    cover: "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=1000&auto=format&fit=crop",
+    poem: [
+      "快门按下",
+      "时间便凝固成琥珀",
+      "光影交错间",
+      "是流动的盛宴"
+    ]
+  },
+  {
+    id: "videos",
+    title: "精彩视频",
+    link: "/videos",
+    cover: "https://images.unsplash.com/photo-1492724724894-7464c27d0ceb?q=80&w=1000&auto=format&fit=crop",
+    poem: [
+      "帧帧流转",
+      "记忆在屏幕上苏醒",
+      "声音与画面的共鸣",
+      "重现昨日的温度"
+    ]
+  }
+];
 ---
 
-<div class="container mx-auto px-4 py-8">
-  <div class="text-center mb-12">
-    <h1 class="text-4xl md:text-5xl font-bold text-txt-p dark:text-darkmode-txt-p mb-4">
-      光影世界
-    </h1>
-    <p class="text-lg text-txt-s dark:text-darkmode-txt-s max-w-2xl mx-auto">
-      记录生活中的光影瞬间，分享美好时刻
-    </p>
-  </div>
+<BaseLayout title="光影" description="记录生活的美好瞬间">
+  <div class="gallery-container min-h-screen bg-black text-white overflow-hidden relative">
+    <!-- 背景氛围光 -->
+    <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-gray-900 via-black to-gray-900 z-0"></div>
+    <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-[120px] animate-pulse"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-[120px] animate-pulse delay-1000"></div>
 
-  <!-- 分类导航 -->
-  <div class="flex justify-center mb-12">
-    <nav class="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
-      <a 
-        href="#photos" 
-        class="px-6 py-3 text-base font-medium text-txt-p dark:text-darkmode-txt-p hover:text-orange-500 dark:hover:text-orange-400 rounded-lg transition-colors"
-      >
-        照片
-      </a>
-      <a 
-        href="#videos" 
-        class="px-6 py-3 text-base font-medium text-txt-p dark:text-darkmode-txt-p hover:text-orange-500 dark:hover:text-orange-400 rounded-lg transition-colors"
-      >
-        视频
-      </a>
-    </nav>
-  </div>
+    <section class="relative z-10 container mx-auto px-4 py-20 flex flex-col md:flex-row gap-16 items-center justify-center min-h-screen">
+      
+      {galleries.map((g, index) => (
+        <div class="gallery-wrapper flex flex-col items-center">
+          <a href={g.link} class={`gallery-card group relative w-full md:w-[400px] aspect-[3/4] block perspective-1000 cursor-pointer animate-fly-in`} style={`animation-delay: ${index * 0.3}s`}>
+            
+            <!-- 3D 卡片 -->
+            <div class="card-inner relative w-full h-full transition-all duration-700 ease-out transform-style-3d group-hover:rotate-y-12 group-hover:translate-y-[-20px]">
+              <!-- 悬停光影 -->
+              <div class="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg blur opacity-0 group-hover:opacity-30 transition duration-1000"></div>
+              
+              <div class="image-wrapper w-full h-full rounded-lg overflow-hidden shadow-2xl relative bg-gray-800">
+                <img 
+                  src={g.cover} 
+                  alt={g.title} 
+                  class="w-full h-full object-cover transform transition-transform duration-1000 group-hover:scale-110 opacity-80 group-hover:opacity-100"
+                />
+              </div>
+            </div>
+          </a>
 
-  <!-- 照片分类 -->
-  <section id="photos" class="mb-16">
-    <div class="text-center mb-10">
-      <h2 class="text-3xl font-bold text-txt-p dark:text-darkmode-txt-p mb-4">
-        精选照片
-      </h2>
-      <p class="text-txt-s dark:text-darkmode-txt-s max-w-xl mx-auto">
-        捕捉生活中的美好瞬间，用镜头记录光影变幻
-      </p>
-    </div>
-    
-    <!-- 瀑布流布局照片 -->
-    <div class="columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-6">
-      <!-- 照片1 -->
-      <div class="break-inside-avoid mb-6">
-        <div class="group relative overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 cursor-pointer"
-             onclick="openPhotoModal('/src/assets/uploads/demo.jpg', '日落时分', '捕捉夕阳西下的浪漫时刻')">
-          <img 
-            src="/src/assets/uploads/demo.jpg" 
-            alt="光影瞬间1" 
-            class="w-full h-auto transform group-hover:scale-105 transition-transform duration-500"
-          >
-          <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-            <div class="text-white">
-              <h3 class="font-bold text-lg">日落时分</h3>
-              <p class="text-sm opacity-80">捕获夕阳西下的浪漫时刻</p>
+          <!-- 标题 & 散文诗 -->
+          <div class="text-content mt-12 text-center max-w-[300px]">
+            <h2 class="text-3xl font-light mb-6 tracking-[0.3em] text-white opacity-0 translate-y-4 animate-fade-up" style={`animation-delay: ${0.8 + index * 0.5}s`}>
+              {g.title}
+            </h2>
+            
+            <div class="poem-container font-serif text-gray-400 text-base leading-relaxed tracking-wider space-y-3">
+              {g.poem.map((line, i) => (
+                <p 
+                  class="js-typewriter min-h-[1.5em]" 
+                  data-text={line} 
+                  data-delay={(1.5 + index * 1 + i * 0.8)}
+                ></p>
+              ))}
             </div>
           </div>
         </div>
-      </div>
-      
-      <!-- 照片2 -->
-      <div class="break-inside-avoid mb-6">
-        <div class="group relative overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 cursor-pointer"
-             onclick="openPhotoModal('/src/assets/uploads/demo.jpg', '晨光初现', '清晨第一缕阳光的温柔')">
-          <img 
-            src="/src/assets/uploads/demo.jpg" 
-            alt="光影瞬间2" 
-            class="w-full h-auto transform group-hover:scale-105 transition-transform duration-500"
-          >
-          <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-            <div class="text-white">
-              <h3 class="font-bold text-lg">晨光初现</h3>
-              <p class="text-sm opacity-80">清晨第一缕阳光的温柔</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- 照片3 -->
-      <div class="break-inside-avoid mb-6">
-        <div class="group relative overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 cursor-pointer"
-             onclick="openPhotoModal('/src/assets/uploads/demo.jpg', '城市夜景', '霓虹灯下的繁华都市')">
-          <img 
-            src="/src/assets/uploads/demo.jpg" 
-            alt="光影瞬间3" 
-            class="w-full h-auto transform group-hover:scale-105 transition-transform duration-500"
-          >
-          <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-            <div class="text-white">
-              <h3 class="font-bold text-lg">城市夜景</h3>
-              <p class="text-sm opacity-80">霓虹灯下的繁华都市</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- 照片4 -->
-      <div class="break-inside-avoid mb-6">
-        <div class="group relative overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 cursor-pointer"
-             onclick="openPhotoModal('/src/assets/uploads/demo.jpg', '自然之美', '大自然的光影交织')">
-          <img 
-            src="/src/assets/uploads/demo.jpg" 
-            alt="光影瞬间4" 
-            class="w-full h-auto transform group-hover:scale-105 transition-transform duration-500"
-          >
-          <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-            <div class="text-white">
-              <h3 class="font-bold text-lg">自然之美</h3>
-              <p class="text-sm opacity-80">大自然的光影交织</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- 照片5 -->
-      <div class="break-inside-avoid mb-6">
-        <div class="group relative overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 cursor-pointer"
-             onclick="openPhotoModal('/src/assets/uploads/demo.jpg', '春日花开', '春天里的绚烂花海')">
-          <img 
-            src="/src/assets/uploads/demo.jpg" 
-            alt="光影瞬间5" 
-            class="w-full h-auto transform group-hover:scale-105 transition-transform duration-500"
-          >
-          <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-            <div class="text-white">
-              <h3 class="font-bold text-lg">春日花开</h3>
-              <p class="text-sm opacity-80">春天里的绚烂花海</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- 照片6 -->
-      <div class="break-inside-avoid mb-6">
-        <div class="group relative overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 cursor-pointer"
-             onclick="openPhotoModal('/src/assets/uploads/demo.jpg', '山间云雾', '山峦叠嶂中的神秘云海')">
-          <img 
-            src="/src/assets/uploads/demo.jpg" 
-            alt="光影瞬间6" 
-            class="w-full h-auto transform group-hover:scale-105 transition-transform duration-500"
-          >
-          <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-            <div class="text-white">
-              <h3 class="font-bold text-lg">山间云雾</h3>
-              <p class="text-sm opacity-80">山峦叠嶂中的神秘云海</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
+      ))}
 
-  <!-- 视频分类 -->
-  <section id="videos">
-    <div class="text-center mb-10">
-      <h2 class="text-3xl font-bold text-txt-p dark:text-darkmode-txt-p mb-4">
-        精选视频
-      </h2>
-      <p class="text-txt-s dark:text-darkmode-txt-s max-w-xl mx-auto">
-        记录动态的光影时刻，分享视频内容
-      </p>
-    </div>
-    
-    <!-- 瀑布流布局视频 -->
-    <div class="columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-6 gap-8">
-      <!-- 视频1 -->
-      <div class="break-inside-avoid mb-8">
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow duration-300">
-          <div class="p-4">
-            <div class="bg-gray-200 border-2 border-dashed rounded-xl w-full aspect-video flex items-center justify-center text-gray-500">
-              视频缩略图
-            </div>
-            <div class="mt-4">
-              <h3 class="font-bold text-lg text-txt-p dark:text-darkmode-txt-p mb-2">光影故事短片</h3>
-              <p class="text-txt-s dark:text-darkmode-txt-s mb-4">记录一段关于光影变化的精彩故事</p>
-              <a 
-                href="https://www.youtube.com/watch?v=example1" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                class="inline-flex items-center px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors duration-300"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
-                </svg>
-                YouTube观看
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- 视频2 -->
-      <div class="break-inside-avoid mb-8">
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow duration-300">
-          <div class="p-4">
-            <div class="bg-gray-200 border-2 border-dashed rounded-xl w-full aspect-video flex items-center justify-center text-gray-500">
-              视频缩略图
-            </div>
-            <div class="mt-4">
-              <h3 class="font-bold text-lg text-txt-p dark:text-darkmode-txt-p mb-2">自然风光集锦</h3>
-              <p class="text-txt-s dark:text-darkmode-txt-s mb-4">展示大自然中光影变幻的美丽景色</p>
-              <a 
-                href="https://www.youtube.com/watch?v=example2" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                class="inline-flex items-center px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors duration-300"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
-                </svg>
-                YouTube观看
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- 视频3 -->
-      <div class="break-inside-avoid mb-8">
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow duration-300">
-          <div class="p-4">
-            <div class="bg-gray-200 border-2 border-dashed rounded-xl w-full aspect-video flex items-center justify-center text-gray-500">
-              视频缩略图
-            </div>
-            <div class="mt-4">
-              <h3 class="font-bold text-lg text-txt-p dark:text-darkmode-txt-p mb-2">城市夜景延时摄影</h3>
-              <p class="text-txt-s dark:text-darkmode-txt-s mb-4">城市夜晚的光影流动，展现繁华之美</p>
-              <a 
-                href="https://v.douyin.com/example3" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                class="inline-flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-300"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
-                </svg>
-                抖音观看
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- 视频4 -->
-      <div class="break-inside-avoid mb-8">
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow duration-300">
-          <div class="p-4">
-            <div class="bg-gray-200 border-2 border-dashed rounded-xl w-full aspect-video flex items-center justify-center text-gray-500">
-              视频缩略图
-            </div>
-            <div class="mt-4">
-              <h3 class="font-bold text-lg text-txt-p dark:text-darkmode-txt-p mb-2">旅行记忆片段</h3>
-              <p class="text-txt-s dark:text-darkmode-txt-s mb-4">回忆旅途中的美景和难忘时光</p>
-              <a 
-                href="https://www.bilibili.com/video/bv1example4" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                class="inline-flex items-center px-4 py-2 bg-pink-500 hover:bg-pink-600 text-white rounded-lg transition-colors duration-300"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
-                </svg>
-                Bilibili观看
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- 视频5 -->
-      <div class="break-inside-avoid mb-8">
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow duration-300">
-          <div class="p-4">
-            <div class="bg-gray-200 border-2 border-dashed rounded-xl w-full aspect-video flex items-center justify-center text-gray-500">
-              视频缩略图
-            </div>
-            <div class="mt-4">
-              <h3 class="font-bold text-lg text-txt-p dark:text-darkmode-txt-p mb-2">烹饪时光记录</h3>
-              <p class="text-txt-s dark:text-darkmode-txt-s mb-4">记录制作美食的过程和技巧分享</p>
-              <a 
-                href="https://www.youtube.com/watch?v=example5" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                class="inline-flex items-center px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors duration-300"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
-                </svg>
-                YouTube观看
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- 视频6 -->
-      <div class="break-inside-avoid mb-8">
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow duration-300">
-          <div class="p-4">
-            <div class="bg-gray-200 border-2 border-dashed rounded-xl w-full aspect-video flex items-center justify-center text-gray-500">
-              视频缩略图
-            </div>
-            <div class="mt-4">
-              <h3 class="font-bold text-lg text-txt-p dark:text-darkmode-txt-p mb-2">音乐创作过程</h3>
-              <p class="text-txt-s dark:text-darkmode-txt-s mb-4">分享音乐创作的灵感与技巧</p>
-              <a 
-                href="https://music.163.com/song/example6" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                class="inline-flex items-center px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors duration-300"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
-                </svg>
-                网易云观看
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-  
-  <div class="mt-12 text-center">
-    <p class="text-txt-s dark:text-darkmode-txt-s">
-      更多精彩内容正在持续更新中...
-    </p>
+    </section>
   </div>
-</div>
-
-<!-- 模态框 (用于显示大图) -->
-<div id="photo-modal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden items-center justify-center p-4">
-  <div class="relative max-w-4xl w-full max-h-[90vh]">
-    <span class="absolute top-4 right-4 text-white text-3xl cursor-pointer z-10" onclick="closePhotoModal()">&times;</span>
-    <img id="modal-img" src="" alt="" class="w-full h-auto max-h-[80vh] object-contain">
-    <div id="modal-caption" class="text-white text-center mt-4 text-xl"></div>
-  </div>
-</div>
+</BaseLayout>
 
 <script>
-  function openPhotoModal(src, title, desc) {
-    const modal = document.getElementById('photo-modal');
-    const modalImg = document.getElementById('modal-img');
-    const modalCaption = document.getElementById('modal-caption');
+  function initTypewriter() {
+    const elements = document.querySelectorAll('.js-typewriter');
     
-    modalImg.src = src;
-    modalCaption.innerHTML = `<div><h3 class="font-bold">${title}</h3><p class="text-sm">${desc}</p></div>`;
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    
-    document.body.style.overflow = 'hidden'; // 防止背景滚动
+    elements.forEach(el => {
+      const text = el.getAttribute('data-text') || '';
+      const delay = parseFloat(el.getAttribute('data-delay') || '0') * 1000;
+      
+      // 清空初始内容
+      el.textContent = '';
+      
+      setTimeout(() => {
+        let charIndex = 0;
+        const typeChar = () => {
+          if (charIndex < text.length) {
+            el.textContent += text.charAt(charIndex);
+            charIndex++;
+            // 模拟真人打字速度，略有随机感
+            setTimeout(typeChar, 100 + Math.random() * 50);
+          }
+        };
+        typeChar();
+      }, delay);
+    });
   }
-  
-  function closePhotoModal() {
-    const modal = document.getElementById('photo-modal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-    document.body.style.overflow = 'auto'; // 恢复背景滚动
-  }
-  
-  // 点击模态框背景关闭
-  document.getElementById('photo-modal').addEventListener('click', function(e) {
-    if (e.target === this) {
-      closePhotoModal();
-    }
-  });
-  
-  // 按ESC键关闭
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-      closePhotoModal();
-    }
-  });
+
+  // 支持 Astro 的页面切换
+  document.addEventListener('DOMContentLoaded', initTypewriter);
+  document.addEventListener('astro:page-load', initTypewriter);
 </script>
+
+<style>
+  /* 基础动画 */
+  @keyframes flyIn {
+    0% {
+      opacity: 0;
+      transform: translateY(100px) scale(0.9) rotateX(-10deg);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1) rotateX(0);
+    }
+  }
+
+  .animate-fly-in {
+    animation: flyIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    opacity: 0;
+  }
+
+  @keyframes fadeUp {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .animate-fade-up {
+    animation: fadeUp 1s ease-out forwards;
+  }
+
+  /* 3D 效果 */
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  .transform-style-3d {
+    transform-style: preserve-3d;
+  }
+  .group:hover .card-inner {
+    transform: rotateY(15deg) rotateX(5deg);
+  }
+
+  /* 字体修饰 */
+  .font-serif {
+    font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", serif;
+  }
+</style>
