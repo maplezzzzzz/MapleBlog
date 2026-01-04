@@ -38,9 +38,9 @@ export default defineConfig({
     mode: 'standalone'
   }), 
   server: {
-    // 允许通过本机IP访问开发服务器
-    host: '0.0.0.0', // 强制绑定到所有 IPv4 接口
-    port: 4000
+    // 强制绑定到 IPv4 本地回环地址，解决 macOS 连接问题
+    host: '127.0.0.1', 
+    port: 4321
   },
   build: {
     // 静态站点构建优化
