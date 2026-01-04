@@ -1,0 +1,440 @@
+---
+import Layout from '../../layouts/AdminLayout.astro';
+import fs from 'fs';
+import path from 'path';
+
+const GALLERY_FILE = path.join(process.cwd(), "src", "data", "gallery.json");
+let galleryData = { moments: [], videos: [] };
+
+if (fs.existsSync(GALLERY_FILE)) {
+    try {
+        galleryData = JSON.parse(fs.readFileSync(GALLERY_FILE, "utf-8"));
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+// 合并数据以便统一展示，添加 _type 字段辅助前端逻辑
+const allItems = [
+    ...galleryData.moments.map((item, index) => ({ ...item, _type: 'image', _index: index })),
+    ...galleryData.videos.map((item, index) => ({ ...item, _type: 'video', _index: index }))
+].sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
+---
+
+<Layout title="光影管理">
+  <div class="admin-container">
+    <div class="flex justify-between items-center mb-6">
+        <h2>📷 光影管理</h2>
+        <button class="admin-btn" onclick="openModal()">+ 新增内容</button>
+    </div>
+    
+    <!-- 筛选 -->
+    <div class="filter-bar mb-6 bg-white p-4 rounded-lg shadow-sm flex gap-4">
+        <button class="filter-btn active" onclick="filterList('all')">全部</button>
+        <button class="filter-btn" onclick="filterList('image')">美好瞬间 (图片)</button>
+        <button class="filter-btn" onclick="filterList('video')">精彩视频</button>
+    </div>
+
+    <div class="gallery-grid" id="gallery-list">
+        {allItems.map(item => (
+            <div class="gallery-item" data-type={item._type}>
+                <div class="item-preview">
+                    <img src={item._type === 'image' ? item.image : item.cover} alt={item.title} loading="lazy" onerror="this.src='/placeholder.jpg'" />
+                    <span class={`type-badge ${item._type}`}>{item._type === 'image' ? '图片' : '视频'}</span>
+                </div>
+                <div class="item-info">
+                    <h3>{item.title}</h3>
+                    <p class="date">{item.date || '无日期'}</p>
+                    <p class="desc">{item.description || item.platform || ''}</p>
+                </div>
+                <div class="item-actions">
+                    <button class="icon-btn edit" onclick={`editItem('${item._type}', ${item._index})`}>✎</button>
+                    <button class="icon-btn delete" onclick={`deleteItem('${item._type}', ${item._index})`}>×</button>
+                </div>
+            </div>
+        ))}
+    </div>
+  </div>
+
+  <!-- 编辑弹窗 -->
+  <div id="gallery-modal" class="modal hidden">
+    <div class="modal-content">
+        <h3 id="modal-title">新增内容</h3>
+        <form id="gallery-form">
+            <input type="hidden" id="item-index" value="-1">
+            
+            <div class="form-group">
+                <label>类型</label>
+                <select id="item-type" class="form-select" onchange="toggleFields()">
+                    <option value="image">美好瞬间 (图片)</option>
+                    <option value="video">精彩视频</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>标题</label>
+                <input type="text" id="item-title" class="form-input" required>
+            </div>
+
+            <div class="form-group">
+                <label>日期</label>
+                <input type="date" id="item-date" class="form-input">
+            </div>
+
+            <div class="form-group">
+                <label id="upload-label">图片上传</label>
+                <div class="flex gap-2">
+                    <input type="text" id="item-url" class="form-input" placeholder="输入URL或上传">
+                    <label class="admin-btn admin-btn-secondary cursor-pointer whitespace-nowrap py-1">
+                        上传
+                        <input type="file" class="hidden" accept="image/*" onchange="uploadFile(this)">
+                    </label>
+                </div>
+                <div id="preview-box" class="mt-2 hidden border p-2 rounded bg-gray-50 text-center">
+                    <img id="item-preview-img" src="" style="max-height: 150px; margin: 0 auto;">
+                </div>
+            </div>
+
+            <!-- 图片特有字段 -->
+            <div id="image-fields">
+                <div class="form-group">
+                    <label>描述</label>
+                    <textarea id="item-desc" class="form-input" rows="3"></textarea>
+                </div>
+            </div>
+
+            <!-- 视频特有字段 -->
+            <div id="video-fields" class="hidden">
+                <div class="form-group">
+                    <label>视频链接 (跳转地址)</label>
+                    <input type="url" id="item-link" class="form-input" placeholder="https://youtube.com/...">
+                </div>
+                <div class="form-group">
+                    <label>平台名称</label>
+                    <input type="text" id="item-platform" class="form-input" placeholder="YouTube, Bilibili...">
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="admin-btn admin-btn-secondary" onclick="closeModal()">取消</button>
+                <button type="submit" class="admin-btn admin-btn-primary">保存</button>
+            </div>
+        </form>
+    </div>
+  </div>
+
+  <script define:vars={{ galleryData }}>
+    let data = galleryData;
+    
+    // --- 筛选逻辑 ---
+    window.filterList = (type) => {
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        const items = document.querySelectorAll('.gallery-item');
+        items.forEach(item => {
+            if (type === 'all' || item.dataset.type === type) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    };
+
+    // --- 弹窗逻辑 ---
+    const modal = document.getElementById('gallery-modal');
+    const form = document.getElementById('gallery-form');
+    
+    window.openModal = () => {
+        document.getElementById('modal-title').textContent = '新增内容';
+        form.reset();
+        document.getElementById('item-index').value = '-1';
+        document.getElementById('item-type').disabled = false;
+        document.getElementById('preview-box').classList.add('hidden');
+        toggleFields();
+        modal.classList.remove('hidden');
+    };
+    
+    window.closeModal = () => {
+        modal.classList.add('hidden');
+    };
+    
+    window.editItem = (type, index) => {
+        const item = data[type === 'image' ? 'moments' : 'videos'][index];
+        
+        document.getElementById('modal-title').textContent = '编辑内容';
+        document.getElementById('item-index').value = index;
+        
+        const typeSelect = document.getElementById('item-type');
+        typeSelect.value = type;
+        typeSelect.disabled = true; // 不允许切换类型
+        toggleFields();
+        
+        document.getElementById('item-title').value = item.title;
+        document.getElementById('item-date').value = item.date || '';
+        document.getElementById('item-url').value = type === 'image' ? item.image : item.cover;
+        
+        // 显示预览
+        const previewImg = document.getElementById('item-preview-img');
+        previewImg.src = type === 'image' ? item.image : item.cover;
+        document.getElementById('preview-box').classList.remove('hidden');
+        
+        if (type === 'image') {
+            document.getElementById('item-desc').value = item.description || '';
+        } else {
+            document.getElementById('item-link').value = item.link || '';
+            document.getElementById('item-platform').value = item.platform || '';
+        }
+        
+        modal.classList.remove('hidden');
+    };
+    
+    window.toggleFields = () => {
+        const type = document.getElementById('item-type').value;
+        const uploadLabel = document.getElementById('upload-label');
+        
+        if (type === 'image') {
+            document.getElementById('image-fields').classList.remove('hidden');
+            document.getElementById('video-fields').classList.add('hidden');
+            uploadLabel.textContent = '图片文件';
+        } else {
+            document.getElementById('image-fields').classList.add('hidden');
+            document.getElementById('video-fields').classList.remove('hidden');
+            uploadLabel.textContent = '视频封面图';
+        }
+    };
+    
+    // --- 上传逻辑 ---
+    window.uploadFile = async (input) => {
+        if (!input.files || !input.files[0]) return;
+        
+        const file = input.files[0];
+        const formData = new FormData();
+        formData.append('image', file);
+        
+        const btn = input.parentElement;
+        const originalText = btn.textContent;
+        btn.textContent = '上传中...';
+        
+        try {
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            
+            if (response.ok && result.url) {
+                document.getElementById('item-url').value = result.url;
+                const previewImg = document.getElementById('item-preview-img');
+                previewImg.src = result.url;
+                document.getElementById('preview-box').classList.remove('hidden');
+                window.showToast('上传成功', 'success');
+            } else {
+                alert('上传失败');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('上传出错');
+        } finally {
+            btn.textContent = originalText; // Reset text roughly
+            input.value = '';
+        }
+    };
+    
+    // --- 保存与删除 ---
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const index = parseInt(document.getElementById('item-index').value);
+        const type = document.getElementById('item-type').value;
+        const isEdit = index >= 0;
+        
+        const newItem = {
+            title: document.getElementById('item-title').value,
+            date: document.getElementById('item-date').value
+        };
+        
+        const url = document.getElementById('item-url').value;
+        
+        if (type === 'image') {
+            newItem.image = url;
+            newItem.description = document.getElementById('item-desc').value;
+            
+            if (isEdit) {
+                data.moments[index] = newItem;
+            } else {
+                data.moments.unshift(newItem);
+            }
+        } else {
+            newItem.cover = url;
+            newItem.link = document.getElementById('item-link').value;
+            newItem.platform = document.getElementById('item-platform').value;
+            
+            if (isEdit) {
+                data.videos[index] = newItem;
+            } else {
+                data.videos.unshift(newItem);
+            }
+        }
+        
+        await saveData();
+    });
+    
+    window.deleteItem = async (type, index) => {
+        if (!confirm('确定删除吗？')) return;
+        
+        if (type === 'image') {
+            data.moments.splice(index, 1);
+        } else {
+            data.videos.splice(index, 1);
+        }
+        
+        await saveData();
+    };
+    
+    async function saveData() {
+        try {
+            const res = await fetch('/api/gallery', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            if (res.ok) {
+                window.showToast('保存成功', 'success');
+                setTimeout(() => window.location.reload(), 500);
+            } else {
+                window.showToast('保存失败', 'error');
+            }
+        } catch (e) {
+            window.showToast('出错: ' + e.message, 'error');
+        }
+    }
+  </script>
+
+  <style>
+    .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+    }
+    
+    .gallery-item {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        overflow: hidden;
+        transition: transform 0.2s;
+    }
+    
+    .gallery-item:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    
+    .item-preview {
+        height: 160px;
+        position: relative;
+        background: #f1f5f9;
+    }
+    
+    .item-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .type-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        color: white;
+        font-weight: 500;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+    .type-badge.image { background: rgba(52, 152, 219, 0.9); }
+    .type-badge.video { background: rgba(231, 76, 60, 0.9); }
+    
+    .item-info {
+        padding: 15px;
+    }
+    
+    .item-info h3 { margin: 0 0 5px 0; font-size: 1rem; color: #333; }
+    .item-info .date { font-size: 0.8rem; color: #999; margin-bottom: 5px; }
+    .item-info .desc { font-size: 0.85rem; color: #666; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.6em; }
+    
+    .item-actions {
+        padding: 10px 15px;
+        border-top: 1px solid #eee;
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        background: #f8f9fa;
+    }
+    
+    .icon-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 1px solid #ddd;
+        background: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+    
+    .icon-btn.edit:hover { color: #3498db; border-color: #3498db; }
+    .icon-btn.delete:hover { color: #e74c3c; border-color: #e74c3c; }
+    
+    /* Filters */
+    .filter-btn {
+        padding: 6px 12px;
+        border-radius: 20px;
+        border: 1px solid transparent;
+        background: #f1f5f9;
+        color: #64748b;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .filter-btn.active {
+        background: #3498db;
+        color: white;
+    }
+    
+    /* Modal styles (reuse from previous files but ensure they are here) */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+    .modal.hidden { display: none; }
+    
+    .modal-content {
+        width: 500px;
+        max-height: 90vh;
+        overflow-y: auto;
+        background: white;
+        padding: 25px;
+        border-radius: 8px;
+    }
+    
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
+    .form-input, .form-select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+    .hidden { display: none; }
+    .flex { display: flex; }
+    .gap-2 { gap: 0.5rem; }
+    .admin-btn-secondary { background: #eee; color: #333; padding: 0 12px; display: flex; align-items: center; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+  </style>
+</Layout>
