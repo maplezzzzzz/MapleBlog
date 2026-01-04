@@ -84,12 +84,15 @@ subMenuItems = findSubMenus(siteMenus.header) || [];
 ---
 
 <BaseLayout title={page.data.title} description={page.data.description}>
+
   <section class="container pt-10 pb-20">
+
     <div class="prose dark:prose-invert max-w-4xl mx-auto px-4">
-      <h1 class="text-3xl md:text-4xl font-bold mb-8">{page.data.title}</h1>
-      
+
       <Content />
+
       
+
       {subMenuItems.length > 0 && (
         <div class="sub-navigation mt-12 pt-8 border-t dark:border-gray-700">
             <h2 class="text-2xl font-bold mb-6">相关内容</h2>
