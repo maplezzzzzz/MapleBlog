@@ -69,19 +69,24 @@ const currentItems = allItems.slice(startIdx, endIdx);
                     <span class={`type-badge ${item._type}`}>
                         {item._type === 'image' ? '🖼️ 图片' : '🎬 视频'}
                     </span>
-                    <div class="item-overlay group-hover:opacity-100 opacity-0 transition-opacity duration-200">
-                        <button class="icon-btn edit" onclick={`editItem('${item._type}', ${item._index})`} title="编辑">✎</button>
-                        <button class="icon-btn delete" onclick={`deleteItem('${item._type}', ${item._index})`} title="删除">×</button>
-                    </div>
                 </div>
                 <div class="item-info">
                     <div class="flex justify-between items-start mb-2">
-                        <h3 class="truncate font-semibold text-gray-800 text-base" title={item.title}>{item.title}</h3>
-                        <span class="text-xs text-gray-400 whitespace-nowrap ml-2">{item.date || '-'}</span>
+                        <h3 class="truncate font-semibold text-gray-800 text-base flex-1" title={item.title}>{item.title}</h3>
+                        <span class="text-[10px] uppercase tracking-wider text-gray-400 whitespace-nowrap ml-2 bg-gray-100 px-1.5 py-0.5 rounded">{item.date || '-'}</span>
                     </div>
-                    <p class="desc text-xs text-gray-500 line-clamp-2 h-8 leading-4">
+                    <p class="desc text-xs text-gray-500 line-clamp-2 h-8 leading-4 mb-4">
                         {item.description || item.link || '暂无描述'}
                     </p>
+                    
+                    <div class="item-actions flex gap-2 pt-3 border-t border-gray-100">
+                        <button class="flex-1 py-1.5 rounded-md bg-gray-50 text-gray-600 text-xs font-medium hover:bg-blue-50 hover:text-blue-600 transition-colors border border-gray-200" onclick={`editItem('${item._type}', ${item._index})`}>
+                            编辑
+                        </button>
+                        <button class="px-3 py-1.5 rounded-md bg-gray-50 text-red-500 text-xs font-medium hover:bg-red-50 transition-colors border border-gray-200" onclick={`deleteItem('${item._type}', ${item._index})`}>
+                            删除
+                        </button>
+                    </div>
                 </div>
             </div>
         ))}
