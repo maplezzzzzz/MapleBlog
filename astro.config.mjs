@@ -38,8 +38,8 @@ export default defineConfig({
     mode: 'standalone'
   }), 
   server: {
-    // 强制绑定到 IPv4 本地回环地址，解决 macOS 连接问题
-    host: '127.0.0.1', 
+    // 监听所有网络接口 (0.0.0.0)，解决部分环境无法通过 localhost 连接的问题
+    host: true, 
     port: 4321
   },
   build: {
