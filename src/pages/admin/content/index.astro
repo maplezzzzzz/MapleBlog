@@ -3,11 +3,24 @@ import Layout from '../../../layouts/AdminLayout.astro';
 import { getCollection } from 'astro:content';
 
 // 获取所有内容类型的数据
-const blogPosts = await getCollection('blog');
+const allBlogPosts = await getCollection('blog');
 const pages = await getCollection('pages');
 const categories = await getCollection('categories');
 const tags = await getCollection('tags');
 const notes = await getCollection('notes');
+
+// 文章分页逻辑
+const pageSize = 10;
+const currentPage = Number(Astro.url.searchParams.get('page') || 1);
+const totalPosts = allBlogPosts.length;
+const totalPages = Math.ceil(totalPosts / pageSize);
+const startIdx = (currentPage - 1) * pageSize;
+const endIdx = startIdx + pageSize;
+
+// 按日期降序排序并分页
+const blogPosts = allBlogPosts
+    .sort((a, b) => (b.data.publishedAt?.getTime() || 0) - (a.data.publishedAt?.getTime() || 0))
+    .slice(startIdx, endIdx);
 ---
 
 <Layout title="内容管理">
@@ -27,200 +40,176 @@ const notes = await getCollection('notes');
       <div class="admin-controls flex flex-col gap-4">
         <div class="flex justify-between items-center w-full">
             <div class="flex items-center gap-4">
-                <a href="/admin/article-editor" class="admin-btn">新建文章</a>
+                <a href="/admin/article-editor" class="action-btn publish-btn text-white no-underline flex items-center gap-2">
+                    <span class="text-lg">+</span> 新建文章
+                </a>
                 <!-- 筛选和搜索 -->
                 <div class="flex items-center gap-2">
-                    <select id="status-filter" class="form-select text-sm py-1 px-2 border rounded">
+                    <select id="status-filter" class="form-select text-sm py-1 px-2 border rounded h-9">
                         <option value="all">所有状态</option>
                         <option value="published">已发布</option>
                         <option value="draft">草稿/未发布</option>
                     </select>
-                    <input type="text" id="post-search" placeholder="搜索文章标题..." class="form-input text-sm py-1 px-2 border rounded w-64">
+                    <input type="text" id="post-search" placeholder="搜索文章标题..." class="form-input text-sm py-1 px-2 border rounded w-64 h-9">
                 </div>
             </div>
             
             <div class="batch-actions hidden" id="batch-actions-toolbar">
               <span class="selected-count mr-2 text-sm text-gray-600">已选 0</span>
-              <button class="admin-btn admin-btn-danger batch-btn text-xs px-2" data-action="delete">删除</button>
-              <button class="admin-btn admin-btn-success batch-btn text-xs px-2" data-action="publish">发布</button>
-              <button class="admin-btn admin-btn-warning batch-btn text-xs px-2" data-action="unpublish">取消发布</button>
+              <button class="action-btn delete-btn text-xs px-2 batch-btn" data-action="delete">删除</button>
+              <button class="action-btn publish-btn text-xs px-2 batch-btn" data-action="publish">发布</button>
+              <button class="action-btn unpublish-btn text-xs px-2 batch-btn" data-action="unpublish">取消发布</button>
             </div>
         </div>
       </div>
 
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th class="w-10 text-center">
-              <input type="checkbox" id="select-all-posts" class="cursor-pointer align-middle">
-            </th>
-            <th>标题</th>
-            <th>状态</th>
-            <th>分类</th>
-            <th>发布时间</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody id="posts-list">
-          {blogPosts.map(post => (
-            <tr key={post.id} class="post-row" data-title={post.data.title.toLowerCase()} data-status={post.data.status || 'draft'}>
-              <td class="text-center">
-                <input type="checkbox" class="post-checkbox cursor-pointer align-middle" data-id={post.id}>
-              </td>
-              <td>{post.data.title}</td>
-              <td>
-                <span class={`status-badge ${post.data.status || 'draft'}`}>
-                  {post.data.status || 'draft'}
-                </span>
-              </td>
-              <td>{post.data.categories ? post.data.categories.join(', ') : ''}</td>
-              <td>{post.data.publishedAt ? new Date(post.data.publishedAt).toLocaleDateString() : '未发布'}</td>
-              <td class="admin-table-actions">
-                <button class="admin-btn admin-btn-secondary edit-btn" data-type="post" data-id={post.id.replace(/\.md$/, '')}>编辑</button>
-                <button class="admin-btn view-btn" data-type="post" data-slug={post.slug || post.id.replace(/\.md$/, '')}>查看</button>
-                {post.data.status === 'published' ? (
-                  <button class="admin-btn admin-btn-warning action-btn" data-action="unpublish" data-id={post.id}>取消发布</button>
-                ) : (
-                  <button class="admin-btn admin-btn-success action-btn" data-action="publish" data-id={post.id}>发布</button>
-                )}
-                <button class="admin-btn admin-btn-danger action-btn" data-action="delete" data-id={post.id}>删除</button>
-              </td>
+      <div class="table-container">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th class="w-10 text-center">
+                <input type="checkbox" id="select-all-posts" class="cursor-pointer align-middle">
+              </th>
+              <th>标题</th>
+              <th>状态</th>
+              <th>分类</th>
+              <th>发布时间</th>
+              <th>操作</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody id="posts-list">
+            {blogPosts.map(post => (
+              <tr key={post.id} class="post-row" data-title={post.data.title.toLowerCase()} data-status={post.data.status || 'draft'}>
+                <td class="text-center">
+                  <input type="checkbox" class="post-checkbox cursor-pointer align-middle" data-id={post.id}>
+                </td>
+                <td class="font-medium">{post.data.title}</td>
+                <td>
+                  <span class={`status-badge ${post.data.status === 'published' ? 'published' : 'draft'}`}>
+                    {post.data.status === 'published' ? '已发布' : '草稿'}
+                  </span>
+                </td>
+                <td>{post.data.categories ? post.data.categories.join(', ') : ''}</td>
+                <td class="text-gray-500 text-sm">{post.data.publishedAt ? new Date(post.data.publishedAt).toLocaleDateString() : '-'}</td>
+                <td class="admin-table-actions">
+                  <button class="action-btn edit-btn flex items-center gap-1" data-type="post" data-id={post.id.replace(/\.md$/, '')} title="编辑">
+                    ✏️ 编辑
+                  </button>
+                  <button class="action-btn view-btn flex items-center gap-1" data-type="post" data-slug={post.slug || post.id.replace(/\.md$/, '')} title="查看">
+                    👁 查看
+                  </button>
+                  {post.data.status === 'published' ? (
+                    <button class="action-btn unpublish-btn flex items-center gap-1" data-action="unpublish" data-id={post.id} title="下架">
+                      ↓ 下架
+                    </button>
+                  ) : (
+                    <button class="action-btn publish-btn flex items-center gap-1" data-action="publish" data-id={post.id} title="发布">
+                      ↑ 发布
+                    </button>
+                  )}
+                  <button class="action-btn delete-btn flex items-center gap-1" data-action="delete" data-id={post.id} title="删除">
+                    × 删除
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <!-- 分页控件 -->
+        <div class="pagination-controls flex justify-between items-center">
+          <div class="text-sm text-gray-500">
+              显示 {startIdx + 1}-{Math.min(endIdx, totalPosts)} 共 {totalPosts} 篇
+          </div>
+          <div class="flex gap-2 items-center">
+              <a href={`?page=${Math.max(1, currentPage - 1)}`} class={`action-btn edit-btn no-underline ${currentPage === 1 ? 'opacity-50 pointer-events-none' : ''}`}>上一页</a>
+              
+              <div class="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let p = i + 1;
+                      if (totalPages > 5) {
+                          if (currentPage > 3) p = currentPage - 2 + i;
+                          if (p > totalPages) p = totalPages - (4 - i);
+                      }
+                      if (p > totalPages || p < 1) return null;
+                      
+                      return (
+                          <a href={`?page=${p}`} class={`px-3 py-1 rounded text-sm no-underline ${currentPage === p ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 border hover:bg-gray-50'}`}>
+                              {p}
+                          </a>
+                      );
+                  }).filter(Boolean)}
+              </div>
+  
+              <a href={`?page=${Math.min(totalPages, currentPage + 1)}`} class={`action-btn edit-btn no-underline ${currentPage === totalPages ? 'opacity-50 pointer-events-none' : ''}`}>下一页</a>
+              
+              <div class="flex items-center ml-4 gap-2">
+                  <input type="number" id="jump-page-input" min="1" max={totalPages} class="w-16 px-2 py-1 border rounded text-sm h-8" placeholder="页码">
+                  <button onclick="const p = document.getElementById('jump-page-input').value; if(p) window.location.href=`?page=${p}`" class="action-btn view-btn py-1 h-8">跳转</button>
+              </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- 动态管理标签页 -->
+    <!-- 动态管理标签页 (简化展示，后续可应用同样样式) -->
     <div class="tab-content" id="notes-tab">
       <div class="admin-controls">
         <button class="admin-btn" onclick="createNote()">新建动态</button>
       </div>
-
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>标题</th>
-            <th>心情</th>
-            <th>地点</th>
-            <th>创建时间</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody id="notes-list">
-          {notes.map(note => (
-            <tr key={note.id}>
-              <td>{note.data.title}</td>
-              <td>{note.data.mood || ''}</td>
-              <td>{note.data.location || ''}</td>
-              <td>{note.data.createdAt ? new Date(note.data.createdAt).toLocaleDateString() : (note.data.updatedAt ? new Date(note.data.updatedAt).toLocaleDateString() : '')}</td>
-              <td class="admin-table-actions">
-                <button class="admin-btn admin-btn-secondary edit-btn" data-type="note" data-id={note.id}>编辑</button>
-                <button class="admin-btn view-btn" data-type="note" data-slug={note.slug}>查看</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div class="table-container">
+        <table class="admin-table">
+            <thead><tr><th>标题</th><th>心情</th><th>地点</th><th>时间</th><th>操作</th></tr></thead>
+            <tbody>
+            {notes.map(note => (
+                <tr>
+                <td>{note.data.title}</td>
+                <td>{note.data.mood || ''}</td>
+                <td>{note.data.location || ''}</td>
+                <td>{note.data.createdAt ? new Date(note.data.createdAt).toLocaleDateString() : ''}</td>
+                <td class="admin-table-actions">
+                    <button class="action-btn edit-btn" data-type="note" data-id={note.id}>编辑</button>
+                </td>
+                </tr>
+            ))}
+            </tbody>
+        </table>
+      </div>
     </div>
 
-    <!-- 页面管理标签页 -->
+    <!-- 其他标签页保持基本结构 -->
     <div class="tab-content" id="pages-tab">
-      <div class="admin-controls">
-        <button class="admin-btn" onclick="createPage()">新建页面</button>
-      </div>
-
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>页面名称</th>
-            <th>路径</th>
-            <th>状态</th>
-            <th>创建时间</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody id="pages-list">
-          {pages.map(page => (
-            <tr key={page.id}>
-              <td>{page.data.title}</td>
-              <td>/{page.slug}</td>
-              <td>
-                <span class={`status-badge ${page.data.status || 'draft'}`}>
-                  {page.data.status || 'draft'}
-                </span>
-              </td>
-              <td>{page.data.createdAt ? new Date(page.data.createdAt).toLocaleDateString() : (page.data.updatedAt ? new Date(page.data.updatedAt).toLocaleDateString() : '')}</td>
-              <td class="admin-table-actions">
-                <button class="admin-btn admin-btn-secondary edit-btn" data-type="page" data-id={page.id}>编辑</button>
-                <button class="admin-btn view-btn" data-type="page" data-slug={page.slug}>查看</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+        <div class="table-container">
+            <table class="admin-table">
+                <thead><tr><th>标题</th><th>路径</th><th>操作</th></tr></thead>
+                <tbody>
+                {pages.map(p => (<tr><td>{p.data.title}</td><td>/{p.slug}</td>
+                <td class="admin-table-actions"><button class="action-btn edit-btn" data-type="page" data-id={p.id}>编辑</button></td></tr>))}
+                </tbody>
+            </table>
+        </div>
     </div>
-
-    <!-- 分类管理标签页 -->
     <div class="tab-content" id="categories-tab">
-      <div class="admin-controls">
-        <button class="admin-btn" onclick="createCategory()">新建分类</button>
-      </div>
-
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>分类名称</th>
-            <th>颜色</th>
-            <th>创建时间</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody id="categories-list">
-          {categories.map(category => (
-            <tr key={category.id}>
-              <td>{category.data.title}</td>
-              <td>{category.data.color || ''}</td>
-              <td>{category.data.createdAt ? new Date(category.data.createdAt).toLocaleDateString() : (category.data.updatedAt ? new Date(category.data.updatedAt).toLocaleDateString() : '')}</td>
-              <td class="admin-table-actions">
-                <button class="admin-btn admin-btn-secondary edit-btn" data-type="category" data-id={category.id}>编辑</button>
-                <button class="admin-btn view-btn" data-type="category" data-slug={category.slug}>查看</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+        <div class="table-container">
+            <table class="admin-table">
+                <thead><tr><th>名称</th><th>操作</th></tr></thead>
+                <tbody>
+                {categories.map(c => (<tr><td>{c.data.title}</td>
+                <td class="admin-table-actions"><button class="action-btn edit-btn" data-type="category" data-id={c.id}>编辑</button></td></tr>))}
+                </tbody>
+            </table>
+        </div>
     </div>
-
-    <!-- 标签管理标签页 -->
     <div class="tab-content" id="tags-tab">
-      <div class="admin-controls">
-        <button class="admin-btn" onclick="createTag()">新建标签</button>
-      </div>
-
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>标签名称</th>
-            <th>颜色</th>
-            <th>创建时间</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody id="tags-list">
-          {tags.map(tag => (
-            <tr key={tag.id}>
-              <td>{tag.data.title}</td>
-              <td>{tag.data.color || ''}</td>
-              <td>{tag.data.createdAt ? new Date(tag.data.createdAt).toLocaleDateString() : (tag.data.updatedAt ? new Date(tag.data.updatedAt).toLocaleDateString() : '')}</td>
-              <td class="admin-table-actions">
-                <button class="admin-btn admin-btn-secondary edit-btn" data-type="tag" data-id={tag.id}>编辑</button>
-                <button class="admin-btn view-btn" data-type="tag" data-slug={tag.slug}>查看</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+        <div class="table-container">
+            <table class="admin-table">
+                <thead><tr><th>名称</th><th>操作</th></tr></thead>
+                <tbody>
+                {tags.map(t => (<tr><td>{t.data.title}</td>
+                <td class="admin-table-actions"><button class="action-btn edit-btn" data-type="tag" data-id={t.id}>编辑</button></td></tr>))}
+                </tbody>
+            </table>
+        </div>
     </div>
   </div>
 
@@ -232,35 +221,6 @@ const notes = await getCollection('notes');
     const selectedCountSpan = document.querySelector('.selected-count');
     const statusFilter = document.getElementById('status-filter');
     const postSearch = document.getElementById('post-search');
-    
-    // 筛选和搜索逻辑
-    function filterPosts() {
-        const status = statusFilter.value;
-        const searchText = postSearch.value.toLowerCase().trim();
-        const rows = document.querySelectorAll('.post-row');
-        
-        rows.forEach(row => {
-            const rowStatus = row.dataset.status;
-            const rowTitle = row.dataset.title; // 已经是小写了
-            
-            let statusMatch = (status === 'all') || (status === 'published' && rowStatus === 'published') || (status === 'draft' && rowStatus !== 'published');
-            let searchMatch = rowTitle.includes(searchText);
-            
-            if (statusMatch && searchMatch) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
-        });
-    }
-
-    if (statusFilter) {
-        statusFilter.addEventListener('change', filterPosts);
-    }
-
-    if (postSearch) {
-        postSearch.addEventListener('input', filterPosts);
-    }
     
     // 更新批量操作UI状态
     function updateBatchUI() {
@@ -291,6 +251,35 @@ const notes = await getCollection('notes');
       cb.addEventListener('change', updateBatchUI);
     });
 
+    // 筛选和搜索逻辑
+    function filterPosts() {
+        const status = statusFilter.value;
+        const searchText = postSearch.value.toLowerCase().trim();
+        const rows = document.querySelectorAll('.post-row');
+        
+        rows.forEach(row => {
+            const rowStatus = row.dataset.status;
+            const rowTitle = row.dataset.title; // 已经是小写了
+            
+            let statusMatch = (status === 'all') || (status === 'published' && rowStatus === 'published') || (status === 'draft' && rowStatus !== 'published');
+            let searchMatch = rowTitle.includes(searchText);
+            
+            if (statusMatch && searchMatch) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    if (statusFilter) {
+        statusFilter.addEventListener('change', filterPosts);
+    }
+
+    if (postSearch) {
+        postSearch.addEventListener('input', filterPosts);
+    }
+
     // 执行API操作
     async function performAction(action, ids) {
        const actionMap = {
@@ -320,14 +309,14 @@ const notes = await getCollection('notes');
         const result = await response.json();
 
         if (result.success) {
-          alert(result.message);
-          window.location.reload();
+          window.showToast(result.message, 'success');
+          setTimeout(() => window.location.reload(), 1000);
         } else {
-          alert('操作失败: ' + (result.error || JSON.stringify(result.errors)));
+          window.showToast('操作失败: ' + (result.error || JSON.stringify(result.errors)), 'error');
         }
       } catch (error) {
         console.error('操作出错:', error);
-        alert('操作出错，请查看控制台');
+        window.showToast('操作出错，请查看控制台', 'error');
       }
     }
 
@@ -344,15 +333,36 @@ const notes = await getCollection('notes');
     });
 
     // 绑定单行操作按钮事件 (使用事件委托)
-    document.querySelector('#posts-list').addEventListener('click', (e) => {
-      if (e.target.classList.contains('action-btn')) {
-        const action = e.target.dataset.action;
-        const id = e.target.dataset.id;
-        if (action && id) {
-          performAction(action, [id]);
-        }
-      }
-    });
+    const postsList = document.querySelector('#posts-list');
+    if (postsList) {
+        postsList.addEventListener('click', (e) => {
+            const btn = e.target.closest('.action-btn');
+            if (!btn) return;
+            
+            // 处理编辑
+            if (btn.classList.contains('edit-btn')) {
+                const id = btn.dataset.id;
+                // 移除 .md 扩展名（如果存在）
+                const cleanId = id.replace(/\.md$/, '');
+                window.location.href = `/admin/article-editor?edit=${encodeURIComponent(cleanId)}`;
+                return;
+            }
+            
+            // 处理查看
+            if (btn.classList.contains('view-btn')) {
+                const slug = btn.dataset.slug;
+                window.open(`/blog/${slug}`, '_blank');
+                return;
+            }
+
+            // 处理其他动作
+            const action = btn.dataset.action;
+            const id = btn.dataset.id;
+            if (action && id) {
+                performAction(action, [id]);
+            }
+        });
+    }
 
     // 切换标签页
     document.querySelectorAll('.tab-btn').forEach(button => {
@@ -367,253 +377,233 @@ const notes = await getCollection('notes');
         document.getElementById(tabId).classList.add('active');
       });
     });
-
-    // 通用函数占位符
-    function createPost() {
-      window.location.href = '/admin/article-editor';
-    }
-
-    // 使用事件委托处理按钮点击
-    document.addEventListener('click', function(e) {
-      // 处理编辑按钮
-      if (e.target.classList.contains('edit-btn')) {
-        const type = e.target.dataset.type;
-        const id = e.target.dataset.id;
-
-        switch(type) {
-          case 'post':
-            // 移除 .md 扩展名（如果存在）
-            const cleanId = id.replace(/\.md$/, '');
-            // 跳转到新的文章编辑器，并传递文章ID
-            window.location.href = `/admin/article-editor?edit=${encodeURIComponent(cleanId)}`;
-            break;
-          case 'note':
-            alert('编辑动态: ' + id);
-            break;
-          case 'page':
-            alert('编辑页面: ' + id);
-            break;
-          case 'category':
-            alert('编辑分类: ' + id);
-            break;
-          case 'tag':
-            alert('编辑标签: ' + id);
-            break;
-        }
-      }
-
-      // 处理查看按钮
-      if (e.target.classList.contains('view-btn')) {
-        const type = e.target.dataset.type;
-        const slug = e.target.dataset.slug;
-
-        switch(type) {
-          case 'post':
-            window.open(`/blog/${slug}`, '_blank');
-            break;
-          case 'note':
-            window.open(`/notes/${slug}`, '_blank');
-            break;
-          case 'page':
-            window.open(`/${slug}`, '_blank');
-            break;
-          case 'category':
-            window.open(`/categories/${slug}`, '_blank');
-            break;
-          case 'tag':
-            window.open(`/tags/${slug}`, '_blank');
-            break;
-        }
-      }
-    });
   </script>
 
   <style>
+    /* 现代化 UI 重构 */
+    :root {
+        --primary-color: #3498db;
+        --border-color: #e2e8f0;
+        --bg-hover: #f8fafc;
+    }
+
+    .admin-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Tabs 优化 */
+    .admin-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 24px;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 1px;
+    }
+
+    .tab-btn {
+        background: none;
+        border: none;
+        padding: 10px 20px;
+        cursor: pointer;
+        color: #64748b;
+        font-weight: 500;
+        font-size: 0.95rem;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+        color: var(--primary-color);
+        background-color: rgba(52, 152, 219, 0.05);
+        border-radius: 6px 6px 0 0;
+    }
+
+    .tab-btn.active {
+        color: var(--primary-color);
+        border-bottom-color: var(--primary-color);
+    }
+
+    /* 顶部操作栏 */
+    .admin-controls {
+        background: white;
+        padding: 16px;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+        border: 1px solid var(--border-color);
+    }
+
+    /* 表格容器 */
+    .table-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+    }
+
+    .admin-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+
+    .admin-table thead {
+        background-color: #f8fafc;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .admin-table th {
+        padding: 16px;
+        font-weight: 600;
+        color: #475569;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .admin-table td {
+        padding: 16px;
+        border-bottom: 1px solid var(--border-color);
+        color: #334155;
+        font-size: 0.95rem;
+        vertical-align: middle;
+    }
+
+    .admin-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .admin-table tr:hover {
+        background-color: #f1f5f9;
+    }
+
+    /* 状态徽章 */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        line-height: 1;
+    }
+
+    .status-badge.published {
+        background-color: #dcfce7;
+        color: #166534;
+    }
+
+    .status-badge.draft {
+        background-color: #fef9c3;
+        color: #854d0e;
+    }
+
+    /* 操作按钮 */
+    .admin-table-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .action-btn {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .edit-btn {
+        background-color: white;
+        border-color: #cbd5e1;
+        color: #334155;
+    }
+    .edit-btn:hover { border-color: #94a3b8; background-color: #f8fafc; }
+
+    .view-btn {
+        background-color: white;
+        border-color: #cbd5e1;
+        color: #0ea5e9;
+    }
+    .view-btn:hover { background-color: #e0f2fe; border-color: #7dd3fc; }
+
+    .publish-btn {
+        background-color: #dcfce7;
+        color: #15803d;
+    }
+    .publish-btn:hover { background-color: #bbf7d0; }
+
+    .unpublish-btn {
+        background-color: #fef9c3;
+        color: #a16207;
+    }
+    .unpublish-btn:hover { background-color: #fef08a; }
+
+    .delete-btn {
+        background-color: #fee2e2;
+        color: #b91c1c;
+    }
+    .delete-btn:hover { background-color: #fecaca; }
+
+    /* 通用工具类 */
+    .w-64 { width: 16rem; }
+    .text-sm { font-size: 0.875rem; }
+    .text-gray-600 { color: #475569; }
+    .text-gray-500 { color: #64748b; }
+    .border { border: 1px solid var(--border-color); }
+    .rounded { border-radius: 6px; }
+    .flex { display: flex; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .gap-4 { gap: 1rem; }
+    .mr-2 { margin-right: 0.5rem; }
+    .hidden { display: none; }
+    .mt-4 { margin-top: 1rem; }
+    .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+    .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+    
+    .cursor-pointer { cursor: pointer; }
+    
+    .form-select, .form-input {
+        background-color: white;
+        border: 1px solid #cbd5e1;
+        transition: border-color 0.2s;
+    }
+    .form-select:focus, .form-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+    }
+    
+    /* 分页条样式 */
+    .pagination-controls {
+        padding: 16px;
+        border-top: 1px solid var(--border-color);
+        background-color: white;
+    }
+    
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
     .batch-actions {
       display: flex;
       align-items: center;
       gap: 10px;
       padding: 4px 10px;
       border-radius: 4px;
-    }
-    
-    .batch-actions.hidden {
-      display: none;
-    }
-
-    .selected-count {
-      font-weight: 500;
-      color: #495057;
-      margin-right: 5px;
-    }
-
-    .admin-btn-danger {
-      background-color: #dc3545;
-      color: white;
-    }
-    
-    .admin-btn-danger:hover {
-      background-color: #c82333;
-    }
-
-    .admin-btn-success {
-      background-color: #28a745;
-      color: white;
-    }
-    
-    .admin-btn-success:hover {
-      background-color: #218838;
-    }
-    
-    .admin-btn-warning {
-      background-color: #ffc107;
-      color: #212529;
-    }
-    
-    .admin-btn-warning:hover {
-      background-color: #e0a800;
-    }
-
-    .flex {
-      display: flex;
-    }
-    
-    .items-center {
-      align-items: center;
-    }
-    
-    .gap-4 {
-      gap: 1rem;
-    }
-    
-    .mr-2 {
-      margin-right: 0.5rem;
-    }
-
-    .w-10 {
-      width: 2.5rem;
-    }
-    
-    .text-center {
-      text-align: center;
-    }
-    
-    .cursor-pointer {
-      cursor: pointer;
-    }
-    
-    .align-middle {
-      vertical-align: middle;
-    }
-
-    .w-64 {
-      width: 16rem;
-    }
-
-    .form-select, .form-input {
-      background-color: white;
-      border: 1px solid #ced4da;
-    }
-    
-    .text-sm {
-      font-size: 0.875rem;
-    }
-    
-    .text-xs {
-      font-size: 0.75rem;
-    }
-    
-    .text-gray-600 {
-      color: #718096;
-    }
-    
-    .py-1 {
-      padding-top: 0.25rem;
-      padding-bottom: 0.25rem;
-    }
-    
-    .px-2 {
-      padding-left: 0.5rem;
-      padding-right: 0.5rem;
-    }
-    
-    .rounded {
-      border-radius: 0.25rem;
-    }
-    
-    .flex-col {
-      flex-direction: column;
-    }
-    
-    .w-full {
-      width: 100%;
-    }
-    
-    .gap-2 {
-      gap: 0.5rem;
-    }
-
-    .admin-tabs {
-      display: flex;
-      margin-bottom: 20px;
-      border-bottom: 1px solid #ddd;
-    }
-
-    .tab-btn {
-      background: none;
-      border: none;
-      padding: 10px 20px;
-      cursor: pointer;
-      border-bottom: 3px solid transparent;
-    }
-
-    .tab-btn.active {
-      border-bottom: 3px solid #3498db;
-      color: #3498db;
-    }
-
-    .tab-content {
-      display: none;
-    }
-
-    .tab-content.active {
-      display: block;
-    }
-
-    .admin-controls {
-      margin-bottom: 20px;
-    }
-
-    .status-badge {
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 12px;
-    }
-
-    .status-badge.published {
-      background: #d4edda;
-      color: #155724;
-    }
-
-    .status-badge.draft {
-      background: #fff3cd;
-      color: #856404;
-    }
-
-    .status-badge.archived {
-      background: #f8d7da;
-      color: #721c24;
-    }
-
-    .admin-table-actions {
-      display: flex;
-      gap: 5px;
-    }
-
-    .admin-table-actions .admin-btn {
-      padding: 4px 8px;
-      font-size: 12px;
-      margin: 0;
+      background-color: #f1f5f9;
     }
   </style>
 </Layout>

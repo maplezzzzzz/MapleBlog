@@ -22,7 +22,7 @@ export const POST: APIRoute = async ({ request }) => {
     
     const filePath = path.join(CATEGORIES_DIR, `${slug}.md`);
     if (fs.existsSync(filePath)) {
-        return new Response(JSON.stringify({ error: "分类 Slug 已存在" }), { status: 409 });
+        return new Response(JSON.stringify({ success: true, message: "分类已存在", skipped: true }), { status: 200 });
     }
     
     const frontmatter = {

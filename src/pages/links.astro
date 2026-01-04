@@ -1,9 +1,0 @@
----
-import LinksEntryLayout from "@components/common/LinksEntryLayout.astro";
-import { getEntry } from "astro:content";
-import type { PagesEntry } from "@/types";
-
-const entry = await getEntry("pages", "links") as PagesEntry;
----
-
-<LinksEntryLayout entry={entry} />

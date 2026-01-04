@@ -81,96 +81,52 @@ const galleries = [
 </BaseLayout>
 
 <script>
-  function initTypewriter() {
-    const elements = document.querySelectorAll('.js-typewriter');
-    
-    elements.forEach(el => {
-      // 避免重复初始化
-      if (el.hasAttribute('data-typed')) return;
-      
-      const text = el.getAttribute('data-text');
-      if (!text) return;
-      
-      const delay = parseFloat(el.getAttribute('data-delay') || '0') * 1000;
-      
-      // 标记为已初始化
-      el.setAttribute('data-typed', 'true');
-      el.textContent = ''; // 清空内容准备打字
-      el.style.opacity = '1'; // 确保可见
-      
-      setTimeout(() => {
-        let charIndex = 0;
-        const typeChar = () => {
-          if (charIndex < text.length) {
-            el.textContent += text.charAt(charIndex);
-            charIndex++;
-            setTimeout(typeChar, 100 + Math.random() * 50);
-          }
-        };
-        typeChar();
-      }, delay);
-    });
-  }
+  (function() {
+    function startTyping() {
+      const elements = document.querySelectorAll('.js-typewriter');
+      if (elements.length === 0) return;
 
-  // 支持 Astro 的页面切换
-  document.addEventListener('DOMContentLoaded', initTypewriter);
-  // 对于 View Transitions，每次页面加载都要运行
-  document.addEventListener('astro:page-load', () => {
-      // 重置所有状态以便重新打字（可选）
-      document.querySelectorAll('.js-typewriter').forEach(el => {
-          el.removeAttribute('data-typed');
+      elements.forEach(el => {
+        // 重置状态
+        const text = el.getAttribute('data-text');
+        if (!text) return;
+        
+        el.textContent = '';
+        el.style.opacity = '1';
+        
+        const delay = parseFloat(el.getAttribute('data-delay') || '0') * 1000;
+        
+        setTimeout(() => {
+          let charIndex = 0;
+          const typeChar = () => {
+            if (charIndex < text.length) {
+              el.textContent += text.charAt(charIndex);
+              charIndex++;
+              // 使用 setTimeout 而非 requestAnimationFrame 以确保间隔可控
+              setTimeout(typeChar, 100 + Math.random() * 50);
+            }
+          };
+          typeChar();
+        }, delay);
       });
-      initTypewriter();
-  });
+    }
+
+    // 立即运行一次
+    startTyping();
+
+    // 依然保留 astro:page-load 以支持客户端路由跳转
+    document.addEventListener('astro:page-load', startTyping);
+  })();
 </script>
 
 <style>
-  /* 基础动画 */
-  @keyframes flyIn {
-    0% {
-      opacity: 0;
-      transform: translateY(100px) scale(0.9) rotateX(-10deg);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0) scale(1) rotateX(0);
-    }
-  }
-
-  .animate-fly-in {
-    animation: flyIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-    opacity: 0;
-  }
-
-  @keyframes fadeUp {
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  .animate-fade-up {
-    animation: fadeUp 1s ease-out forwards;
-  }
-
-  /* 3D 效果 */
-  .perspective-1000 {
-    perspective: 1000px;
-  }
-  .transform-style-3d {
-    transform-style: preserve-3d;
-  }
-  .group:hover .card-inner {
-    transform: rotateY(15deg) rotateX(5deg);
-  }
-
-  /* 字体修饰 */
-  .font-serif {
-    font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", serif;
-  }
-  
-  /* 确保打字机容器有高度，防止布局跳动 */
+  /* ... (动画样式保持不变) ... */
+  /* 确保打字机容器默认可见但内容为空 */
   .js-typewriter {
-      min-height: 1.5em;
+      min-height: 1.6em;
       display: block;
+      color: rgba(255, 255, 255, 0.9); /* 提高对比度 */
+      font-weight: 300;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5); /* 增加阴影以适应深色背景 */
   }
 </style>

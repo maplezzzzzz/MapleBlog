@@ -453,18 +453,30 @@ if (!initialMenus.footer) initialMenus.footer = [];
         
         try {
             btn.disabled = true;
-            btn.textContent = '正在同步页面...';
+            btn.textContent = '正在同步资源...';
             
-            // 1. 收集所有需要检查/创建的页面
-            const itemsToProcess = [];
+            const pagesToCreate = [];
+            const categoriesToCreate = [];
+            const tagsToCreate = [];
+
             const collectItems = (items) => {
                 items.forEach(item => {
-                    // 宽松检查：只要 URL 以 / 开头且不是首页，就尝试创建
-                    const isInternal = item.type !== 'external' && item.url && item.url.startsWith('/') && item.url !== '/';
-                    
-                    if (isInternal) {
-                        itemsToProcess.push({ title: item.name, slug: item.url });
+                    const url = item.url || '';
+                    if (!url.startsWith('/')) return;
+
+                    if (url.startsWith('/blog/categories/')) {
+                        const slug = url.replace('/blog/categories/', '').replace(/\/$/, '');
+                        if (slug) categoriesToCreate.push({ title: item.name, slug });
+                    } else if (url.startsWith('/blog/tags/')) {
+                        const slug = url.replace('/blog/tags/', '').replace(/\/$/, '');
+                        if (slug) tagsToCreate.push({ title: item.name, slug });
+                    } else if (url !== '/' && !url.startsWith('/blog/') && !url.startsWith('/admin')) {
+                        // 普通页面 (排除首页、博客详情页、后台页)
+                        // 注意：这里可能误判，比如 /search, /photo-gallery 等特殊页面
+                        // 但由于 API 有幂等性，创建了也没关系（如果已存在会跳过）
+                        pagesToCreate.push({ title: item.name, slug: url });
                     }
+
                     if (item.children && item.children.length > 0) {
                         collectItems(item.children);
                     }
@@ -474,18 +486,36 @@ if (!initialMenus.footer) initialMenus.footer = [];
             collectItems(menus.header);
             collectItems(menus.footer);
             
-            // 2. 并发创建页面 (API 已支持幂等性)
-            const createPromises = itemsToProcess.map(item => 
+            // 1. 创建普通页面
+            const pagePromises = pagesToCreate.map(item => 
                 fetch('/api/pages', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(item)
                 }).then(res => res.json())
             );
+
+            // 2. 创建分类
+            const catPromises = categoriesToCreate.map(item => 
+                fetch('/api/categories', {
+                    method: 'POST', // 确保 categories API 支持 POST 创建且幂等（我们之前写的会返回 409，需修改）
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(item)
+                }).then(res => res.json())
+            );
+
+            // 3. 创建标签
+            const tagPromises = tagsToCreate.map(item => 
+                fetch('/api/tags', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(item)
+                }).then(res => res.json())
+            );
             
-            await Promise.all(createPromises);
+            await Promise.all([...pagePromises, ...catPromises, ...tagPromises]);
             
-            // 3. 保存菜单配置
+            // 4. 保存菜单配置
             const response = await fetch('/api/menus', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -493,7 +523,7 @@ if (!initialMenus.footer) initialMenus.footer = [];
             });
             
             if (response.ok) {
-                window.showToast('菜单及页面已同步更新', 'success');
+                window.showToast('菜单及对应资源已同步更新', 'success');
             } else {
                 window.showToast('保存菜单失败', 'error');
             }
