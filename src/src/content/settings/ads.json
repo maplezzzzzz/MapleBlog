@@ -1,0 +1,22 @@
+[
+  {
+    "id": "banner-top",
+    "name": "顶部横幅",
+    "type": "banner",
+    "enabled": true,
+    "code": "<!-- 顶部横幅广告代码 -->",
+    "position": "top",
+    "startDate": "2025-12-29T08:17:41.084Z",
+    "endDate": null
+  },
+  {
+    "id": "sidebar-1",
+    "name": "侧边栏广告1",
+    "type": "sidebar",
+    "enabled": true,
+    "code": "<!-- 侧边栏广告代码 -->",
+    "position": "sidebar",
+    "startDate": "2025-12-29T08:17:41.084Z",
+    "endDate": null
+  }
+]

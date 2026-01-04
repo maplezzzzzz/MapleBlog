@@ -1,0 +1,17 @@
+{
+  "site": {
+    "title": "小白的世界",
+    "description": "一个记录生活感悟、分享人生体验的个人空间",
+    "author": "小白",
+    "url": "https://example.com",
+    "logo": "",
+    "favicon": ""
+  },
+  "appearance": {
+    "theme": "auto"
+  },
+  "features": {
+    "comments": true,
+    "search": true
+  }
+}

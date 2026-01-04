@@ -1,7 +1,9 @@
 {
   "categories": [
-    { "id": "cat-tech", "name": "技术博客", "code": "tech", "sort_order": 1 },
-    { "id": "cat-life", "name": "生活记录", "code": "life", "sort_order": 2 }
+    { "id": "cat-ai", "name": "ai前沿", "code": "ai", "sort_order": 1 },
+    { "id": "cat-photo", "name": "摄影", "code": "photo", "sort_order": 2 },
+    { "id": "cat-music", "name": "音乐", "code": "music", "sort_order": 3 },
+    { "id": "cat-tool", "name": "工具", "code": "tool", "sort_order": 4 }
   ],
   "links": [
     {
@@ -11,7 +13,7 @@
       "description": "一个独立开发者的精神自留地",
       "avatar": "/favicon/avatar.webp",
       "status": "active",
-      "category_code": "tech",
+      "category_code": "ai",
       "sort_order": 1
     },
     {
@@ -21,7 +23,7 @@
       "description": "JS/TS、React、工程化与性能优化",
       "avatar": "/favicon/logo-192x192.png",
       "status": "active",
-      "category_code": "tech",
+      "category_code": "ai",
       "sort_order": 2
     },
     {
@@ -31,7 +33,7 @@
       "description": "旅行、摄影与日常随笔",
       "avatar": "/favicon/logo-192x192.png",
       "status": "active",
-      "category_code": "life",
+      "category_code": "ai",
       "sort_order": 1
     }
   ]

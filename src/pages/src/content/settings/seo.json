@@ -1,0 +1,9 @@
+{
+  "siteTitle": "小白天地",
+  "siteDescription": "一个记录生活感悟、分享人生体验的个人空间",
+  "keywords": ["生活感悟", "人生体验", "个人博客"],
+  "ogImage": "/assets/default-og-image.jpg",
+  "googleAnalyticsId": "",
+  "robotsTxt": "User-agent: *\nAllow: /",
+  "sitemap": true
+}

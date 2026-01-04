@@ -9,7 +9,9 @@
     }
 
     .liquidGlass-shine {
-      box-shadow: inset 2px 2px 8px 0 rgba(255, 255, 255, 0.4), inset -1px -1px 1px 1px rgba(255, 255, 255, 0.6);
+      box-shadow:
+        inset 2px 2px 8px 0 rgba(255, 255, 255, 0.4),
+        inset -1px -1px 1px 1px rgba(255, 255, 255, 0.6);
     }
   }
 }
@@ -38,7 +40,9 @@
     position: absolute;
     inset: 0;
     background: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 6px rgba(39, 39, 39, 0.3), 0 0 20px rgba(39, 39, 39, 0.2);
+    box-shadow:
+      0 4px 6px rgba(39, 39, 39, 0.3),
+      0 0 20px rgba(39, 39, 39, 0.2);
     pointer-events: none;
   }
 
@@ -62,13 +66,13 @@
     pointer-events: none;
   }
 
-
   .liquidGlass-shine {
     position: absolute;
     inset: 0;
     z-index: 2;
     overflow: hidden;
-    box-shadow: inset 2px 2px 1px 0 rgba(255, 255, 255, 0.5),
+    box-shadow:
+      inset 2px 2px 1px 0 rgba(255, 255, 255, 0.5),
       inset -1px -1px 1px 1px rgba(255, 255, 255, 0.4);
     pointer-events: none;
   }
@@ -93,7 +97,7 @@
   }
 
   .menu,
-  .menu>div {
+  .menu > div {
     padding: 0.4rem;
     border-radius: 1rem;
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 2.2);
@@ -112,7 +116,7 @@
   }
 
   .panel,
-  .panel>div {
+  .panel > div {
     border-radius: 30px;
   }
 
@@ -120,17 +124,15 @@
   //   // transform: scale(0.99);
   // }
 
-
-  .panel>img {
+  .panel > img {
     width: 75px;
     padding: 0;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2);
   }
 
-  .panel>img:hover {
+  .panel > img:hover {
     transform-origin: center center;
   }
-
 
   .dock {
     border-radius: 30px;
@@ -139,7 +141,7 @@
   }
 
   .dock,
-  .dock>div {
+  .dock > div {
     border-radius: 30px;
   }
 
@@ -149,14 +151,13 @@
   //   transform: scale(0.995);
   // }
 
-
-  .dock>img {
+  .dock > img {
     width: 75px;
     padding: 0;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2);
   }
 
-  .dock>img:hover {
+  .dock > img:hover {
     transform-origin: center center;
   }
 
@@ -168,7 +169,7 @@
   }
 
   .button,
-  .button>div {
+  .button > div {
     @apply rounded-full;
   }
 
@@ -178,7 +179,7 @@
     transform: scale(1.1);
   }
 
-  .button:hover>div {
+  .button:hover > div {
     @apply rounded-full;
   }
 
@@ -216,11 +217,18 @@
 
   // 文字阴影效果，用于提高在背景图片上的可读性
   .text-shadow-lg {
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.2);
+    text-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.4),
+      0 2px 4px rgba(0, 0, 0, 0.2);
   }
 
   // 头部图片叠加效果
   .entry-header-overlay {
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.3), transparent);
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.7),
+      rgba(0, 0, 0, 0.3),
+      transparent
+    );
   }
 }

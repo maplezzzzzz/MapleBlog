@@ -1,0 +1,213 @@
+--- 
+import Layout from '../../layouts/AdminLayout.astro';
+import fs from 'fs';
+import path from 'path';
+
+// 初始加载 settings 获取 SEO 信息
+const SETTINGS_FILE = path.join(process.cwd(), "src", "data", "settings.json");
+let settings = { seo: { keywords: "", googleVerification: "", baiduVerification: "" } };
+
+if (fs.existsSync(SETTINGS_FILE)) {
+    try {
+        const data = JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf-8"));
+        if (!data.seo) data.seo = { keywords: "", googleVerification: "", baiduVerification: "" };
+        settings = data;
+    } catch (e) { console.error(e); }
+}
+
+// 初始加载 robots.txt
+const ROBOTS_FILE = path.join(process.cwd(), "public", "robots.txt");
+let robotsContent = "User-agent: *\nAllow: /";
+if (fs.existsSync(ROBOTS_FILE)) {
+    robotsContent = fs.readFileSync(ROBOTS_FILE, "utf-8");
+}
+---
+
+<Layout title="SEO 优化">
+  <div class="admin-container">
+    <h2>🔍 SEO 优化</h2>
+    
+    <div class="grid-container">
+        <!-- 基础 SEO 设置 -->
+        <div class="admin-card">
+            <h3>基础元数据</h3>
+            <form id="seo-meta-form">
+                <div class="form-group">
+                    <label>关键词 (Keywords)</label>
+                    <textarea name="seo.keywords" class="form-input" rows="3" placeholder="博客, 技术, 生活, 分享 (用逗号分隔)">{settings.seo.keywords}</textarea>
+                    <p class="text-hint">这些关键词将出现在网站首页的 meta keywords 标签中。</p>
+                </div>
+                <div class="form-group">
+                    <label>Google 站点验证代码</label>
+                    <input type="text" name="seo.googleVerification" class="form-input" value={settings.seo.googleVerification} placeholder="google-site-verification=...">
+                </div>
+                <div class="form-group">
+                    <label>百度站点验证代码</label>
+                    <input type="text" name="seo.baiduVerification" class="form-input" value={settings.seo.baiduVerification}>
+                </div>
+                <button type="submit" class="admin-btn admin-btn-primary">保存元数据</button>
+            </form>
+        </div>
+
+        <!-- Robots.txt 编辑 -->
+        <div class="admin-card">
+            <h3>robots.txt 编辑</h3>
+            <div class="form-group">
+                <textarea id="robots-content" class="form-input code-editor" rows="10">{robotsContent}</textarea>
+            </div>
+            <button id="save-robots-btn" class="admin-btn">保存 robots.txt</button>
+        </div>
+        
+        <!-- 站点地图 -->
+        <div class="admin-card">
+            <h3>站点地图 (Sitemap)</h3>
+            <p>站点地图会自动生成在 <code>/sitemap.xml</code>。</p>
+            <div class="mt-4">
+                <a href="/sitemap.xml" target="_blank" class="admin-btn admin-btn-secondary">查看站点地图</a>
+                <button class="admin-btn ml-2" onclick="window.showToast('站点地图是实时动态生成的，无需手动刷新。', 'info')">刷新生成</button>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <script>
+    // 保存 SEO Meta
+    document.getElementById('seo-meta-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = e.target.querySelector('button');
+        const originalText = btn.textContent;
+        
+        try {
+            btn.disabled = true;
+            btn.textContent = '保存中...';
+            
+            // 先获取现有设置
+            const settingsRes = await fetch('/api/settings');
+            const currentSettings = await settingsRes.json();
+            
+            const formData = new FormData(e.target);
+            
+            // 更新 SEO 部分
+            currentSettings.seo = {
+                keywords: formData.get('seo.keywords'),
+                googleVerification: formData.get('seo.googleVerification'),
+                baiduVerification: formData.get('seo.baiduVerification')
+            };
+            
+            // 保存回服务器
+            const saveRes = await fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(currentSettings)
+            });
+            
+            if (saveRes.ok) {
+                window.showToast('SEO 元数据已保存', 'success');
+            } else {
+                throw new Error('保存失败');
+            }
+        } catch (err) {
+            window.showToast('保存出错: ' + err.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    });
+
+    // 保存 Robots.txt
+    document.getElementById('save-robots-btn').addEventListener('click', async (e) => {
+        const btn = e.target;
+        const content = document.getElementById('robots-content').value;
+        const originalText = btn.textContent;
+
+        try {
+            btn.disabled = true;
+            btn.textContent = '保存中...';
+            
+            const res = await fetch('/api/seo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content })
+            });
+            
+            if (res.ok) {
+                window.showToast('robots.txt 已更新', 'success');
+            } else {
+                window.showToast('更新失败', 'error');
+            }
+        } catch (err) {
+            window.showToast('出错: ' + err.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    });
+  </script>
+
+  <style>
+    .grid-container {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    @media (min-width: 768px) {
+        .grid-container {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    .admin-card {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .admin-card h3 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        color: #2c3e50;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+        color: #495057;
+    }
+    
+    .form-input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+    }
+    
+    .code-editor {
+        font-family: monospace;
+        background-color: #f8f9fa;
+        font-size: 13px;
+    }
+
+    .text-hint {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 4px;
+    }
+    
+    .mt-4 { margin-top: 1rem; }
+    .ml-2 { margin-left: 0.5rem; }
+    
+    .admin-btn-primary {
+        background-color: #3498db;
+        color: white;
+    }
+  </style>
+</Layout>

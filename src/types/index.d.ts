@@ -32,7 +32,7 @@ export type SearchableEntry =
   | PortfolioEntry
   | RecipesEntry
   | TermsEntry;
-  
+
 export type SocialLinks = {
   wechat?: string;
   xhs?: string;
@@ -47,7 +47,7 @@ export type SocialLinks = {
   website?: string;
   youtube?: string;
   rss?: string;
-}
+};
 
 export type EntryReference = {
   id: string;
@@ -86,10 +86,9 @@ export type SideNavMenuProps = {
   level: number;
 };
 
-
 export type ImageData = {
-  src: string,
-  width: number,
-  height: number,
-  format: string
+  src: string;
+  width: number;
+  height: number;
+  format: string;
 };

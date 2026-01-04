@@ -2,7 +2,6 @@
 // 这些样式将在 Twikoo 初始化完成后动态注入
 .dark {
   .twikoo {
-
     // 输入框组样式
     .el-input-group__append,
     .el-input-group__prepend {
@@ -124,11 +123,9 @@
   .tk-icon.__comments {
     @apply text-amber-500 !important;
   }
-
 }
 
 .twikoo {
-
   // 输入框组样式
   .el-input-group__append,
   .el-input-group__prepend {
@@ -159,7 +156,8 @@
   .tk-extras {
     @apply text-gray-500 !important;
     @apply text-sm;
-    span,svg {
+    span,
+    svg {
       @apply text-gray-400 !important;
     }
   }
@@ -167,17 +165,18 @@
   .tk-comments-container {
     min-height: 8rem !important;
   }
-    .tk-comment{
-      margin-top: 1.2rem;
-      font-size: 1rem;
-    }
+  .tk-comment {
+    margin-top: 1.2rem;
+    font-size: 1rem;
+  }
 
-    .tk-comment code,pre {
-      @apply bg-white dark:bg-black;
-      @apply rounded-md;
-      @apply px-2 py-1;
-      @apply text-sm;
-    }
+  .tk-comment code,
+  pre {
+    @apply bg-white dark:bg-black;
+    @apply rounded-md;
+    @apply px-2 py-1;
+    @apply text-sm;
+  }
 
   // 评论输入框样式
   .el-textarea__inner {
@@ -199,11 +198,11 @@
     }
   }
 
-    .tk-preview-container{
-      @apply bg-gray-300/30 dark:bg-gray-600/80 !important ; 
-      @apply rounded-[18px] !important;
-      @apply p-4 !important;
-    }
+  .tk-preview-container {
+    @apply bg-gray-300/30 dark:bg-gray-600/80 !important;
+    @apply rounded-[18px] !important;
+    @apply p-4 !important;
+  }
 
   .el-input--small {
     @apply text-base !important;
@@ -278,9 +277,9 @@
       border-color: rgba(255, 255, 255, 0.15) !important;
     }
   }
-    .tk-expand{
-      @apply bg-gray-300/50 dark:bg-gray-600/50;
-    }
+  .tk-expand {
+    @apply bg-gray-300/50 dark:bg-gray-600/50;
+  }
 
   // 评论头像
   .tk-avatar {
@@ -319,7 +318,7 @@
       }
     }
 
-    .tk-time{
+    .tk-time {
       @apply text-txt-light/70 dark:text-darkmode-txt-light/70;
     }
   }
@@ -347,5 +346,4 @@
   .tk-actions a {
     @apply text-slate-900 !important;
   }
-
 }

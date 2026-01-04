@@ -3,11 +3,15 @@ import { plainify } from "@lib/textConverter";
 import Footer from "@components/base/Footer.astro";
 import Header from "@components/base/Header.astro";
 import "@/styles/main.scss";
-import { ClientRouter } from "astro:transitions";
+import "@/styles/loading-enhanced.scss";
+// import { ClientRouter } from "astro:transitions"; // 暂时禁用Astro的路由
 import Background from "@/components/base/Background.astro";
 import { Tooltips } from "astro-tooltips";
 import { SITE_INFO } from "@lib/config";
+import { getSiteSettings } from "@/utils/settings";
 import { isDevelopment } from "@lib/env";
+
+const dynamicSettings = getSiteSettings();
 
 // types for frontmatters
 export interface Props {
@@ -28,19 +32,19 @@ let customSettings: any = {};
 
 // 基础设置变量
 // console.log("网站基础信息：", basicSettings);
-const siteTitle = SITE_INFO.SITE_NAME;
+const siteTitle = dynamicSettings.site.title || SITE_INFO.SITE_NAME;
 const siteSubTitle = SITE_INFO.SUBNAME;
 const siteImage = SITE_INFO.LOGO_IMAGE || "/favicon.ico";
-const baseUrl = SITE_INFO.URL || "/";
+const baseUrl = dynamicSettings.site.url || SITE_INFO.URL || "/";
 const siteKeywords = basicSettings?.site_keywords || "";
 const siteTagline = basicSettings?.site_tagline || "";
 
 // SEO设置变量
 const metaTitle = seoSettings?.seo_meta_title || "";
-const metaDescription = description || SITE_INFO.DESCRIPTION;
-const metaKeywords = keywords || SITE_INFO.KEY_WORDS;
-const googleAnalyticsId = SITE_INFO.GOOGLE_ANALYTICS_ID || "";
-const baiduAnalyticsId = SITE_INFO.BAIDU_ANALYTICS_ID || "";
+const metaDescription = description || dynamicSettings.site.description || SITE_INFO.DESCRIPTION;
+const metaKeywords = keywords || dynamicSettings.seo.keywords || SITE_INFO.KEY_WORDS;
+const googleAnalyticsId = dynamicSettings.seo.googleVerification || SITE_INFO.GOOGLE_ANALYTICS_ID || "";
+const baiduAnalyticsId = dynamicSettings.seo.baiduVerification || SITE_INFO.BAIDU_ANALYTICS_ID || "";
 
 // 自定义代码设置变量
 const customHeaderCode = customSettings?.custom_header_code || "";
@@ -197,8 +201,8 @@ const customFooterCode = customSettings?.custom_footer_code || "";
       integrity="sha384-dZ/hSVfTPHuzXyECOYCetAvMd0cgqWxN5Fh+mwo86PV4GdU9xgQ/MNzh/YM/lotR"
       crossorigin="anonymous"
       defer></script>
-    <!-- https://docs.astro.build/en/guides/view-transitions -->
-    <ClientRouter fallback="swap" />
+    <!-- 禁用Astro的默认客户端路由，使用我们自定义的零闪烁路由 -->
+    <!-- <ClientRouter fallback="swap" /> -->
     <Tooltips interactive={false} delay={[100, 50]} />
 
     <!-- Google Analytics - 仅在生产环境加载 -->
@@ -230,7 +234,7 @@ const customFooterCode = customSettings?.custom_footer_code || "";
         (function() {
           var hm = document.createElement("script");
           hm.src = "https://hm.baidu.com/hm.js?${baiduAnalyticsId}";
-          var s = document.getElementsByTagName("script")[0]; 
+          var s = document.getElementsByTagName("script")[0];
           s.parentNode.insertBefore(hm, s);
         })();
       `}
@@ -584,7 +588,7 @@ const customFooterCode = customSettings?.custom_footer_code || "";
             ></feFuncR>
             <feFuncG type="gamma" amplitude="0" exponent="1" offset="0"
             ></feFuncG>
-            <feFuncB type="gamma" amplitude="0" exponent="1" offset="0.5"
+            <feFuncB type="gamma" amplitude="0" exponent="0.5"
             ></feFuncB>
           </feComponentTransfer>
 
@@ -642,11 +646,11 @@ const customFooterCode = customSettings?.custom_footer_code || "";
       // 安全的 KaTeX 渲染函数
       function renderMathSafely() {
         if (
-          typeof (window as any).renderMathInElement !== "undefined" &&
+          typeof (window).renderMathInElement !== "undefined" &&
           document.body
         ) {
           try {
-            (window as any).renderMathInElement(document.body, {
+            (window).renderMathInElement(document.body, {
               delimiters: [
                 { left: "$$", right: "$$", display: true },
                 { left: "$", right: "$", display: false },
@@ -675,160 +679,455 @@ const customFooterCode = customSettings?.custom_footer_code || "";
       }
     </script>
 
-    <!-- 页面跳转等待动画脚本 -->
+    <!-- 增强版页面过渡管理脚本 -->
     <script>
-      // 页面加载动画控制
-      let loadingTimeout: NodeJS.Timeout | null = null;
-
-      // 随机加载文案
-      const loadingTexts = [
-        "✨ 魔法正在施展中...",
-        "🌈 彩虹桥搭建中...",
-        "🎨 创意正在迸发...",
-        "🚀 即将起飞...",
-        "💫 星辰大海等你来...",
-        "🌹 精彩内容准备中...",
-        "🌟 闪亮登场倒计时...",
-        "🎪 奇妙之旅即将开始...",
-        "🎶 美妙旋律响起...",
-        "🌸 花朵正在绽放...",
-        "🦋 蝴蝶翩翩起舞...",
-        "🌙 月光洒向大地...",
-      ];
-
-      function getRandomLoadingText() {
-        return loadingTexts[Math.floor(Math.random() * loadingTexts.length)];
-      }
-
-      function updateLoadingText() {
-        const textElement = document.getElementById("loading-text");
-        if (textElement) {
-          textElement.textContent = getRandomLoadingText();
-        }
-      }
-
-      function showPageLoading(delay = 0) {
-        // 清除之前的延迟隐藏
-        if (loadingTimeout) {
-          clearTimeout(loadingTimeout);
-          loadingTimeout = null;
+      // 零闪烁页面过渡管理器
+      class PageTransitionManager {
+        constructor(options = {}) {
+          this.options = {
+            duration: options.duration || 400,
+            easing: options.easing || 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+            fadeInDuration: options.fadeInDuration || 300,
+            fadeOutDuration: options.fadeOutDuration || 200,
+            iframePreload: true,
+            useCustomHistory: true
+          };
+          
+          this.isLoading = false;
+          this.transitionQueue = [];
+          this.isProcessing = false;
+          this.iframeCache = new Map();
+          this.maxIframeCacheSize = 5;
+          this.isFirstLoad = true;
+          
+          // 创建iframe容器
+          this.createIframeContainer();
+          
+          // 创建持久的加载遮罩
+          this.createPersistentOverlay();
+          
+          this.init();
         }
 
-        const loadingElement = document.querySelector(".page-loading");
-        if (loadingElement) {
-          // 更新加载文案
-          updateLoadingText();
-
-          if (delay > 0) {
-            // 优化：使用requestAnimationFrame替代setTimeout
-            requestAnimationFrame(() => {
-              setTimeout(() => {
-                loadingElement.classList.add("active");
-              }, delay);
-            });
-          } else {
-            // 优化：使用requestAnimationFrame确保在下一帧执行
-            requestAnimationFrame(() => {
-              loadingElement.classList.add("active");
-            });
-          }
+        createPersistentOverlay() {
+          // 创建一个持久的遮罩层，始终覆盖整个页面
+          this.persistentOverlay = document.createElement('div');
+          this.persistentOverlay.id = 'persistent-overlay';
+          this.persistentOverlay.style.position = 'fixed';
+          this.persistentOverlay.style.top = '0';
+          this.persistentOverlay.style.left = '0';
+          this.persistentOverlay.style.width = '100%';
+          this.persistentOverlay.style.height = '100%';
+          this.persistentOverlay.style.backgroundColor = '#ffffff';
+          this.persistentOverlay.style.zIndex = '9999';
+          this.persistentOverlay.style.opacity = '1';
+          this.persistentOverlay.style.visibility = 'visible';
+          this.persistentOverlay.style.transition = 'opacity 0.3s ease';
+          
+          // 获取当前页面的实际背景色，而非仅依赖暗色模式
+          const computedStyle = getComputedStyle(document.documentElement);
+          const bgColor = computedStyle.getPropertyValue('--color-background') ||
+                         computedStyle.backgroundColor ||
+                         '#ffffff';
+          // 确保颜色值有效，否则使用默认值
+          this.persistentOverlay.style.backgroundColor = bgColor && bgColor !== 'transparent'
+            ? bgColor
+            : (document.documentElement.classList.contains('dark') ||
+               window.matchMedia('(prefers-color-scheme: dark)').matches
+               ? '#111111'
+               : '#ffffff');
+          
+          document.body.appendChild(this.persistentOverlay);
+          
+          // 首次加载完成后淡出遮罩
+          setTimeout(() => {
+            this.isFirstLoad = false;
+            this.persistentOverlay.style.opacity = '0';
+            setTimeout(() => {
+              this.persistentOverlay.style.visibility = 'hidden';
+            }, 300);
+          }, 500);
         }
-      }
 
-      function hidePageLoading(delay = 100) {
-        const loadingElement = document.querySelector(".page-loading");
-        if (loadingElement) {
-          // 优化：使用requestAnimationFrame优化动画性能
-          loadingTimeout = setTimeout(() => {
-            requestAnimationFrame(() => {
-              loadingElement.classList.remove("active");
-            });
-            loadingTimeout = null;
-          }, delay);
+        createIframeContainer() {
+          // 创建一个隐藏的iframe容器用于预加载内容
+          this.iframeContainer = document.createElement('div');
+          this.iframeContainer.style.position = 'absolute';
+          this.iframeContainer.style.visibility = 'hidden';
+          this.iframeContainer.style.pointerEvents = 'none';
+          this.iframeContainer.style.width = '0';
+          this.iframeContainer.style.height = '0';
+          this.iframeContainer.style.overflow = 'hidden';
+          this.iframeContainer.style.zIndex = '-1';
+          this.iframeContainer.style.left = '-9999px';
+          this.iframeContainer.style.top = '-9999px';
+          document.body.appendChild(this.iframeContainer);
         }
-      }
 
-      // 检查是否为快速导航（避免闪烁）
-      function isQuickNavigation() {
-        return (
-          document.readyState === "complete" ||
-          document.readyState === "interactive"
-        );
-      }
+        init() {
+          // 监听页面跳转事件
+          this.hookNavigationEvents();
+        }
 
-      // 监听页面开始加载事件
-      document.addEventListener("astro:before-preparation", () => {
-        // 对于快速导航，稍微延迟显示动画以避免闪烁
-        const delay = isQuickNavigation() ? 150 : 0;
-        showPageLoading(delay);
-      });
+        hookNavigationEvents() {
+          // 拦截所有链接点击事件
+          document.addEventListener('click', this.handleLinkClick.bind(this));
+        }
 
-      // 监听页面加载完成事件
-      document.addEventListener("astro:page-load", () => {
-        hidePageLoading();
-      });
+        handleLinkClick(event) {
+          const target = event.target;
+          const link = target.closest('a');
 
-      // 监听所有链接点击事件
-      document.addEventListener("click", (e) => {
-        const target = e.target as HTMLElement;
-        const link = target.closest("a");
+          if (!link) return;
 
-        if (link && link.href) {
           const url = new URL(link.href);
           const currentUrl = new URL(window.location.href);
 
-          // 如果是同域名的链接且不是锚点链接
-          if (url.origin === currentUrl.origin && !url.hash) {
-            // 检查是否是下载链接或特殊链接
-            const isDownload =
-              link.hasAttribute("download") ||
-              link.href.match(/\.(pdf|doc|docx|zip|rar|exe|dmg)$/i);
-            const isExternal = link.target === "_blank";
-            const isMailto = link.href.startsWith("mailto:");
-            const isTel = link.href.startsWith("tel:");
-            const isAnchor = link.getAttribute("href")?.startsWith("#");
+          // 检查是否是外部链接或特殊链接
+          if (url.origin !== currentUrl.origin) return;
+          if (link.target === '_blank') return;
+          if (link.href.startsWith('mailto:') || link.href.startsWith('tel:')) return;
+          if (link.getAttribute('href')?.startsWith('#')) return;
 
-            // 只对普通的内部页面链接显示加载动画
-            if (
-              !isDownload &&
-              !isExternal &&
-              !isMailto &&
-              !isTel &&
-              !isAnchor
-            ) {
-              // 检查是否是相同页面的链接
-              if (url.pathname !== currentUrl.pathname) {
-                showPageLoading();
-              }
+          // 如果是相同路径但不同hash，则不执行页面过渡
+          if (url.pathname === currentUrl.pathname) {
+            if (url.hash) {
+              event.preventDefault();
+              this.smoothScrollToTarget(url.hash);
+            }
+            return;
+          }
+
+          // 执行完美零闪烁过渡
+          event.preventDefault();
+          this.navigateTo(link.href);
+        }
+
+        async navigateTo(url) {
+          // 如果正在处理其他过渡，将其加入队列
+          if (this.isProcessing) {
+            this.transitionQueue.push(url);
+            return;
+          }
+          
+          this.isProcessing = true;
+          
+          try {
+            // 执行零闪烁过渡
+            await this.performZeroFlashTransition(url);
+          } catch (error) {
+            console.error('页面跳转失败:', error);
+            // 发生错误时直接跳转
+            window.location.href = url;
+          } finally {
+            this.isProcessing = false;
+            
+            // 处理队列中的下一个跳转
+            if (this.transitionQueue.length > 0) {
+              const nextUrl = this.transitionQueue.shift();
+              setTimeout(() => this.navigateTo(nextUrl), 100);
             }
           }
         }
-      });
 
-      // 监听浏览器前进后退按钮
-      window.addEventListener("popstate", () => {
-        showPageLoading();
-      });
+        async performZeroFlashTransition(url) {
+          return new Promise(async (resolve, reject) => {
+            try {
+              // 立即显示持久遮罩以防止白屏，并同步当前背景色
+              if (!this.isFirstLoad) {
+                // 更新遮罩背景色以匹配当前页面
+                const computedStyle = getComputedStyle(document.documentElement);
+                const bgColor = computedStyle.getPropertyValue('--color-background') ||
+                               computedStyle.backgroundColor ||
+                               '#ffffff';
+                this.persistentOverlay.style.backgroundColor = bgColor && bgColor !== 'transparent'
+                  ? bgColor
+                  : (document.documentElement.classList.contains('dark') ||
+                     window.matchMedia('(prefers-color-scheme: dark)').matches
+                     ? '#111111'
+                     : '#ffffff');
 
-      // 监听表单提交（如搜索表单）
-      document.addEventListener("submit", (e) => {
-        const form = e.target as HTMLFormElement;
-        if (form && form.method.toLowerCase() === "get") {
-          showPageLoading();
+                this.persistentOverlay.style.visibility = 'visible';
+                this.persistentOverlay.style.opacity = '1';
+              }
+              
+              // 首先，淡出当前内容
+              const currentMain = document.querySelector('main#main-content');
+              if (!currentMain) {
+                window.location.href = url;
+                return;
+              }
+              
+              // 创建当前内容的快照并保持可见
+              const snapshot = this.createSnapshot(currentMain);
+              currentMain.parentNode?.insertBefore(snapshot, currentMain);
+              currentMain.style.visibility = 'hidden';
+              
+              // 预加载目标页面
+              const iframe = await this.preloadPageWithIframe(url);
+              
+              // 从iframe中提取内容
+              const content = this.extractContentFromIframe(iframe, url);
+              if (!content) {
+                throw new Error('无法从iframe中提取内容');
+              }
+              
+              // 将新内容添加到DOM中（但隐藏）
+              content.newMain.style.opacity = '0';
+              content.newMain.style.visibility = 'hidden';
+              currentMain.parentNode?.replaceChild(content.newMain, currentMain);
+              
+              // 更新标题和元数据
+              document.title = content.newTitle;
+              this.updateMetaTags(content.newDoc);
+              
+              // 确保新内容渲染后再显示
+              await this.waitForRender(content.newMain);
+              
+              // 执行淡入淡出动画
+              await this.performFadeInOut(snapshot, content.newMain);
+              
+              // 更新浏览器历史记录
+              if (this.options.useCustomHistory) {
+                history.pushState({}, '', url);
+              }
+              
+              // 延迟隐藏持久遮罩，确保过渡完成
+              setTimeout(() => {
+                this.persistentOverlay.style.opacity = '0';
+                setTimeout(() => {
+                  if (!this.isFirstLoad) {
+                    this.persistentOverlay.style.visibility = 'hidden';
+                  }
+                }, 300);
+              }, 100);
+              
+              // 清理iframe
+              setTimeout(() => {
+                if (iframe.parentNode) {
+                  iframe.parentNode.removeChild(iframe);
+                }
+              }, 1000);
+              
+              resolve();
+            } catch (error) {
+              console.error('零闪烁过渡执行失败:', error);
+              // 即使出现错误也要确保遮罩被移除
+              this.persistentOverlay.style.opacity = '0';
+              setTimeout(() => {
+                this.persistentOverlay.style.visibility = 'hidden';
+              }, 300);
+              reject(error);
+            }
+          });
         }
-      });
 
-      // 页面初始加载时隐藏加载动画
-      document.addEventListener("DOMContentLoaded", () => {
-        hidePageLoading();
-      });
+        async preloadPageWithIframe(url) {
+          // 检查是否已缓存iframe
+          if (this.iframeCache.has(url)) {
+            return this.iframeCache.get(url);
+          }
+          
+          return new Promise((resolve, reject) => {
+            const iframe = document.createElement('iframe');
+            iframe.style.position = 'absolute';
+            iframe.style.visibility = 'hidden';
+            iframe.style.width = '100%';
+            iframe.style.height = '100vh';
+            iframe.style.border = 'none';
+            iframe.style.zIndex = '-1';
+            // 防止iframe获取焦点
+            iframe.style.pointerEvents = 'none';
+            iframe.style.opacity = '0';
+            
+            iframe.onload = () => {
+              // 确保iframe完全加载后才返回
+              setTimeout(() => {
+                // 如果缓存已满，删除最旧的条目
+                if (this.iframeCache.size >= this.maxIframeCacheSize) {
+                  const firstKey = this.iframeCache.keys().next().value;
+                  const oldIframe = this.iframeCache.get(firstKey);
+                  if (oldIframe && oldIframe.parentNode) {
+                    oldIframe.parentNode.removeChild(oldIframe);
+                  }
+                  this.iframeCache.delete(firstKey);
+                }
+                
+                // 缓存iframe
+                this.iframeCache.set(url, iframe);
+                resolve(iframe);
+              }, 100);
+            };
+            
+            iframe.onerror = () => {
+              reject(new Error('Failed to load iframe for ' + url));
+            };
+            
+            iframe.src = url;
+            this.iframeContainer.appendChild(iframe);
+          });
+        }
 
-      // 如果页面已经加载完成（处理缓存情况）
-      if (document.readyState === "complete") {
-        hidePageLoading();
+        extractContentFromIframe(iframe, url) {
+          try {
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            
+            // 提取关键内容部分
+            const newMain = iframeDoc.querySelector('main#main-content');
+            const newTitle = iframeDoc.querySelector('title')?.textContent || '';
+            
+            if (!newMain) {
+              return null;
+            }
+            
+            // 深拷贝内容以避免引用问题
+            const newMainClone = newMain.cloneNode(true);
+            
+            return {
+              newMain: newMainClone,
+              newTitle,
+              newDoc: iframeDoc
+            };
+          } catch (e) {
+            console.error('无法从iframe中提取内容 ' + url + ':', e);
+            return null;
+          }
+        }
+
+        createSnapshot(element) {
+          // 创建当前内容的深拷贝作为快照
+          const snapshot = element.cloneNode(true);
+          snapshot.id = 'content-snapshot';
+          snapshot.style.position = 'relative';
+          snapshot.style.zIndex = '9997';
+          snapshot.style.transition = 'opacity 0.2s ease-out';
+          
+          return snapshot;
+        }
+
+        async waitForRender(element) {
+          // 确保元素完全渲染
+          return new Promise(resolve => {
+            // 使用 requestAnimationFrame 确保渲染完成
+            requestAnimationFrame(() => {
+              // 再次使用，确保CSS样式完全应用
+              requestAnimationFrame(() => {
+                setTimeout(resolve, 10);
+              });
+            });
+          });
+        }
+
+        async performFadeInOut(snapshot, newMain) {
+          return new Promise(resolve => {
+            // 设置新内容样式
+            newMain.style.opacity = '0';
+            newMain.style.visibility = 'visible';
+            newMain.style.transition = 'opacity ' + this.options.fadeInDuration + 'ms ease-out';
+            
+            // 淡出快照，淡入新内容
+            snapshot.style.transition = 'opacity ' + this.options.fadeOutDuration + 'ms ease-out';
+            snapshot.style.opacity = '0';
+            
+            // 显示新内容
+            requestAnimationFrame(() => {
+              newMain.style.opacity = '1';
+            });
+            
+            // 等待所有动画完成
+            setTimeout(() => {
+              // 移除快照
+              if (snapshot.parentNode) {
+                snapshot.parentNode.removeChild(snapshot);
+              }
+              resolve();
+            }, Math.max(this.options.fadeOutDuration, this.options.fadeInDuration) + 50);
+          });
+        }
+
+        updateMetaTags(newDoc) {
+          // 更新描述
+          const newDescription = newDoc.querySelector('meta[name="description"]');
+          if (newDescription) {
+            const currentDescription = document.querySelector('meta[name="description"]');
+            if (currentDescription) {
+              currentDescription.setAttribute('content', newDescription.getAttribute('content'));
+            } else {
+              document.head.appendChild(newDescription.cloneNode(true));
+            }
+          }
+          
+          // 更新Open Graph标签
+          const ogTags = newDoc.querySelectorAll('meta[property^="og:"]');
+          ogTags.forEach(tag => {
+            const prop = tag.getAttribute('property');
+            if (prop) {
+              const currentTag = document.querySelector('meta[property="' + prop + '"]');
+              if (currentTag) {
+                currentTag.setAttribute('content', tag.getAttribute('content'));
+              } else {
+                document.head.appendChild(tag.cloneNode(true));
+              }
+            }
+          });
+          
+          // 更新Twitter Card标签
+          const twitterTags = newDoc.querySelectorAll('meta[name^="twitter:"]');
+          twitterTags.forEach(tag => {
+            const name = tag.getAttribute('name');
+            if (name) {
+              const currentTag = document.querySelector('meta[name="' + name + '"]');
+              if (currentTag) {
+                currentTag.setAttribute('content', tag.getAttribute('content'));
+              } else {
+                document.head.appendChild(tag.cloneNode(true));
+              }
+            }
+          });
+        }
+
+        smoothScrollToTarget(hash) {
+          const element = document.querySelector(hash);
+          if (element) {
+            element.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+            });
+          }
+        }
+
+        destroy() {
+          // 移除事件监听器
+          document.removeEventListener('click', this.handleLinkClick.bind(this));
+          
+          // 清理iframe容器
+          if (this.iframeContainer && this.iframeContainer.parentNode) {
+            this.iframeContainer.parentNode.removeChild(this.iframeContainer);
+          }
+          
+          // 清理持久遮罩
+          if (this.persistentOverlay && this.persistentOverlay.parentNode) {
+            this.persistentOverlay.parentNode.removeChild(this.persistentOverlay);
+          }
+          
+          // 清理所有缓存的iframe
+          for (const iframe of this.iframeCache.values()) {
+            if (iframe.parentNode) {
+              iframe.parentNode.removeChild(iframe);
+            }
+          }
+          this.iframeCache.clear();
+        }
       }
 
-      // 返回顶部功能已集成到Footer组件中
+      // 初始化管理器
+      document.addEventListener('DOMContentLoaded', () => {
+        const pageTransitionManager = new PageTransitionManager({
+          duration: 400,
+          fadeInDuration: 300,
+          fadeOutDuration: 200
+        });
+      });
     </script>
 
     <!-- 自定义底部代码 -->

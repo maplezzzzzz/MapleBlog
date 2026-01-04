@@ -1,7 +1,7 @@
 // content reading
 const readingTime = (content: string, complexity: number): string => {
-  if(!content) {
-    return '0分钟';
+  if (!content) {
+    return "0分钟";
   }
   // 中文阅读速度：每分钟约300-400字，取350字/分钟
   const CPS = 350 / 60; // Characters Per Second
@@ -22,7 +22,9 @@ const readingTime = (content: string, complexity: number): string => {
 
   // 统计英文字符数（按单词计算，除以5作为平均单词长度）
   const englishChars = content.match(englishRegex);
-  const englishWordCount = englishChars ? Math.ceil(englishChars.length / 5) : 0;
+  const englishWordCount = englishChars
+    ? Math.ceil(englishChars.length / 5)
+    : 0;
 
   // 总字数（中文字符 + 英文单词数）
   const totalChars = chineseCount + englishWordCount;

@@ -1,0 +1,129 @@
+---
+import Layout from '../../layouts/AdminLayout.astro';
+---
+
+<Layout title="Python 功能集成">
+  <div class="admin-container">
+    <div class="flex justify-between items-center mb-6">
+      <h2>🐍 Python 功能集成</h2>
+      <div id="service-status" class="status-badge checking">检查服务中...</div>
+    </div>
+
+    <div class="dashboard-grid">
+      <!-- 服务概览 -->
+      <div class="dashboard-card full-width">
+        <h3>服务状态</h3>
+        <p>此模块连接到运行在端口 8000 的 FastAPI 服务，提供 AI 文本分析、SEO 优化建议和内容质量检测。</p>
+        <div class="api-info mt-4">
+          <code>API Endpoint: http://localhost:8000</code>
+        </div>
+      </div>
+
+      <!-- 功能测试 -->
+      <div class="dashboard-card">
+        <h3>情感分析测试</h3>
+        <textarea id="analysis-text" class="form-input mb-4" rows="3" placeholder="输入一段文字进行情感分析..."></textarea>
+        <button id="test-analysis-btn" class="admin-btn">开始分析</button>
+        <div id="analysis-result" class="result-box mt-4 hidden"></div>
+      </div>
+
+      <div class="dashboard-card">
+        <h3>内容优化建议</h3>
+        <p class="text-gray-600 mb-4">自动检测文章的关键词密度、阅读难度和 SEO 评分。</p>
+        <button class="admin-btn admin-btn-secondary" disabled>前往编辑器使用</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function checkStatus() {
+      const badge = document.getElementById('service-status');
+      try {
+        const response = await fetch('http://localhost:8000/health');
+        if (response.ok) {
+          badge.textContent = '● 服务运行中';
+          badge.className = 'status-badge published';
+        } else {
+          throw new Error();
+        }
+      } catch (e) {
+        badge.textContent = '● 服务未启动';
+        badge.className = 'status-badge archived';
+      }
+    }
+
+    // 情感分析测试逻辑
+    const testBtn = document.getElementById('test-analysis-btn');
+    const resultBox = document.getElementById('analysis-result');
+    const textArea = document.getElementById('analysis-text');
+
+    if (testBtn) {
+      testBtn.addEventListener('click', async () => {
+        const text = textArea.value.trim();
+        if (!text) return alert('请输入文字');
+
+        testBtn.disabled = true;
+        testBtn.textContent = '分析中...';
+        resultBox.classList.remove('hidden');
+        resultBox.textContent = '请求中...';
+
+        try {
+          const response = await fetch('http://localhost:8000/api/text-analysis', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text, language: 'zh' })
+          });
+          const data = await response.json();
+          resultBox.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        } catch (e) {
+          resultBox.textContent = '分析失败：请确保 Python API 已启动。';
+        } finally {
+          testBtn.disabled = false;
+          testBtn.textContent = '开始分析';
+        }
+      });
+    }
+
+    checkStatus();
+  </script>
+
+  <style>
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    
+    .dashboard-card {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .full-width {
+      grid-column: 1 / -1;
+    }
+
+    .status-badge.checking {
+      background: #e1e5e9;
+      color: #6c757d;
+    }
+
+    .result-box {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 13px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .hidden { display: none; }
+    .mt-4 { margin-top: 1rem; }
+    .mb-4 { margin-bottom: 1rem; }
+    .mb-6 { margin-bottom: 1.5rem; }
+    .text-gray-600 { color: #718096; }
+  </style>
+</Layout>

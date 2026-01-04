@@ -1,0 +1,131 @@
+---
+interface Props {
+  items: Array<{
+    title: string;
+    image: string;
+    date?: string;
+    description?: string;
+    link?: string; // 如果有link则跳转，否则只是展示图片
+    platform?: string;
+  }>;
+  type: 'image' | 'video';
+}
+
+const { items, type } = Astro.props;
+---
+
+<div class="afilmory-grid">
+  {items.map(item => (
+    <a href={item.link || '#'} target={item.link ? "_blank" : "_self"} class={`af-item ${type === 'video' ? 'video-item' : ''}`}>
+      <div class="af-image-wrapper">
+        <img src={item.image} alt={item.title} loading="lazy" />
+        {type === 'video' && (
+            <div class="play-icon">
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="white"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+        )}
+      </div>
+      <div class="af-content">
+        <span class="af-date">{item.date}</span>
+        <h3 class="af-title">{item.title}</h3>
+        {item.description && <p class="af-desc">{item.description}</p>}
+        {item.platform && <span class="af-tag">{item.platform}</span>}
+      </div>
+    </a>
+  ))}
+</div>
+
+<style>
+  .afilmory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 40px;
+    padding: 20px 0;
+  }
+
+  .af-item {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.3s ease;
+  }
+
+  .af-item:hover {
+    transform: translateY(-5px);
+  }
+
+  .af-image-wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9; /* Afilmory 风格通常是大图 */
+    overflow: hidden;
+    border-radius: 4px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    margin-bottom: 15px;
+  }
+
+  .af-image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+  }
+
+  .af-item:hover img {
+    transform: scale(1.05);
+  }
+
+  .play-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.3);
+    border-radius: 50%;
+    padding: 10px;
+    backdrop-filter: blur(4px);
+    transition: background 0.3s;
+  }
+  
+  .af-item:hover .play-icon {
+    background: rgba(231, 76, 60, 0.8); /* YouTube red */
+  }
+
+  .af-content {
+    text-align: center;
+  }
+
+  .af-date {
+    font-size: 0.8rem;
+    color: #999;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 5px;
+  }
+
+  .af-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 5px 0;
+    color: #333;
+  }
+  
+  :global(.dark) .af-title { color: #eee; }
+
+  .af-desc {
+    font-size: 0.9rem;
+    color: #666;
+    line-height: 1.5;
+  }
+  
+  .af-tag {
+    display: inline-block;
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    color: #888;
+    margin-top: 5px;
+  }
+</style>

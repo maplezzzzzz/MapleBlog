@@ -3,4 +3,4 @@ Allow: /
 
 Disallow: /api/*
 
-Sitemap: https://maplezz.com/sitemap-index.xml
+Sitemap: http://localhost:4321/sitemap-index.xml

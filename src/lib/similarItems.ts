@@ -16,7 +16,7 @@ const similerItems = (currentItem: any, allItems: any, id: string) => {
   const filterByCategories = allItems.filter((item: any) =>
     categories.find((category) => item.data.categories.includes(category)),
   );
-  
+
   // filter by tags
   const filterByTags = allItems.filter((item: any) =>
     tags.find((tag) => item.data.tags.includes(tag)),
@@ -35,13 +35,19 @@ const similerItems = (currentItem: any, allItems: any, id: string) => {
   }, {});
 
   // sort items by number of instances
-  const sortedItems = filterByID.sort((a: any, b: any) => itemCount[b.id] - itemCount[a.id]);
+  const sortedItems = filterByID.sort(
+    (a: any, b: any) => itemCount[b.id] - itemCount[a.id],
+  );
 
   // remove items with fewer than 2 instances
-  const filteredItems = sortedItems.filter((item: any) => itemCount[item.id] > 1);
+  const filteredItems = sortedItems.filter(
+    (item: any) => itemCount[item.id] > 1,
+  );
 
   // remove duplicates
-  const uniqueItems = [...new Set(filteredItems.map((item: any) => item.id))].map((id: string) => {
+  const uniqueItems = [
+    ...new Set(filteredItems.map((item: any) => item.id)),
+  ].map((id: string) => {
     return filteredItems.find((item: any) => item.id === id);
   });
 

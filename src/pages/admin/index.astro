@@ -1,0 +1,72 @@
+---
+import Layout from '../../layouts/AdminLayout.astro';
+
+const title = '管理后台';
+---
+
+<Layout title={title}>
+  <div class="admin-container">
+    <h1>管理后台</h1>
+    <div class="dashboard-grid">
+      <a href="/admin/content" class="dashboard-card">
+        <h3>📝 内容管理</h3>
+        <p>管理文章、页面和媒体</p>
+      </a>
+      <a href="/admin/analytics" class="dashboard-card">
+        <h3>📊 访问统计</h3>
+        <p>查看访问数据和分析</p>
+      </a>
+      <a href="/admin/seo" class="dashboard-card">
+        <h3>🔍 SEO优化</h3>
+        <p>管理SEO设置和优化</p>
+      </a>
+      <a href="/admin/ads" class="dashboard-card">
+        <h3>📢 广告管理</h3>
+        <p>管理网站广告位</p>
+      </a>
+      <a href="/admin/settings" class="dashboard-card">
+        <h3>⚙️ 网站设置</h3>
+        <p>网站配置和信息</p>
+      </a>
+      <a href="/admin/python-integration" class="dashboard-card">
+        <h3>🐍 Python功能</h3>
+        <p>集成Python功能</p>
+      </a>
+    </div>
+  </div>
+
+  <style>
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-top: 30px;
+    }
+    
+    .dashboard-card {
+      background: white;
+      border: 1px solid #e1e5e9;
+      border-radius: 8px;
+      padding: 20px;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .dashboard-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .dashboard-card h3 {
+      margin-top: 0;
+      color: #2c3e50;
+    }
+    
+    .dashboard-card p {
+      color: #6c757d;
+      margin-bottom: 0;
+    }
+  </style>
+</Layout>

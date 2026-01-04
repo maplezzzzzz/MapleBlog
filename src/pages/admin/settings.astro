@@ -1,0 +1,309 @@
+---
+import Layout from '../../layouts/AdminLayout.astro';
+import fs from "fs";
+import path from "path";
+import matter from "gray-matter";
+
+const SETTINGS_FILE = path.join(process.cwd(), "src", "data", "settings.json");
+const ABOUT_FILE = path.join(process.cwd(), "src", "content", "pages", "about.md");
+
+let initialSettings = {
+  site: { title: "", description: "", author: "", url: "", logo: "", favicon: "" },
+  appearance: { theme: "auto", primaryColor: "#3498db" },
+  features: { comments: true, search: true, darkMode: true }
+};
+
+let aboutContent = "";
+
+if (fs.existsSync(SETTINGS_FILE)) {
+  try {
+    const data = JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf-8"));
+    // 合并默认值
+    initialSettings = {
+        ...initialSettings,
+        ...data,
+        site: { ...initialSettings.site, ...(data.site || {}) },
+        appearance: { ...initialSettings.appearance, ...(data.appearance || {}) },
+        features: { ...initialSettings.features, ...(data.features || {}) }
+    };
+  } catch (e) { console.error(e); }
+}
+
+if (fs.existsSync(ABOUT_FILE)) {
+    try {
+        const fileContent = fs.readFileSync(ABOUT_FILE, "utf-8");
+        aboutContent = matter(fileContent).content;
+    } catch (e) { console.error(e); }
+}
+---
+
+<Layout title="网站设置">
+  <div class="admin-container">
+    <h2>⚙️ 网站设置</h2>
+    
+    <div class="settings-grid">
+        <!-- 左侧：常规设置 -->
+        <div class="settings-form card">
+            <form id="settings-form">
+                <div class="form-section">
+                    <h3>基本信息</h3>
+                    <div class="form-group">
+                        <label>网站名称</label>
+                        <input type="text" name="site.title" class="form-input" value={initialSettings.site.title} required>
+                    </div>
+                    <div class="form-group">
+                        <label>网站描述</label>
+                        <textarea name="site.description" class="form-input" rows="3">{initialSettings.site.description}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>作者名称</label>
+                        <input type="text" name="site.author" class="form-input" value={initialSettings.site.author}>
+                    </div>
+                    <div class="form-group">
+                        <label>网站 URL</label>
+                        <input type="url" name="site.url" class="form-input" value={initialSettings.site.url} placeholder="https://example.com">
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>图标设置</h3>
+                    <div class="form-group">
+                        <label>网站 Logo</label>
+                        <div class="flex gap-2">
+                            <input type="text" name="site.logo" id="site-logo" class="form-input" value={initialSettings.site.logo} placeholder="/favicon/logo.png">
+                            <label class="admin-btn admin-btn-secondary cursor-pointer whitespace-nowrap flex items-center">
+                                上传
+                                <input type="file" class="hidden" accept="image/*" onchange="uploadFile(this, 'site-logo')">
+                            </label>
+                        </div>
+                        {initialSettings.site.logo && <img src={initialSettings.site.logo} class="mt-2 h-12 object-contain" id="logo-preview">}
+                    </div>
+                    <div class="form-group">
+                        <label>Favicon (图标)</label>
+                        <div class="flex gap-2">
+                            <input type="text" name="site.favicon" id="site-favicon" class="form-input" value={initialSettings.site.favicon} placeholder="/favicon.ico">
+                            <label class="admin-btn admin-btn-secondary cursor-pointer whitespace-nowrap flex items-center">
+                                上传
+                                <input type="file" class="hidden" accept="image/*" onchange="uploadFile(this, 'site-favicon')">
+                            </label>
+                        </div>
+                        {initialSettings.site.favicon && <img src={initialSettings.site.favicon} class="mt-2 h-8 w-8 object-contain" id="favicon-preview">}
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>外观与功能</h3>
+                    <div class="form-group">
+                        <label>主题模式</label>
+                        <select name="appearance.theme" class="form-select" data-value={initialSettings.appearance.theme}>
+                            <option value="auto">自动 (跟随系统)</option>
+                            <option value="light">明亮</option>
+                            <option value="dark">暗黑</option>
+                        </select>
+                    </div>
+                    <div class="checkbox-group">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="features.comments" checked={initialSettings.features.comments}>
+                            启用评论系统
+                        </label>
+                    </div>
+                    <div class="checkbox-group mt-2">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="features.search" checked={initialSettings.features.search}>
+                            启用搜索功能
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-actions sticky-bottom">
+                    <button type="submit" class="admin-btn admin-btn-primary w-full" id="save-settings-btn">保存设置</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- 右侧：关于页面编辑 -->
+        <div class="about-editor card">
+            <div class="flex justify-between items-center mb-4">
+                <h3>📝 关于页面内容</h3>
+                <button class="admin-btn admin-btn-sm" id="save-about-btn">保存内容</button>
+            </div>
+            <textarea id="about-content" class="form-input code-editor" placeholder="在这里输入 Markdown 内容...">{aboutContent}</textarea>
+            <p class="text-xs text-gray-500 mt-2">支持 Markdown 格式。修改后请点击右上角的保存按钮。</p>
+        </div>
+    </div>
+  </div>
+
+  <script>
+    // 初始化 Select 选中状态
+    document.querySelectorAll('select[data-value]').forEach(select => {
+        const val = select.getAttribute('data-value');
+        if (val) select.value = val;
+    });
+
+    // 上传逻辑
+    window.uploadFile = async (input, targetId) => {
+        if (!input.files || !input.files[0]) return;
+        const file = input.files[0];
+        const formData = new FormData();
+        formData.append('image', file);
+        
+        try {
+            const response = await fetch('/api/upload', { method: 'POST', body: formData });
+            const result = await response.json();
+            if (response.ok && result.url) {
+                document.getElementById(targetId).value = result.url;
+                // 更新预览
+                const previewId = targetId === 'site-logo' ? 'logo-preview' : 'favicon-preview';
+                let preview = document.getElementById(previewId);
+                if (!preview) {
+                    preview = document.createElement('img');
+                    preview.id = previewId;
+                    preview.className = targetId === 'site-logo' ? "mt-2 h-12 object-contain" : "mt-2 h-8 w-8 object-contain";
+                    input.closest('.form-group').appendChild(preview);
+                }
+                preview.src = result.url;
+                window.showToast('上传成功', 'success');
+            } else {
+                window.showToast('上传失败', 'error');
+            }
+        } catch (e) {
+            window.showToast('上传出错', 'error');
+        }
+    };
+
+    // 保存设置
+    document.getElementById('settings-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('save-settings-btn');
+      const originalText = btn.textContent;
+      
+      try {
+        btn.disabled = true;
+        btn.textContent = '保存中...';
+        
+        const formData = new FormData(e.target);
+        const settings = {
+            site: {
+                title: formData.get('site.title'),
+                description: formData.get('site.description'),
+                author: formData.get('site.author'),
+                url: formData.get('site.url'),
+                logo: formData.get('site.logo'),
+                favicon: formData.get('site.favicon'),
+            },
+            appearance: {
+                theme: formData.get('appearance.theme'),
+            },
+            features: {
+                comments: formData.get('features.comments') === 'on',
+                search: formData.get('features.search') === 'on',
+            }
+        };
+
+        const response = await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settings)
+        });
+        
+        if (response.ok) {
+            window.showToast('网站设置已保存', 'success');
+        } else {
+            throw new Error('保存失败');
+        }
+        
+      } catch (error) {
+        window.showToast(error.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    });
+
+    // 保存关于页面
+    document.getElementById('save-about-btn').addEventListener('click', async (e) => {
+        const btn = e.target;
+        const originalText = btn.textContent;
+        const content = document.getElementById('about-content').value;
+        
+        try {
+            btn.disabled = true;
+            btn.textContent = '...';
+            
+            const response = await fetch('/api/about', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content })
+            });
+            
+            if (response.ok) {
+                window.showToast('关于页面已更新', 'success');
+            } else {
+                throw new Error('保存失败');
+            }
+        } catch (error) {
+            window.showToast(error.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    });
+  </script>
+
+  <style>
+    .settings-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 24px;
+        align-items: start;
+    }
+    
+    @media (min-width: 1024px) {
+        .settings-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    .card {
+        background: white;
+        padding: 24px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        border: 1px solid #e2e8f0;
+    }
+
+    .form-section {
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #eee;
+    }
+    .form-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+    h3 { margin: 0 0 20px 0; color: #2c3e50; font-size: 1.1rem; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; margin-bottom: 6px; font-weight: 500; color: #475569; font-size: 0.9rem; }
+    .form-input, .form-select { 
+        width: 100%; padding: 8px 12px; 
+        border: 1px solid #cbd5e1; border-radius: 6px; 
+        font-size: 0.95rem; 
+    }
+    
+    .code-editor {
+        font-family: monospace;
+        min-height: 500px;
+        line-height: 1.6;
+        background-color: #f8fafc;
+    }
+    
+    .sticky-bottom { margin-top: 20px; }
+    .flex { display: flex; }
+    .gap-2 { gap: 0.5rem; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .mt-2 { margin-top: 0.5rem; }
+    
+    .admin-btn-primary { background-color: #3498db; color: white; padding: 10px; font-weight: 600; }
+    .admin-btn-secondary { background-color: #f1f5f9; color: #475569; padding: 0 12px; border: 1px solid #cbd5e1; }
+  </style>
+</Layout>

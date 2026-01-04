@@ -12,59 +12,66 @@ declare global {
  * @param button - 复制按钮元素
  */
 window.copyCode = function (button: HTMLElement): void {
-  const codeBlock = button.closest('.code-block-wrapper')?.querySelector('code') as HTMLElement;
+  const codeBlock = button
+    .closest(".code-block-wrapper")
+    ?.querySelector("code") as HTMLElement;
   if (!codeBlock) {
-    console.error('未找到代码块');
+    console.error("未找到代码块");
     return;
   }
-  
-  const code = codeBlock.textContent || '';
 
-  navigator.clipboard.writeText(code).then(() => {
-    // 显示复制成功提示
-    const originalHTML = button.innerHTML;
-    button.innerHTML = `
+  const code = codeBlock.textContent || "";
+
+  navigator.clipboard
+    .writeText(code)
+    .then(() => {
+      // 显示复制成功提示
+      const originalHTML = button.innerHTML;
+      button.innerHTML = `
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polyline points="20,6 9,17 4,12"></polyline>
       </svg>
     `;
-    button.title = '已复制';
+      button.title = "已复制";
 
-    setTimeout(() => {
-      button.innerHTML = originalHTML;
-      button.title = '复制代码';
-    }, 2000);
-  }).catch((err: Error) => {
-    console.error('复制失败:', err);
-    // 降级方案：选中文本
-    const range = document.createRange();
-    range.selectNode(codeBlock);
-    const selection = window.getSelection();
-    if (selection) {
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
-  });
+      setTimeout(() => {
+        button.innerHTML = originalHTML;
+        button.title = "复制代码";
+      }, 2000);
+    })
+    .catch((err: Error) => {
+      console.error("复制失败:", err);
+      // 降级方案：选中文本
+      const range = document.createRange();
+      range.selectNode(codeBlock);
+      const selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+    });
 };
 
 /**
  * 平滑滚动到锚点
  */
 function smoothScrollToAnchor(): void {
-  document.addEventListener('click', function (e: Event) {
-    const target = (e.target as Element)?.closest('a[href^="#"]') as HTMLAnchorElement;
+  document.addEventListener("click", function (e: Event) {
+    const target = (e.target as Element)?.closest(
+      'a[href^="#"]',
+    ) as HTMLAnchorElement;
     if (target) {
       e.preventDefault();
-      const id = target.getAttribute('href')?.substring(1);
+      const id = target.getAttribute("href")?.substring(1);
       if (id) {
         const element = document.getElementById(id);
         if (element) {
           element.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
+            behavior: "smooth",
+            block: "start",
           });
           // 更新URL
-          history.pushState(null, '', `#${id}`);
+          history.pushState(null, "", `#${id}`);
         }
       }
     }
@@ -75,11 +82,13 @@ function smoothScrollToAnchor(): void {
  * 为表格添加响应式滚动
  */
 function setupResponsiveTables(): void {
-  const tables = document.querySelectorAll('.table-wrapper') as NodeListOf<HTMLElement>;
-  tables.forEach(wrapper => {
-    const table = wrapper.querySelector('table') as HTMLTableElement;
+  const tables = document.querySelectorAll(
+    ".table-wrapper",
+  ) as NodeListOf<HTMLElement>;
+  tables.forEach((wrapper) => {
+    const table = wrapper.querySelector("table") as HTMLTableElement;
     if (table && table.scrollWidth > wrapper.clientWidth) {
-      wrapper.style.overflowX = 'auto';
+      wrapper.style.overflowX = "auto";
     }
   });
 }
@@ -91,7 +100,7 @@ function setupResponsiveTables(): void {
  * @returns 模态框元素
  */
 function createImageModal(imgSrc: string, imgAlt: string): HTMLElement {
-  const modal = document.createElement('div');
+  const modal = document.createElement("div");
   modal.innerHTML = `
     <div class="markdown-content">
       <div class="image-modal">
@@ -111,7 +120,7 @@ function createImageModal(imgSrc: string, imgAlt: string): HTMLElement {
  */
 function setupModalClose(modal: HTMLElement): void {
   const closeModal = (): void => {
-    modal.classList.add('fade-out');
+    modal.classList.add("fade-out");
     setTimeout(() => {
       if (modal.parentElement) {
         modal.remove();
@@ -120,34 +129,34 @@ function setupModalClose(modal: HTMLElement): void {
   };
 
   // 点击背景关闭
-  const backdrop = modal.querySelector('.image-modal-backdrop') as HTMLElement;
-  backdrop?.addEventListener('click', (e: Event) => {
+  const backdrop = modal.querySelector(".image-modal-backdrop") as HTMLElement;
+  backdrop?.addEventListener("click", (e: Event) => {
     if (e.target === e.currentTarget) {
       closeModal();
     }
   });
 
   // 点击关闭按钮
-  const closeButton = modal.querySelector('.image-modal-close') as HTMLElement;
-  closeButton?.addEventListener('click', closeModal);
+  const closeButton = modal.querySelector(".image-modal-close") as HTMLElement;
+  closeButton?.addEventListener("click", closeModal);
 
   // ESC键关闭
   const handleEscape = (e: KeyboardEvent): void => {
-    if (e.key === 'Escape') {
+    if (e.key === "Escape") {
       closeModal();
-      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener("keydown", handleEscape);
     }
   };
-  document.addEventListener('keydown', handleEscape);
+  document.addEventListener("keydown", handleEscape);
 
   // 防止页面滚动
-  document.body.style.overflow = 'hidden';
+  document.body.style.overflow = "hidden";
 
   // 模态框关闭时恢复滚动
   const originalRemove = modal.remove.bind(modal);
   modal.remove = function (): void {
-    document.body.style.overflow = '';
-    document.removeEventListener('keydown', handleEscape);
+    document.body.style.overflow = "";
+    document.removeEventListener("keydown", handleEscape);
     originalRemove();
   };
 }
@@ -156,17 +165,19 @@ function setupModalClose(modal: HTMLElement): void {
  * 为图片添加点击放大功能
  */
 function setupImageModal(): void {
-  const images = document.querySelectorAll('.markdown-image img') as NodeListOf<HTMLImageElement>;
-  images.forEach(img => {
+  const images = document.querySelectorAll(
+    ".markdown-image img",
+  ) as NodeListOf<HTMLImageElement>;
+  images.forEach((img) => {
     if (img.src.indexOf("/_image?href=") !== -1) {
       return;
     }
     // 转化url
     img.src = transformImageUrl(img.src);
-    
+
     // 点击事件
-    img.addEventListener('click', function (this: HTMLImageElement) {
-      const modal = createImageModal(this.src, this.alt || '');
+    img.addEventListener("click", function (this: HTMLImageElement) {
+      const modal = createImageModal(this.src, this.alt || "");
       setupModalClose(modal);
       document.body.appendChild(modal);
     });
@@ -192,7 +203,7 @@ function initMarkdownUtils(): void {
 }
 
 // 页面加载完成后初始化
-document.addEventListener('DOMContentLoaded', initMarkdownUtils);
+document.addEventListener("DOMContentLoaded", initMarkdownUtils);
 
 // 导出函数供其他模块使用
 export {
@@ -200,5 +211,5 @@ export {
   setupResponsiveTables,
   setupImageModal,
   transformImageUrl,
-  initMarkdownUtils
+  initMarkdownUtils,
 };

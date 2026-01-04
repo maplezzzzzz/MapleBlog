@@ -1,7 +1,7 @@
 ---
-title: MapleBlog
-content: MapleBlog 是一个基于 Astro 的静态站点生成器，用于创建博客、文档和其他类型的网站。
+title: 小白的天地
+content: 小白的天地 - 一个记录生活感悟、分享人生体验的个人空间，在这里与志同道合的朋友一起探索生活的美好。
 button:
-  label: 查看代码
-  link: https://github.com/MapleBlog/MapleBlog_public
+  label: 关于我
+  link: /about
 ---

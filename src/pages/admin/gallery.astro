@@ -1,0 +1,338 @@
+---
+import Layout from '../../layouts/AdminLayout.astro';
+import fs from 'fs';
+import path from 'path';
+
+const GALLERY_FILE = path.join(process.cwd(), "src", "data", "gallery.json");
+let galleryData = { moments: [], videos: [] };
+
+if (fs.existsSync(GALLERY_FILE)) {
+    try {
+        galleryData = JSON.parse(fs.readFileSync(GALLERY_FILE, "utf-8"));
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+// 合并数据以便统一展示
+const allItems = [
+    ...galleryData.moments.map((item, index) => ({ ...item, _type: 'image', _index: index })),
+    ...galleryData.videos.map((item, index) => ({ ...item, _type: 'video', _index: index }))
+].sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
+
+// 分页逻辑 (SSR 初始渲染)
+const pageSize = 12;
+const currentPage = Number(Astro.url.searchParams.get('page') || 1);
+const totalItems = allItems.length;
+const totalPages = Math.ceil(totalItems / pageSize);
+const startIdx = (currentPage - 1) * pageSize;
+const endIdx = startIdx + pageSize;
+const currentItems = allItems.slice(startIdx, endIdx);
+---
+
+<Layout title="光影管理">
+  <div class="admin-container">
+    <div class="flex justify-between items-center mb-6">
+        <h2>📷 光影管理</h2>
+        <div class="text-sm text-gray-500">
+            共 {totalItems} 个项目
+        </div>
+    </div>
+    
+    <!-- 顶部操作栏 -->
+    <div class="admin-controls">
+        <div class="flex justify-between items-center w-full flex-wrap gap-4">
+            <div class="flex items-center gap-4 flex-wrap">
+                <button class="action-btn publish-btn text-white no-underline flex items-center gap-2" onclick="openModal()">
+                    <span class="text-lg">+</span> 新增内容
+                </button>
+                
+                <!-- 筛选和搜索 -->
+                <div class="flex items-center gap-2">
+                    <div class="filter-group flex border rounded overflow-hidden h-9">
+                        <button class="filter-btn active px-3 text-sm bg-blue-50 text-blue-600 font-medium" data-filter="all" onclick="filterList('all')">全部</button>
+                        <button class="filter-btn px-3 text-sm text-gray-600 hover:bg-gray-50 border-l" data-filter="image" onclick="filterList('image')">图片</button>
+                        <button class="filter-btn px-3 text-sm text-gray-600 hover:bg-gray-50 border-l" data-filter="video" onclick="filterList('video')">视频</button>
+                    </div>
+                    <input type="text" id="gallery-search" placeholder="搜索标题..." class="form-input text-sm py-1 px-3 border rounded w-64 h-9">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 内容网格 -->
+    <div class="gallery-grid" id="gallery-list">
+        {currentItems.map(item => (
+            <div class="gallery-item group" data-type={item._type} data-title={item.title.toLowerCase()}>
+                <div class="item-preview">
+                    <img src={item._type === 'image' ? item.image : item.cover} alt={item.title} loading="lazy" onerror="this.src='/placeholder.jpg'" />
+                    <span class={`type-badge ${item._type}`}>
+                        {item._type === 'image' ? '🖼️ 图片' : '🎬 视频'}
+                    </span>
+                </div>
+                <div class="item-info">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="truncate font-semibold text-gray-800 text-base flex-1" title={item.title}>{item.title}</h3>
+                        <span class="text-[10px] uppercase tracking-wider text-gray-400 whitespace-nowrap ml-2 bg-gray-100 px-1.5 py-0.5 rounded">{item.date || '-'}</span>
+                    </div>
+                    <p class="desc text-xs text-gray-500 line-clamp-2 h-8 leading-4 mb-4">
+                        {item.description || item.link || '暂无描述'}
+                    </p>
+                    
+                    <div class="item-actions flex gap-2 pt-3 border-t border-gray-100">
+                        <button class="flex-1 py-1.5 rounded-md bg-gray-50 text-gray-600 text-xs font-medium hover:bg-blue-50 hover:text-blue-600 transition-colors border border-gray-200" onclick={`editItem('${item._type}', ${item._index})`}>
+                            编辑
+                        </button>
+                        <button class="px-3 py-1.5 rounded-md bg-gray-50 text-red-500 text-xs font-medium hover:bg-red-50 transition-colors border border-gray-200" onclick={`deleteItem('${item._type}', ${item._index})`}>
+                            删除
+                        </button>
+                    </div>
+                </div>
+            </div>
+        ))}
+    </div>
+    
+    <!-- 优化后的单行分页控件 -->
+    <div class="pagination-wrapper mt-8">
+        <div class="pagination-container bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex items-center justify-between">
+            <div class="pagination-info text-sm text-gray-500 font-medium">
+                显示 <span class="text-gray-900">{startIdx + 1}-{Math.min(endIdx, totalItems)}</span> 共 <span class="text-gray-900">{totalItems}</span> 项
+            </div>
+            
+            <div class="pagination-actions flex items-center gap-3">
+                <a href={`?page=${Math.max(1, currentPage - 1)}`} 
+                   class={`page-nav-btn ${currentPage === 1 ? 'disabled' : ''}`}
+                   title="上一页">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    上一页
+                </a>
+                
+                <div class="page-numbers flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => {
+                        const p = i + 1;
+                        // 只显示当前页附近的页码
+                        if (totalPages > 7) {
+                            if (p !== 1 && p !== totalPages && (p < currentPage - 1 || p > currentPage + 1)) {
+                                if (p === currentPage - 2 || p === currentPage + 2) return <span class="px-1 text-gray-400">...</span>;
+                                return null;
+                            }
+                        }
+                        return (
+                            <a href={`?page=${p}`} 
+                               class={`page-number-btn ${currentPage === p ? 'active' : ''}`}>
+                                {p}
+                            </a>
+                        );
+                    }).filter(Boolean)}
+                </div>
+
+                <a href={`?page=${Math.min(totalPages, currentPage + 1)}`} 
+                   class={`page-nav-btn ${currentPage === totalPages ? 'disabled' : ''}`}
+                   title="下一页">
+                    下一页
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </a>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <!-- 编辑弹窗 -->
+  <div id="gallery-modal" class="modal hidden">
+    <div class="modal-content">
+        <div class="flex justify-between items-center mb-6 pb-4 border-b">
+            <h3 id="modal-title" class="text-xl font-bold text-gray-800">新增内容</h3>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">×</button>
+        </div>
+        
+        <form id="gallery-form">
+            <input type="hidden" id="item-index" value="-1">
+            <div class="grid grid-cols-2 gap-4">
+                <div class="form-group">
+                    <label>类型</label>
+                    <select id="item-type" class="form-select w-full" onchange="toggleFields()">
+                        <option value="image">美好瞬间 (图片)</option>
+                        <option value="video">精彩视频</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>日期</label>
+                    <input type="date" id="item-date" class="form-input w-full">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>标题</label>
+                <input type="text" id="item-title" class="form-input w-full" required>
+            </div>
+            <div class="form-group">
+                <label id="upload-label">资源链接 / 上传</label>
+                <div class="flex gap-2">
+                    <input type="text" id="item-url" class="form-input flex-1" placeholder="输入URL或上传">
+                    <label class="action-btn edit-btn cursor-pointer py-2 px-4 h-full flex items-center gap-2">
+                        上传
+                        <input type="file" class="hidden" accept="image/*" onchange="uploadFile(this)">
+                    </label>
+                </div>
+                <div id="preview-box" class="mt-3 hidden border border-dashed p-2 rounded bg-gray-50 text-center">
+                    <img id="item-preview-img" src="" style="max-height: 150px; margin: 0 auto; border-radius: 4px;">
+                </div>
+            </div>
+            <div id="image-fields"><div class="form-group"><label>描述</label><textarea id="item-desc" class="form-input w-full" rows="3"></textarea></div></div>
+            <div id="video-fields" class="hidden">
+                <div class="form-group"><label>视频链接</label><input type="url" id="item-link" class="form-input w-full"></div>
+                <div class="form-group"><label>平台</label><input type="text" id="item-platform" class="form-input w-full"></div>
+            </div>
+            <div class="modal-actions flex justify-end gap-3 mt-8 pt-4 border-t">
+                <button type="button" class="action-btn edit-btn" onclick="closeModal()">取消</button>
+                <button type="submit" class="action-btn publish-btn text-white px-6">保存</button>
+            </div>
+        </form>
+    </div>
+  </div>
+
+  <script define:vars={{ galleryData }}>
+    let data = galleryData;
+    const searchInput = document.getElementById('gallery-search');
+    
+    function filterItems() {
+        const searchText = searchInput.value.toLowerCase();
+        const activeFilterBtn = document.querySelector('.filter-btn.active');
+        const filterType = activeFilterBtn ? activeFilterBtn.dataset.filter : 'all';
+        const items = document.querySelectorAll('.gallery-item');
+        items.forEach(item => {
+            const title = item.dataset.title;
+            const type = item.dataset.type;
+            const matchSearch = title.includes(searchText);
+            const matchFilter = filterType === 'all' || type === filterType;
+            item.style.display = (matchSearch && matchFilter) ? 'block' : 'none';
+        });
+    }
+    
+    window.filterList = (type) => {
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            if (btn.dataset.filter === type) btn.classList.add('active', 'bg-blue-50', 'text-blue-600');
+            else btn.classList.remove('active', 'bg-blue-50', 'text-blue-600');
+        });
+        filterItems();
+    };
+    
+    searchInput?.addEventListener('input', filterItems);
+
+    const modal = document.getElementById('gallery-modal');
+    const form = document.getElementById('gallery-form');
+    
+    window.openModal = () => {
+        form.reset();
+        document.getElementById('item-index').value = '-1';
+        document.getElementById('item-type').disabled = false;
+        document.getElementById('item-date').valueAsDate = new Date();
+        toggleFields();
+        modal.classList.remove('hidden');
+    };
+    window.closeModal = () => modal.classList.add('hidden');
+    window.editItem = (type, index) => {
+        const item = data[type === 'image' ? 'moments' : 'videos'][index];
+        document.getElementById('item-index').value = index;
+        const typeSelect = document.getElementById('item-type');
+        typeSelect.value = type; typeSelect.disabled = true;
+        toggleFields();
+        document.getElementById('item-title').value = item.title;
+        document.getElementById('item-date').value = item.date || '';
+        document.getElementById('item-url').value = type === 'image' ? item.image : item.cover;
+        if (type === 'image') document.getElementById('item-desc').value = item.description || '';
+        else { document.getElementById('item-link').value = item.link || ''; document.getElementById('item-platform').value = item.platform || ''; }
+        const previewImg = document.getElementById('item-preview-img');
+        previewImg.src = type === 'image' ? item.image : item.cover;
+        document.getElementById('preview-box').classList.remove('hidden');
+        modal.classList.remove('hidden');
+    };
+    window.toggleFields = () => {
+        const type = document.getElementById('item-type').value;
+        document.getElementById('image-fields').classList.toggle('hidden', type !== 'image');
+        document.getElementById('video-fields').classList.toggle('hidden', type !== 'video');
+    };
+    window.uploadFile = async (input) => {
+        if (!input.files?.[0]) return;
+        const formData = new FormData(); formData.append('image', input.files[0]);
+        try {
+            const res = await fetch('/api/upload', { method: 'POST', body: formData });
+            const result = await res.json();
+            if (res.ok && result.url) {
+                document.getElementById('item-url').value = result.url;
+                document.getElementById('item-preview-img').src = result.url;
+                document.getElementById('preview-box').classList.remove('hidden');
+                window.showToast('上传成功', 'success');
+            }
+        } catch (e) { window.showToast('上传出错', 'error'); }
+    };
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const index = parseInt(document.getElementById('item-index').value);
+        const type = document.getElementById('item-type').value;
+        const item = { title: document.getElementById('item-title').value, date: document.getElementById('item-date').value };
+        const url = document.getElementById('item-url').value;
+        if (type === 'image') { item.image = url; item.description = document.getElementById('item-desc').value; if (index >= 0) data.moments[index] = item; else data.moments.unshift(item); }
+        else { item.cover = url; item.link = document.getElementById('item-link').value; item.platform = document.getElementById('item-platform').value; if (index >= 0) data.videos[index] = item; else data.videos.unshift(item); }
+        await saveData();
+    });
+    window.deleteItem = async (type, index) => {
+        if (confirm('确定删除吗？')) {
+            if (type === 'image') data.moments.splice(index, 1); else data.videos.splice(index, 1);
+            await saveData();
+        }
+    };
+    async function saveData() {
+        try {
+            const res = await fetch('/api/gallery', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            if (res.ok) { window.showToast('保存成功', 'success'); setTimeout(() => window.location.reload(), 500); }
+        } catch (e) { window.showToast('保存出错', 'error'); }
+    }
+  </script>
+
+  <style>
+    :root { --primary-color: #3498db; --border-color: #e2e8f0; }
+    .admin-container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+    h2 { font-size: 1.5rem; font-weight: 600; color: #1e293b; margin-bottom: 1.5rem; }
+    .admin-controls { background: white; padding: 16px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; border: 1px solid var(--border-color); }
+    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 24px; }
+    .gallery-item { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); overflow: hidden; border: 1px solid var(--border-color); transition: all 0.3s ease; position: relative; }
+    .item-preview { height: 180px; position: relative; background: #f1f5f9; overflow: hidden; }
+    .item-preview img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+    .gallery-item:hover { transform: translateY(-4px); box-shadow: 0 15px 30px -5px rgba(0,0,0,0.1); }
+    .gallery-item:hover .item-preview img { transform: scale(1.08); }
+    .item-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); display: flex; justify-content: center; align-items: center; gap: 12px; }
+    .type-badge { position: absolute; top: 12px; right: 12px; padding: 4px 10px; border-radius: 99px; font-size: 11px; color: white; font-weight: 600; background: rgba(0,0,0,0.6); }
+    .type-badge.image { background: rgba(59, 130, 246, 0.85); }
+    .type-badge.video { background: rgba(239, 68, 68, 0.85); }
+    .item-info { padding: 16px; }
+    .item-info h3 { margin: 0 0 4px 0; font-size: 1rem; color: #1e293b; font-weight: 600; }
+    .item-info .date { font-size: 0.75rem; color: #94a3b8; }
+    .action-btn { padding: 8px 16px; border-radius: 6px; font-size: 0.9rem; font-weight: 500; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; text-decoration: none; }
+    .publish-btn { background-color: #22c55e; color: white; }
+    .publish-btn:hover { background-color: #16a34a; }
+    .edit-btn { background-color: white; border-color: #cbd5e1; color: #334155; }
+    .edit-btn:hover { border-color: #94a3b8; background-color: #f8fafc; }
+    .icon-btn { width: 36px; height: 36px; border-radius: 50%; background: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-size: 1rem; }
+    .icon-btn:hover { transform: scale(1.1); }
+    
+    /* 分页专用样式 */
+    .pagination-container { flex-wrap: nowrap; }
+    .pagination-actions { flex-shrink: 0; }
+    .page-nav-btn { display: flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 0.875rem; font-weight: 500; color: #475569; text-decoration: none; transition: all 0.2s; }
+    .page-nav-btn:hover:not(.disabled) { background: #f8fafc; border-color: #cbd5e1; color: #1e293b; }
+    .page-nav-btn.disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+    .page-number-btn { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 0.875rem; font-weight: 500; color: #64748b; text-decoration: none; transition: all 0.2s; border: 1px solid transparent; }
+    .page-number-btn:hover:not(.active) { background: #f1f5f9; color: #1e293b; }
+    .page-number-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
+
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-content { width: 550px; background: white; padding: 32px; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+    .form-input, .form-select { border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 12px; }
+    .hidden { display: none; }
+    .flex { display: flex; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .gap-3 { gap: 0.75rem; }
+    .mt-8 { margin-top: 2rem; }
+  </style>
+</Layout>

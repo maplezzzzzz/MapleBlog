@@ -1,0 +1,152 @@
+# Decap CMS 配置文件
+# 位置: static/admin/config.yml
+
+backend:
+  name: git-gateway
+  branch: main # 设置为主分支
+
+media_folder: "src/assets/images/uploads" # 媒体文件存储位置
+public_folder: "/src/assets/images/uploads"
+
+collections:
+  - name: "blog" # 文件夹名称
+    label: "博客文章" # 标签名称
+    folder: "src/content/blog" # 文件夹路径
+    create: true # 允许创建新文章
+    slug: "{{slug}}" # 文件名格式
+    fields: # 字段定义
+      - { label: "标题", name: "title", widget: "string" }
+      - { label: "描述", name: "description", widget: "string", required: false }
+      - { label: "创建时间", name: "createdAt", widget: "datetime", required: false }
+      - { label: "更新时间", name: "updatedAt", widget: "datetime", required: false }
+      - { label: "分类", name: "categories", widget: "list", required: false }
+      - { label: "标签", name: "tags", widget: "list", required: false }
+      - { label: "状态", name: "status", widget: "select", default: "published", options: ["draft", "published", "archived"] }
+      - { label: "推荐", name: "recommended", widget: "boolean", default: false, required: false }
+      - { label: "隐藏目录", name: "hideToc", widget: "boolean", default: false, required: false }
+      - { label: "内容", name: "body", widget: "markdown" }
+  
+  - name: "pages" # 页面
+    label: "页面"
+    folder: "src/content/pages"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "标题", name: "title", widget: "string" }
+      - { label: "描述", name: "description", widget: "string", required: false }
+      - { label: "隐藏目录", name: "hideToc", widget: "boolean", default: false, required: false }
+      - { label: "内容", name: "body", widget: "markdown" }
+  
+  - name: "about" # 关于页面
+    label: "关于"
+    folder: "src/content/about"
+    create: false # 不允许创建新内容，只有一篇关于文章
+    slug: "-index"
+    fields:
+      - { label: "标题", name: "title", widget: "string" }
+      - { label: "描述", name: "description", widget: "string", required: false }
+      - { label: "技能", name: "skills", widget: "list", required: false }
+      - { label: "经验", name: "experience", widget: "list", required: false, fields: [
+          { label: "职位", name: "title", widget: "string" },
+          { label: "公司", name: "company", widget: "string" },
+          { label: "期间", name: "period", widget: "string" },
+          { label: "描述", name: "description", widget: "text", required: false }
+        ] }
+      - { label: "教育", name: "education", widget: "list", required: false, fields: [
+          { label: "学位", name: "degree", widget: "string" },
+          { label: "学校", name: "school", widget: "string" },
+          { label: "期间", name: "period", widget: "string" }
+        ] }
+      - { label: "社交媒体", name: "social", widget: "object", required: false, fields: [
+          { label: "Discord", name: "discord", widget: "string", required: false },
+          { label: "邮箱", name: "email", widget: "string", required: false },
+          { label: "Facebook", name: "facebook", widget: "string", required: false },
+          { label: "GitHub", name: "github", widget: "string", required: false },
+          { label: "Instagram", name: "instagram", widget: "string", required: false },
+          { label: "LinkedIn", name: "linkedin", widget: "string", required: false },
+          { label: "Pinterest", name: "pinterest", widget: "string", required: false },
+          { label: "TikTok", name: "tiktok", widget: "string", required: false },
+          { label: "网站", name: "website", widget: "string", required: false },
+          { label: "YouTube", name: "youtube", widget: "string", required: false },
+          { label: "微信", name: "wechat", widget: "string", required: false },
+          { label: "小红书", name: "xhs", widget: "string", required: false },
+          { label: "微博", name: "weibo", widget: "string", required: false },
+          { label: "RSS", name: "rss", widget: "string", required: false }
+        ] }
+      - { label: "内容", name: "body", widget: "markdown" }
+  
+  - name: "categories" # 分类
+    label: "分类"
+    folder: "src/content/categories"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "标题", name: "title", widget: "string" }
+      - { label: "描述", name: "description", widget: "string", required: false }
+      - { label: "图标", name: "icon", widget: "string", required: false }
+      - { label: "颜色", name: "color", widget: "color", default: "#007bff", required: false }
+      - { label: "内容", name: "body", widget: "markdown", required: false }
+  
+  - name: "tags" # 标签
+    label: "标签"
+    folder: "src/content/tags"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "标题", name: "title", widget: "string" }
+      - { label: "描述", name: "description", widget: "string", required: false }
+      - { label: "颜色", name: "color", widget: "color", default: "#007bff", required: false }
+      - { label: "内容", name: "body", widget: "markdown", required: false }
+  
+  - name: "notes" # 笔记/动态
+    label: "笔记/动态"
+    folder: "src/content/notes"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "标题", name: "title", widget: "string" }
+      - { label: "描述", name: "description", widget: "string", required: false }
+      - { label: "心情", name: "mood", widget: "string", required: false }
+      - { label: "位置", name: "location", widget: "string", required: false }
+      - { label: "标签", name: "tags", widget: "list", required: false }
+      - { label: "内容", name: "body", widget: "markdown" }
+  
+  - name: "home" # 首页内容
+    label: "首页"
+    folder: "src/content/home"
+    create: false # 只有一页首页
+    slug: "-index"
+    fields:
+      - { label: "标题", name: "title", widget: "string" }
+      - { label: "描述", name: "description", widget: "string", required: false }
+      - { label: "英雄区域", name: "hero", widget: "object", required: false, fields: [
+          { label: "标题", name: "title", widget: "string" },
+          { label: "副标题", name: "subtitle", widget: "string", required: false },
+          { label: "背景图片", name: "backgroundImage", widget: "string", required: false },
+          { label: "行动按钮", name: "ctaButton", widget: "object", required: false, fields: [
+            { label: "文本", name: "text", widget: "string" },
+            { label: "链接", name: "link", widget: "string" }
+          ]}
+        ] }
+      - { label: "特性", name: "features", widget: "list", required: false, fields: [
+          { label: "标题", name: "title", widget: "string" },
+          { label: "描述", name: "description", widget: "text" },
+          { label: "图标", name: "icon", widget: "string", required: false }
+        ] }
+      - { label: "内容", name: "body", widget: "markdown", required: false }
+  
+  - name: "settings" # 网站设置
+    label: "网站设置"
+    editor:
+      preview: false
+    files:
+      - name: "general"
+        label: "常规设置"
+        file: "src/content/config.ts"
+        fields:
+          - { label: "网站标题", name: "siteName", widget: "string", required: false }
+          - { label: "网站描述", name: "siteDescription", widget: "string", required: false }
+          - { label: "网站关键词", name: "siteKeywords", widget: "string", required: false }
+          - { label: "ICP备案号", name: "beian", widget: "string", required: false }
+          - { label: "网站Logo", name: "logo", widget: "string", required: false }
+          - { label: "网站图标", name: "favicon", widget: "string", required: false }

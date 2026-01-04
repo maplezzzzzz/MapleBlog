@@ -8,7 +8,7 @@
   @apply backdrop-blur-xl;
   @apply bg-clip-padding backdrop-filter backdrop-saturate-100 backdrop-contrast-100;
   @apply border border-[rgba(255,255,255,0.5)] dark:border-[rgba(255,255,255,0.3)];
-  box-shadow: 2px 2px 8px rgba(0,0,0,0.25);
+  box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.25);
   --tw-backdrop-blur: blur(14px);
 }
 
@@ -19,7 +19,7 @@
 }
 
 .glass.dock,
-.glass.dock>div {
+.glass.dock > div {
   border-radius: 1rem;
 }
 
@@ -29,14 +29,13 @@
   transform: scale(0.99);
 }
 
-
-.glass.dock>img {
+.glass.dock > img {
   width: 75px;
   padding: 0;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2);
 }
 
-.glass.dock>img:hover {
+.glass.dock > img:hover {
   transform-origin: center center;
 }
 
@@ -48,7 +47,7 @@
 }
 
 .glass.button,
-.glass.button>div {
+.glass.button > div {
   border-radius: 2rem;
 }
 
@@ -58,7 +57,7 @@
   transform: scale(1.1);
 }
 
-.glass.button:hover>div {
+.glass.button:hover > div {
   border-radius: 2rem;
 }
 
@@ -86,7 +85,7 @@
   @apply backdrop-blur-md;
   @apply bg-clip-padding backdrop-filter backdrop-saturate-100 backdrop-contrast-100;
   @apply border border-[rgba(255,255,255,0.5)] dark:border-[rgba(255,255,255,0.3)];
-  box-shadow: 2px 2px 8px rgba(0,0,0,0.25);
+  box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.25);
   --tw-backdrop-blur: blur(4px);
 }
 
@@ -111,14 +110,12 @@
   @apply bg-clip-padding backdrop-filter backdrop-saturate-100 backdrop-contrast-100;
 }
 
-
 // Gradient
 .gradient {
   @apply from-transparent via-transparent to-transparent;
   // @apply from-txt-s via-transparent to-transparent;
   // @apply dark:from-darkmode-txt-s dark:via-transparent dark:to-transparent;
 }
-
 
 /* From Uiverse.io by Spacious74 */
 .flex-new {
@@ -128,7 +125,7 @@
   justify-content: center;
   top: 50%;
   left: 50%;
-  transform: translate(-50%,-50%);
+  transform: translate(-50%, -50%);
   z-index: -1;
   pointer-events: none;
 }
@@ -139,13 +136,15 @@
   border: none;
   font-size: 1rem;
   cursor: pointer;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   // border-radius: 0.8rem;
   @apply rounded-full;
   color: #fff;
   transition: all 0.1s ease;
-  box-shadow: inset 1px 1px 1px 0px rgba(255,255,255,0.77),inset -1px -1px 1px 0px rgba(255,255,255,0.33);
-  text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
+  box-shadow:
+    inset 1px 1px 1px 0px rgba(255, 255, 255, 0.77),
+    inset -1px -1px 1px 0px rgba(255, 255, 255, 0.33);
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
   background-color: rgb(255 255 255 / 30%);
 }
 
@@ -172,9 +171,9 @@
 
 .outer-cont:active {
   box-shadow:
-    inset 0px 0px 5px rgba(255,255,255,0.2),
-    inset 0px 35px 30px rgba(255,255,255,0),
-    0px 5px 15px rgba(0,0,0,0.1),
-    0px 2px 5px rgba(0,0,0,0.05);
+    inset 0px 0px 5px rgba(255, 255, 255, 0.2),
+    inset 0px 35px 30px rgba(255, 255, 255, 0),
+    0px 5px 15px rgba(0, 0, 0, 0.1),
+    0px 2px 5px rgba(0, 0, 0, 0.05);
   margin-top: 3px;
 }

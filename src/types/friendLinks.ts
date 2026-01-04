@@ -17,7 +17,7 @@ export interface FriendLinkCategory {
 /**
  * 友情链接状态枚举
  */
-export type FriendLinkStatus = 'active' | 'error' | 'lost';
+export type FriendLinkStatus = "active" | "error" | "lost";
 
 /**
  * 友情链接接口
@@ -47,7 +47,7 @@ export interface FriendLinkWithRSS extends FriendLink {
   extension_field_1?: string;
   extension_field_2?: string;
   last_rss_fetch_at?: string;
-  rss_fetch_status?: 'success' | 'error' | 'pending';
+  rss_fetch_status?: "success" | "error" | "pending";
 }
 
 /**
@@ -66,8 +66,8 @@ export interface FriendLinkQueryParams {
   is_featured?: boolean;
   limit?: number;
   offset?: number;
-  order_by?: 'sort_order' | 'added_date' | 'name' | 'click_count';
-  order_direction?: 'asc' | 'desc';
+  order_by?: "sort_order" | "added_date" | "name" | "click_count";
+  order_direction?: "asc" | "desc";
 }
 
 /**
@@ -179,8 +179,8 @@ export interface RSSArticleQueryParams {
   search_keyword?: string;
   date_from?: string;
   date_to?: string;
-  sort_by?: 'pub_date' | 'created_at' | 'title';
-  sort_order?: 'asc' | 'desc';
+  sort_by?: "pub_date" | "created_at" | "title";
+  sort_order?: "asc" | "desc";
 }
 
 /**
@@ -208,8 +208,8 @@ export interface RSSPageState {
       from?: string;
       to?: string;
     };
-    sortBy: 'pub_date' | 'created_at' | 'title';
-    sortOrder: 'asc' | 'desc';
+    sortBy: "pub_date" | "created_at" | "title";
+    sortOrder: "asc" | "desc";
   };
   pagination: {
     currentPage: number;

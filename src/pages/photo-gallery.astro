@@ -1,0 +1,132 @@
+---
+import BaseLayout from "@components/base/BaseLayout.astro";
+
+const galleries = [
+  {
+    id: "moments",
+    title: "美好瞬间",
+    link: "/moments",
+    cover: "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=1000&auto=format&fit=crop",
+    poem: [
+      "快门按下",
+      "时间便凝固成琥珀",
+      "光影交错间",
+      "是流动的盛宴"
+    ]
+  },
+  {
+    id: "videos",
+    title: "精彩视频",
+    link: "/videos",
+    cover: "https://images.unsplash.com/photo-1492724724894-7464c27d0ceb?q=80&w=1000&auto=format&fit=crop",
+    poem: [
+      "帧帧流转",
+      "记忆在屏幕上苏醒",
+      "声音与画面的共鸣",
+      "重现昨日的温度"
+    ]
+  }
+];
+---
+
+<BaseLayout title="光影" description="记录生活的美好瞬间">
+  <div class="gallery-container min-h-screen bg-black text-white overflow-hidden relative">
+    <!-- 背景氛围光 -->
+    <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-gray-900 via-black to-gray-900 z-0"></div>
+    <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-[120px] animate-pulse"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-[120px] animate-pulse delay-1000"></div>
+
+    <section class="relative z-10 container mx-auto px-4 py-20 flex flex-col md:flex-row gap-16 items-center justify-center min-h-screen">
+      
+      {galleries.map((g, index) => (
+        <div class="gallery-wrapper flex flex-col items-center">
+          <a href={g.link} class={`gallery-card group relative w-full md:w-[400px] aspect-[3/4] block perspective-1000 cursor-pointer animate-fly-in`} style={`animation-delay: ${index * 0.3}s`}>
+            
+            <!-- 3D 卡片 -->
+            <div class="card-inner relative w-full h-full transition-all duration-700 ease-out transform-style-3d group-hover:rotate-y-12 group-hover:translate-y-[-20px]">
+              <!-- 悬停光影 -->
+              <div class="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg blur opacity-0 group-hover:opacity-30 transition duration-1000"></div>
+              
+              <div class="image-wrapper w-full h-full rounded-lg overflow-hidden shadow-2xl relative bg-gray-800">
+                <img 
+                  src={g.cover} 
+                  alt={g.title} 
+                  class="w-full h-full object-cover transform transition-transform duration-1000 group-hover:scale-110 opacity-80 group-hover:opacity-100"
+                />
+              </div>
+            </div>
+          </a>
+
+          <!-- 标题 & 散文诗 -->
+          <div class="text-content mt-12 text-center max-w-[300px]">
+            <h2 class="text-3xl font-light mb-6 tracking-[0.3em] text-white opacity-0 translate-y-4 animate-fade-up" style={`animation-delay: ${0.8 + index * 0.5}s`}>
+              {g.title}
+            </h2>
+            
+            <div class="poem-container font-serif text-gray-400 text-base leading-relaxed tracking-wider space-y-3">
+              {g.poem.map((line, i) => (
+                <p 
+                  class="js-typewriter min-h-[1.5em]" 
+                  data-text={line} 
+                  data-delay={(1.5 + index * 1 + i * 0.8)}
+                ></p>
+              ))}
+            </div>
+          </div>
+        </div>
+      ))}
+
+    </section>
+  </div>
+</BaseLayout>
+
+<script>
+  (function() {
+    function startTyping() {
+      const elements = document.querySelectorAll('.js-typewriter');
+      if (elements.length === 0) return;
+
+      elements.forEach(el => {
+        // 重置状态
+        const text = el.getAttribute('data-text');
+        if (!text) return;
+        
+        el.textContent = '';
+        el.style.opacity = '1';
+        
+        const delay = parseFloat(el.getAttribute('data-delay') || '0') * 1000;
+        
+        setTimeout(() => {
+          let charIndex = 0;
+          const typeChar = () => {
+            if (charIndex < text.length) {
+              el.textContent += text.charAt(charIndex);
+              charIndex++;
+              // 使用 setTimeout 而非 requestAnimationFrame 以确保间隔可控
+              setTimeout(typeChar, 100 + Math.random() * 50);
+            }
+          };
+          typeChar();
+        }, delay);
+      });
+    }
+
+    // 立即运行一次
+    startTyping();
+
+    // 依然保留 astro:page-load 以支持客户端路由跳转
+    document.addEventListener('astro:page-load', startTyping);
+  })();
+</script>
+
+<style>
+  /* ... (动画样式保持不变) ... */
+  /* 确保打字机容器默认可见但内容为空 */
+  .js-typewriter {
+      min-height: 1.6em;
+      display: block;
+      color: rgba(255, 255, 255, 0.9); /* 提高对比度 */
+      font-weight: 300;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5); /* 增加阴影以适应深色背景 */
+  }
+</style>

@@ -1,16 +1,22 @@
-import { getCollection } from 'astro:content';
-import type { APIContext } from 'astro';
+import { getCollection } from "astro:content";
+import type { APIContext } from "astro";
 
 // 转义 XML 特殊字符
 function escapeXml(unsafe: string): string {
   return unsafe.replace(/[<>&'"]/g, function (c) {
     switch (c) {
-      case '<': return '&lt;';
-      case '>': return '&gt;';
-      case '&': return '&amp;';
-      case '\'': return '&apos;';
-      case '"': return '&quot;';
-      default: return c;
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case "&":
+        return "&amp;";
+      case "'":
+        return "&apos;";
+      case '"':
+        return "&quot;";
+      default:
+        return c;
     }
   });
 }
@@ -22,8 +28,8 @@ function formatDate(date: Date): string {
 
 export async function GET(context: APIContext) {
   // 获取所有已发布的博客文章
-  const blog = await getCollection('blog', ({ data }) => {
-    return data.draft !== true && data.status === 'published';
+  const blog = await getCollection("blog", ({ data }) => {
+    return data.draft !== true && data.status === "published";
   });
 
   // 按发布时间倒序排列，取最新的 25 篇文章
@@ -35,10 +41,15 @@ export async function GET(context: APIContext) {
     })
     .slice(0, 25);
 
-  const siteUrl = context.site!.toString().replace(/\/$/, '');
-  const feedUpdated = sortedPosts.length > 0 
-    ? formatDate(sortedPosts[0].data.publishedAt || sortedPosts[0].data.createdAt || new Date())
-    : formatDate(new Date());
+  const siteUrl = context.site!.toString().replace(/\/$/, "");
+  const feedUpdated =
+    sortedPosts.length > 0
+      ? formatDate(
+          sortedPosts[0].data.publishedAt ||
+            sortedPosts[0].data.createdAt ||
+            new Date(),
+        )
+      : formatDate(new Date());
 
   // 构建 RSS 2.0 XML
   const rssXml = `<?xml version="1.0" encoding="utf-8"?>
@@ -56,37 +67,40 @@ export async function GET(context: APIContext) {
     <generator>Astro</generator>
     <ttl>60</ttl>
 
-${sortedPosts.map((post) => {
+${sortedPosts
+  .map((post) => {
     const pubDate = post.data.publishedAt || post.data.createdAt || new Date();
     const updatedDate = post.data.updatedAt || pubDate;
-    const description = post.data.description || 
-      (post.body ? post.body.slice(0, 200).replace(/[#*`]/g, '') + '...' : '暂无描述');
+    const description =
+      post.data.description ||
+      (post.body
+        ? post.body.slice(0, 200).replace(/[#*`]/g, "") + "..."
+        : "暂无描述");
     const postUrl = `${siteUrl}/blog/${post.id}/`;
-    const author = post.data.author || 'Maplezz';
-    
+    const author = post.data.author || "Maplezz";
+
     // 处理封面图
-    let imageContent = '';
-    if (post.data.image && typeof post.data.image.src === 'string') {
+    let imageContent = "";
+    if (post.data.image && typeof post.data.image.src === "string") {
       let imageUrl = post.data.image.src;
       // 如果是相对路径，转换为绝对路径
-      if (imageUrl.startsWith('@assets/')) {
-        imageUrl = imageUrl.replace('@assets/', `${siteUrl}/src/assets/`);
-      } else if (imageUrl.startsWith('/')) {
+      if (imageUrl.startsWith("@assets/")) {
+        imageUrl = imageUrl.replace("@assets/", `${siteUrl}/src/assets/`);
+      } else if (imageUrl.startsWith("/")) {
         imageUrl = `${siteUrl}${imageUrl}`;
-      } else if (!imageUrl.startsWith('http')) {
+      } else if (!imageUrl.startsWith("http")) {
         imageUrl = `${siteUrl}/${imageUrl}`;
       }
-      
+
       imageContent = `<enclosure url="${escapeXml(imageUrl)}" type="image/jpeg" />`;
     }
-    
+
     // 处理分类
     const categories = post.data.categories?.filter(Boolean) || [];
-    const categoryContent = categories.map(cat => 
-      cat &&
-      `<category>${escapeXml(cat)}</category>`
-    ).join('');
-    
+    const categoryContent = categories
+      .map((cat) => cat && `<category>${escapeXml(cat)}</category>`)
+      .join("");
+
     return `    <item>
       <title>${escapeXml(post.data.title)}</title>
       <link>${postUrl}</link>
@@ -97,14 +111,15 @@ ${sortedPosts.map((post) => {
       ${imageContent}
       ${categoryContent}
     </item>`;
-  }).join('\n\n')}
+  })
+  .join("\n\n")}
 
   </channel>
 </rss>`;
 
   return new Response(rssXml, {
     headers: {
-      'Content-Type': 'application/rss+xml; charset=utf-8',
+      "Content-Type": "application/rss+xml; charset=utf-8",
     },
   });
 }

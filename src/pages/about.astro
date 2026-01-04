@@ -1,9 +1,0 @@
----
-import type { AboutEntry } from "@/types";
-import EntryLayout from "@components/about/EntryLayout.astro";
-import { getIndex } from "@lib/contentParser";
-
-const entry = (await getIndex("about")) as AboutEntry;
----
-
-<EntryLayout entry={entry} />

@@ -1,0 +1,29 @@
+{
+  "items": [
+    {
+      "label": "首页",
+      "link": "/",
+      "isExternal": false
+    },
+    {
+      "label": "记忆",
+      "link": "/blog/categories/生活感悟",
+      "isExternal": false
+    },
+    {
+      "label": "未来",
+      "link": "/blog/categories/计划",
+      "isExternal": false
+    },
+    {
+      "label": "工具",
+      "link": "/tools",
+      "isExternal": false
+    },
+    {
+      "label": "关于",
+      "link": "/about",
+      "isExternal": false
+    }
+  ]
+}

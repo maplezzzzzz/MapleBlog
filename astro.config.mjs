@@ -1,6 +1,7 @@
 import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
 import tailwind from "@astrojs/tailwind";
+import node from "@astrojs/node";
 import AutoImport from "astro-auto-import";
 import { defineConfig } from "astro/config";
 import remarkCollapse from "remark-collapse";
@@ -23,7 +24,7 @@ const getSiteUrl = () => {
     case 'development':
     case 'test':
     default:
-      return "http://localhost:4321";
+      return "http://localhost:3000";
   }
 };
 
@@ -32,10 +33,13 @@ export default defineConfig({
   site: getSiteUrl(),
   base: "/",
   trailingSlash: "ignore",
-  output: "static",
+  output: "server", // 使用服务端渲染模式，支持动态后台
+  adapter: node({
+    mode: 'standalone'
+  }), 
   server: {
-    // 允许通过本机IP访问开发服务器
-    host: true, // 或者使用 '0.0.0.0'
+    // 监听所有网络接口 (0.0.0.0)，解决部分环境无法通过 localhost 连接的问题
+    host: true, 
     port: 4321
   },
   build: {
@@ -52,13 +56,13 @@ export default defineConfig({
     prefetchAll: isProduction
   },
   integrations: [
-    react(), 
+    react(),
     tailwind({
       applyBaseStyles: false, // 使用自定义的base样式
     }),
     AutoImport({
       imports: ["@components/common/Button.astro", "@shortcodes/Accordion", "@shortcodes/Notice", "@shortcodes/Youtube", "@shortcodes/Tabs", "@shortcodes/Tab"]
-    }), 
+    }),
     mdx()
   ],
   markdown: {

@@ -1,0 +1,26 @@
+---
+import BaseLayout from "@components/base/BaseLayout.astro";
+import AfilmoryGrid from "@components/gallery/AfilmoryGrid.astro";
+import fs from 'fs';
+import path from 'path';
+
+// 读取数据
+const GALLERY_FILE = path.join(process.cwd(), "src", "data", "gallery.json");
+let moments = [];
+
+if (fs.existsSync(GALLERY_FILE)) {
+    const data = JSON.parse(fs.readFileSync(GALLERY_FILE, "utf-8"));
+    moments = data.moments || [];
+}
+---
+
+<BaseLayout title="美好瞬间" description="图集展示">
+  <section class="container pt-16 pb-20 px-4">
+    <div class="text-center mb-12">
+      <h1 class="text-3xl font-bold">美好瞬间</h1>
+      <div class="w-16 h-1 bg-orange-500 mx-auto mt-4 rounded-full"></div>
+    </div>
+    
+    <AfilmoryGrid items={moments} type="image" />
+  </section>
+</BaseLayout>
