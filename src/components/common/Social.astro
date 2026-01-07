@@ -25,8 +25,8 @@ const iconClass =
   links && (
     <ul class="py-2 flex items-center">
       {links.wechat && (
-        <li class={liClass}>
-          <a id="wechat-popup-trigger" href="javascript:void(0);">
+        <li class={`${liClass}`}>
+          <a id="wechat-popup-trigger" href="javascript:void(0);" data-wechat-value={links.wechat}>
             <GlassButton
               id="wechatIcon"
               variant="info"
@@ -36,7 +36,7 @@ const iconClass =
               className="min-w-10 justify-center"
             >
               <span class="sr-only">公众号</span>
-              <FaWeixin className="w-6 h-6   dark:hover:text-green-600 hover:text-green-600 transition duration-300" />
+              <FaWeixin className="w-6 h-6 dark:hover:text-green-600 hover:text-green-600 transition duration-300" />
             </GlassButton>
           </a>
         </li>
@@ -98,25 +98,95 @@ const iconClass =
 
 <script>
   import { showToast } from "@lib/toastUtils.ts";
-  import wechatQrCode from "@assets/image/公众号.png";
+
+  let tooltipEl: HTMLElement | null = null;
+
+  function createTooltip(imageUrl: string) {
+    const div = document.createElement('div');
+    div.className = 'fixed z-[9999] p-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl transition-opacity duration-200 opacity-0 pointer-events-none';
+    div.innerHTML = `<img src="${imageUrl}" alt="二维码" class="w-32 h-32 object-cover rounded block">`;
+    document.body.appendChild(div);
+    return div;
+  }
 
   function setupWechatPopup() {
     const wechatTrigger = document.getElementById("wechat-popup-trigger");
-    if (wechatTrigger) {
-      wechatTrigger.addEventListener("click", (e) => {
-        e.preventDefault();
-        showToast({
-          title: "关注我的公众号",
-          content: `<img src="${wechatQrCode.src}" alt="微信公众号二维码" class="w-full h-auto rounded-lg">`,
-          type: 'info',
-          duration: 0, 
-          closable: true,
-          position: 'top-center'
-        });
-      });
+    if (!wechatTrigger) {
+        console.log("Social: WeChat trigger not found");
+        return;
     }
+
+    const wechatValue = wechatTrigger.getAttribute("data-wechat-value");
+    console.log("Social: WeChat Value =", wechatValue);
+    
+    if (!wechatValue) return;
+
+    const isImage = wechatValue.match(/\.(jpeg|jpg|gif|png|webp)$/i) || wechatValue.startsWith('/assets/') || wechatValue.startsWith('/uploads/') || wechatValue.startsWith('http');
+    console.log("Social: Is Image?", isImage);
+
+    // 悬停逻辑
+    if (isImage) {
+        wechatTrigger.addEventListener('mouseenter', () => {
+            console.log("Social: Mouse enter");
+            if (!tooltipEl) tooltipEl = createTooltip(wechatValue);
+            
+            const rect = wechatTrigger.getBoundingClientRect();
+            // ...
+            
+            // 计算位置：图标正上方，水平居中
+            const top = rect.top - 140; // 预留高度
+            const left = rect.left + (rect.width / 2) - (128 / 2) - 8; // 128 is w-32
+
+            tooltipEl.style.top = `${top}px`;
+            tooltipEl.style.left = `${left}px`;
+            
+            // 显示动画
+            requestAnimationFrame(() => {
+                if(tooltipEl) tooltipEl.classList.remove('opacity-0');
+            });
+        });
+
+        wechatTrigger.addEventListener('mouseleave', () => {
+            console.log("Social: Mouse leave");
+            if (tooltipEl) {
+                tooltipEl.classList.add('opacity-0');
+                // 延迟移除或复用
+                setTimeout(() => {
+                    if (tooltipEl && tooltipEl.classList.contains('opacity-0')) {
+                        tooltipEl.remove();
+                        tooltipEl = null;
+                    }
+                }, 200);
+            }
+        });
+    }
+
+    // 点击逻辑 (移动端兼容)
+    wechatTrigger.addEventListener("click", (e) => {
+        e.preventDefault();
+        console.log("Social: Clicked. Is Image?", isImage);
+        
+        if (isImage) {
+            showToast({
+              title: "微信二维码",
+              content: `<div class="flex justify-center"><img src="${wechatValue}" alt="微信二维码" class="max-w-[200px] h-auto rounded-lg shadow-md"></div>`,
+              type: 'info',
+              duration: 0, 
+              closable: true,
+              position: 'top-center'
+            });
+        } else {
+            navigator.clipboard.writeText(wechatValue).then(() => {
+                showToast({ title: "已复制", message: `微信号 "${wechatValue}" 已复制`, type: "success" });
+            });
+        }
+    });
   }
 
+  // 立即尝试初始化
+  setupWechatPopup();
+  
+  // 绑定 Astro 页面切换事件
   document.addEventListener("astro:page-load", setupWechatPopup);
 </script>
 

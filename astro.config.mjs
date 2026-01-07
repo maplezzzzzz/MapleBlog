@@ -13,6 +13,7 @@ import { fileURLToPath, URL } from "node:url";
 
 // 获取环境变量
 const NODE_ENV = process.env.NODE_ENV || 'development';
+const BUILD_MODE = process.env.BUILD_MODE || 'server';
 const isProduction = NODE_ENV === 'production';
 const isDevelopment = NODE_ENV === 'development';
 
@@ -33,8 +34,8 @@ export default defineConfig({
   site: getSiteUrl(),
   base: "/",
   trailingSlash: "ignore",
-  output: "server", // 使用服务端渲染模式，支持动态后台
-  adapter: node({
+  output: BUILD_MODE === 'static' ? "static" : "server", // 静态模式用于 Cloudflare Pages，服务端模式用于本地管理后台
+  adapter: BUILD_MODE === 'static' ? undefined : node({
     mode: 'standalone'
   }), 
   server: {

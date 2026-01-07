@@ -26,6 +26,7 @@ const { title = '管理后台' } = Astro.props as Props;
         <a href="/admin/content" class="nav-link">内容管理</a>
         <a href="/admin/categories" class="nav-link">栏目管理</a>
         <a href="/admin/menus" class="nav-link">导航管理</a>
+        <a href="/admin/social" class="nav-link">社交媒体</a>
         <a href="/admin/gallery" class="nav-link">光影管理</a>
         <a href="/admin/analytics" class="nav-link">访问统计</a>
         <a href="/admin/seo" class="nav-link">SEO优化</a>
@@ -33,6 +34,12 @@ const { title = '管理后台' } = Astro.props as Props;
         <a href="/admin/settings" class="nav-link">网站设置</a>
         <a href="/admin/python-integration" class="nav-link">Python功能</a>
       </nav>
+      
+      <div class="mt-auto pt-6 border-t border-gray-700">
+        <button id="deploy-btn" class="w-full py-2 px-4 bg-green-600 hover:bg-green-700 text-white rounded transition-colors flex items-center justify-center gap-2">
+            <span class="text-xl">🚀</span> 发布上线
+        </button>
+      </div>
     </aside>
     <main class="admin-main">
       <header class="admin-header">
@@ -48,6 +55,35 @@ const { title = '管理后台' } = Astro.props as Props;
   <div id="toast-container"></div>
 
   <script is:inline>
+    // 发布按钮逻辑
+    const deployBtn = document.getElementById('deploy-btn');
+    if (deployBtn) {
+        deployBtn.addEventListener('click', async () => {
+            if (!confirm('确定要将当前内容发布到公开网站吗？')) return;
+            
+            const originalText = deployBtn.innerHTML;
+            deployBtn.disabled = true;
+            deployBtn.innerHTML = '<span class="animate-spin">↻</span> 发布中...';
+            
+            try {
+                const res = await fetch('/api/deploy', { method: 'POST' });
+                const result = await res.json();
+                
+                if (res.ok) {
+                    window.showToast('发布成功！', 'success');
+                } else {
+                    window.showToast('发布失败: ' + result.error, 'error');
+                    console.error(result.details);
+                }
+            } catch (e) {
+                window.showToast('请求出错', 'error');
+            } finally {
+                deployBtn.disabled = false;
+                deployBtn.innerHTML = originalText;
+            }
+        });
+    }
+
     // 全局 Toast 函数
     window.showToast = (message, type = 'success') => {
       const container = document.getElementById('toast-container');

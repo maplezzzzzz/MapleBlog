@@ -10,14 +10,28 @@ export interface MenuItem {
   children?: MenuItem[];
 }
 
+export interface FooterInfo {
+  copyrightName?: string;
+  copyrightUrl?: string;
+  beianText?: string;
+  beianUrl?: string;
+}
+
 export interface SiteMenus {
   header: MenuItem[];
   footer: MenuItem[];
+  footerInfo?: FooterInfo;
 }
 
 const DEFAULT_MENUS: SiteMenus = {
   header: [],
-  footer: []
+  footer: [],
+  footerInfo: {
+    copyrightName: "小白之家",
+    copyrightUrl: "/",
+    beianText: "备案中",
+    beianUrl: "#"
+  }
 };
 
 export function getSiteMenus(): SiteMenus {

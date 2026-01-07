@@ -15,6 +15,13 @@ const footerMenus = siteMenus.footer.length > 0 ? siteMenus.footer : [
   { name: "关于", url: "/about", target: "_self" },
 ];
 
+const footerInfo = siteMenus.footerInfo || {
+  copyrightName: "小白之家",
+  copyrightUrl: SITE_INFO.URL,
+  beianText: "备案中",
+  beianUrl: "#"
+};
+
 // 从content获取社交信息
 const socialEntry = await getEntry("social", "-index");
 const socialLinks = socialEntry?.data.platforms || {
@@ -33,12 +40,10 @@ const socialLinks = socialEntry?.data.platforms || {
 // 获取统计数据
 const siteStatsData = await getSiteStats();
 
-// 本地模式：不统计全站浏览量，展示占位或从 content 统计文章数/字数
-let totalViews = "--";
+// 基础统计数据
 const statsData = {
   totalWords: siteStatsData.totalWords,
   runningDays: siteStatsData.runningDays,
-  totalViews: totalViews,
   totalArticles: siteStatsData.articles.toString(),
 };
 ---
@@ -75,13 +80,13 @@ const statsData = {
               © {new Date().getFullYear()} ·
               <span class="hidden md:inline">保留所有权利 ·</span>
               <a
-                href={SITE_INFO.URL}
+                href={footerInfo.copyrightUrl || SITE_INFO.URL}
                 class="hover:text-orange-500 transition-colors"
               >
-                小白之家 ·
+                {footerInfo.copyrightName} ·
               </a>
-              <a href="#" target="_blank">
-                备案中
+              <a href={footerInfo.beianUrl} target="_blank">
+                {footerInfo.beianText}
               </a>
             </div>
             <!-- 右侧：社交链接 -->
@@ -144,7 +149,12 @@ const statsData = {
                 <div
                   class="flex flex-wrap items-center justify-center gap-x-1 gap-y-1 md:gap-x-2 text-xs md:text-sm text-txt-light dark:text-darkmode-txt-light"
                 >
-                  <!-- 浏览量已取消显示 -->
+                  <span id="busuanzi_container_site_pv" class="hidden">
+                    <span id="busuanzi_value_site_pv"></span> 访
+                  </span>
+                  <span id="busuanzi_container_page_pv" class="hidden">
+                     / 本页 <span id="busuanzi_value_page_pv"></span>
+                  </span>
                    ·
                   <span>{statsData.totalArticles} 文章</span>
                    ·

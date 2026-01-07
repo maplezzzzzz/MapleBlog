@@ -187,7 +187,12 @@ tags?.sort((a: string, b: string) => a.localeCompare(b));
                   ))}
                 </li>
               )}
-              {/* 浏览量已取消显示 */}
+              <li class="flex items-center gap-1" title="阅读量">
+                <FaRegEye className="text-base" />
+                <span id="busuanzi_container_page_pv" class="hidden">
+                  <span id="busuanzi_value_page_pv"></span> 次
+                </span>
+              </li>
             </ul>
           </div>
         </div>

@@ -83,5 +83,11 @@
       "type": "external",
       "children": []
     }
-  ]
+  ],
+  "footerInfo": {
+    "copyrightName": "小白之家",
+    "copyrightUrl": "/",
+    "beianText": "备案中",
+    "beianUrl": "#"
+  }
 }

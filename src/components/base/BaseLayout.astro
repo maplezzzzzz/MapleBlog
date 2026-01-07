@@ -242,6 +242,10 @@ const customFooterCode = customSettings?.custom_footer_code || "";
       )
     }
     <meta name="baidu-site-verification" content="codeva-RmOcCYpW8H" />
+    
+    <!-- 不蒜子统计 -->
+    <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
     <!-- 自定义头部代码 -->
     {customHeaderCode && <Fragment set:html={customHeaderCode} />}
 
@@ -1128,6 +1132,34 @@ const customFooterCode = customSettings?.custom_footer_code || "";
           fadeOutDuration: 200
         });
       });
+    </script>
+
+    <!-- 自定义统计脚本 (发送给自建后台) -->
+    <script>
+      // 请将此处的 URL 替换为您 Cloudflare Tunnel 映射的后台域名
+      // 例如: const API_BASE = "https://admin.maplezz.com";
+      // 如果是在本地开发，可以使用空字符串(相对路径)或 http://localhost:4321
+      const API_BASE = import.meta.env.PUBLIC_API_URL || ""; 
+
+      if (API_BASE || window.location.hostname === 'localhost') {
+          const track = () => {
+              fetch(`${API_BASE}/api/analytics/track`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                      url: window.location.href,
+                      referrer: document.referrer,
+                      ua: navigator.userAgent
+                  })
+              }).catch(e => console.debug('Analytics error:', e)); // 静默失败
+          };
+          
+          // 页面加载后延迟执行，不阻塞主线程
+          window.addEventListener('load', () => setTimeout(track, 1000));
+          
+          // 兼容 Astro 视图转换
+          document.addEventListener('astro:page-load', () => setTimeout(track, 1000));
+      }
     </script>
 
     <!-- 自定义底部代码 -->

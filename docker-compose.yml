@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # =========================================
   # 1. 博客管理后台 (Admin Panel)
@@ -11,25 +9,19 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "8080:8080"  # 访问端口: http://NAS_IP:8080/admin
+      - "50021:8080"  # 访问端口: http://NAS_IP:50021/admin
     environment:
       - NODE_ENV=production
       - PORT=8080
       - PYTHON_API_URL=http://python-api:8000
-      # 如果你在国内网络环境构建慢，可以取消下面注释设置 npm 镜像
-      # - NPM_CONFIG_REGISTRY=https://registry.npmmirror.com
     volumes:
-      # [核心] 挂载文章内容目录：容器内修改 -> 实时同步到宿主机文件
       - ./src/content:/app/src/content
-      # [核心] 挂载图片上传目录
       - ./public/assets/uploads:/app/public/assets/uploads
-      # 忽略 node_modules，防止宿主机环境污染容器
       - /app/node_modules
     depends_on:
       - python-api
     networks:
       - blog-network
-    # 健康检查
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/admin/login"]
       interval: 30s
@@ -46,13 +38,32 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "8000:8000" # API文档: http://NAS_IP:8000/docs
+      - "50022:8000"
     environment:
       - HOST=0.0.0.0
       - PORT=8000
-      # - PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
     volumes:
       - ./python-api:/app
+    networks:
+      - blog-network
+
+networks:
+  blog-network:
+    driver: bridge
+
+  # =========================================
+  # 3. Twikoo 评论系统
+  # =========================================
+  twikoo:
+    container_name: blog-comments
+    image: imaegoo/twikoo
+    restart: unless-stopped
+    ports:
+      - "50023:8080" # 评论API: http://NAS_IP:50023
+    volumes:
+      - ./twikoo-data:/app/data
+    environment:
+      - TWIKOO_PORT=8080
     networks:
       - blog-network
 

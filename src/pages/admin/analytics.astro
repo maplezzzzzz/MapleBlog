@@ -1,28 +1,41 @@
 ---
 import Layout from '../../layouts/AdminLayout.astro';
 import { getCollection } from 'astro:content';
+import fs from 'fs';
+import path from 'path';
 
-// 获取真实内容数据
+// 获取真实内容数据 (本地 Markdown)
 const allPosts = await getCollection('blog');
 const publishedPosts = allPosts.filter(p => !p.data.draft);
 
+// --- 尝试加载自建统计数据 (Real Analytics) ---
+const ANALYTICS_FILE = path.join(process.cwd(), 'src', 'data', 'analytics_db.json');
+let realStats = { pageViews: {}, visits: [] };
+let hasRealStats = false;
+
+if (fs.existsSync(ANALYTICS_FILE)) {
+    try {
+        realStats = JSON.parse(fs.readFileSync(ANALYTICS_FILE, 'utf-8'));
+        hasRealStats = true;
+    } catch (e) { console.error("Error loading analytics db", e); }
+}
+
 // 计算统计数据
 const totalPosts = publishedPosts.length;
-const totalViews = publishedPosts.reduce((acc, curr) => acc + (curr.data.views || 0), 0);
+// 如果有真实统计，使用真实 PV，否则使用 Markdown 中的 views
+const totalViews = hasRealStats 
+    ? Object.values(realStats.pageViews).reduce((a: any, b: any) => a + b, 0)
+    : publishedPosts.reduce((acc, curr) => acc + (curr.data.views || 0), 0);
 
-// 分类统计
+// 分类统计 (保持不变)
 const categoryStats = {};
 publishedPosts.forEach(post => {
     const cats = post.data.categories || ['未分类'];
-    cats.forEach(c => {
-        categoryStats[c] = (categoryStats[c] || 0) + 1;
-    });
+    cats.forEach(c => { categoryStats[c] = (categoryStats[c] || 0) + 1; });
 });
-const categoriesData = Object.entries(categoryStats)
-    .sort((a, b) => b[1] - a[1])
-    .map(([name, count]) => ({ name, count }));
+const categoriesData = Object.entries(categoryStats).sort((a:any, b:any) => b[1] - a[1]).map(([name, count]) => ({ name, count }));
 
-// 发布时间热力图数据 (模拟 GitHub 风格)
+// 发布时间热力图 (保持不变)
 const dateStats = {};
 publishedPosts.forEach(post => {
     if (post.data.publishedAt) {
@@ -31,11 +44,30 @@ publishedPosts.forEach(post => {
     }
 });
 
-// 获取热门文章
-const topPosts = [...publishedPosts]
-    .sort((a, b) => (b.data.views || 0) - (a.data.views || 0))
-    .slice(0, 5)
-    .map(p => ({ title: p.data.title, views: p.data.views || 0 }));
+// 获取热门文章 (优先使用真实 PV)
+let topPosts = [];
+if (hasRealStats) {
+    // 从 pageViews 映射回文章标题
+    // 注意：这里需要 URL 到 标题 的映射，简单起见我们先只显示 URL 或尝试匹配 slug
+    const sortedPaths = Object.entries(realStats.pageViews).sort((a: any, b: any) => b[1] - a[1]).slice(0, 10);
+    topPosts = sortedPaths.map(([url, views]) => {
+        // 尝试找对应的文章
+        const match = publishedPosts.find(p => url.includes(p.id) || url.includes(p.slug));
+        return { 
+            title: match ? match.data.title : (url === '/' ? '首页' : url), 
+            views: views 
+        };
+    });
+} else {
+    topPosts = [...publishedPosts].sort((a, b) => (b.data.views || 0) - (a.data.views || 0)).slice(0, 5).map(p => ({ title: p.data.title, views: p.data.views || 0 }));
+}
+
+// 计算近7天流量趋势 (如果有真实日志)
+const trafficTrend = [0, 0, 0, 0, 0, 0, 0]; // 模拟数据占位
+if (hasRealStats && realStats.visits.length > 0) {
+    // 简单按日期聚合 visits
+    // 这里为了演示暂不实现复杂的日期聚合逻辑，实际项目可用 dayjs
+}
     
 // 注入数据到前端脚本
 const analyticsData = {
@@ -43,7 +75,8 @@ const analyticsData = {
     totalViews,
     topPosts,
     categories: categoriesData,
-    heatmap: dateStats
+    heatmap: dateStats,
+    hasRealStats
 };
 ---
 
@@ -52,8 +85,16 @@ const analyticsData = {
 
   <div class="admin-container">
     <div class="flex justify-between items-center mb-6">
-        <h2>📊 数据分析中心</h2>
-        <div class="text-sm text-gray-500">数据最后更新: {new Date().toLocaleString()}</div>
+        <div>
+            <h2>📊 数据分析中心</h2>
+            <p class="text-sm text-gray-500 mt-1">
+                { hasRealStats 
+                    ? "自建统计系统已激活，数据实时更新" 
+                    : "使用 Markdown 文件中的历史数据"
+                }
+            </p>
+        </div>
+        <div class="text-sm text-gray-500">数据同步于: {new Date().toLocaleString()}</div>
     </div>
     
     <!-- 关键指标卡片 -->
@@ -62,7 +103,7 @@ const analyticsData = {
             <div class="stat-icon">👁️</div>
             <div>
                 <div class="stat-value">{totalViews.toLocaleString()}</div>
-                <div class="stat-title">总浏览量</div>
+                <div class="stat-title">总浏览量 {hasRealStats ? '(真实)' : '(历史)'}</div>
             </div>
         </div>
         <div class="stat-card gradient-purple">
@@ -83,7 +124,7 @@ const analyticsData = {
             <div class="stat-icon">🔥</div>
             <div>
                 <div class="stat-value">{topPosts[0]?.views || 0}</div>
-                <div class="stat-title">最高单篇阅读</div>
+                <div class="stat-title">最高单篇阅读 {hasRealStats ? '(真实)' : '(历史)'}</div>
             </div>
         </div>
     </div>
@@ -116,7 +157,7 @@ const analyticsData = {
     <!-- 热门文章 & 热力图 -->
     <div class="charts-grid mt-6">
         <div class="chart-card">
-            <h3>🏆 热门文章 TOP 5</h3>
+            <h3>🏆 热门页面 TOP 10 {hasRealStats ? '(真实)' : '(历史)'}</h3>
             <div class="top-list-container">
                 <ul class="top-list">
                     {topPosts.map((post, i) => (
@@ -125,10 +166,11 @@ const analyticsData = {
                                 <span class={`rank rank-${i+1}`}>{i+1}</span>
                                 <span class="title truncate" title={post.title}>{post.title}</span>
                             </div>
-                            <span class="views-badge">{post.views} 阅读</span>
+                            <span class="views-badge">{post.views} 次</span>
                         </li>
                     ))}
                 </ul>
+                {!hasRealStats && <p class="text-[10px] text-gray-400 mt-4 italic">* 阅读量为 Markdown 文件中记录的历史数值。</p>}
             </div>
         </div>
         
@@ -221,16 +263,28 @@ const analyticsData = {
         renderHeatmap(analyticsData.heatmap);
     });
 
-    function renderHeatmap(data) {
+    function renderHeatmap(dateStats) {
         const container = document.getElementById('heatmap-container');
-        const weeks = 52;
-        const days = 7;
+        const today = new Date();
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(today.getFullYear() - 1);
         
         let html = '<div class="heatmap-grid">';
-        for (let i = 0; i < weeks * days; i++) {
-            // 这里简单模拟，真实逻辑应该根据日期计算
-            const level = Math.random() > 0.8 ? Math.floor(Math.random() * 5) : 0;
-            html += `<div class="heatmap-cell level-${level}" title="暂无文章"></div>`;
+        
+        // 生成 364 天的数据 (52周)
+        for (let i = 0; i < 364; i++) {
+            const date = new Date(oneYearAgo);
+            date.setDate(date.getDate() + i);
+            const dateStr = date.toISOString().split('T')[0];
+            const count = dateStats[dateStr] || 0;
+            
+            let level = 0;
+            if (count > 0) level = 1;
+            if (count > 2) level = 2;
+            if (count > 5) level = 3;
+            if (count > 8) level = 4;
+            
+            html += `<div class="heatmap-cell level-${level}" title="${dateStr}: ${count} 篇文章"></div>`;
         }
         html += '</div>';
         container.innerHTML = html;

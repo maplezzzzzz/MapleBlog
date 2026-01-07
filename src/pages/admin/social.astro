@@ -1,0 +1,197 @@
+---
+import Layout from '../../layouts/AdminLayout.astro';
+---
+
+<Layout title="社交媒体管理">
+  <div class="admin-container">
+    <h2>💬 社交媒体配置</h2>
+    <p class="text-gray-500 mb-6">配置全站通用的社交媒体链接，将显示在页脚右下角及关于页面。</p>
+    
+    <div class="bg-white p-6 rounded-lg shadow-sm">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="social-form">
+            <!-- 国内常用 -->
+            <div class="col-span-1 md:col-span-2">
+                <h3 class="text-lg font-bold border-b pb-2 mb-4">国内常用</h3>
+            </div>
+            
+            <div class="form-group">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    <span class="mr-2">🟢</span> 微信 (WeChat)
+                </label>
+                <input type="text" name="wechat" class="form-input w-full" placeholder="微信号或二维码链接">
+                <p class="text-xs text-gray-400 mt-1">将在点击时显示弹窗或复制</p>
+            </div>
+
+            <div class="form-group">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    <span class="mr-2">📕</span> 小红书 (XHS)
+                </label>
+                <input type="text" name="xhs" class="form-input w-full" placeholder="主页链接">
+            </div>
+
+            <div class="form-group">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    <span class="mr-2">🔴</span> 微博 (Weibo)
+                </label>
+                <input type="text" name="weibo" class="form-input w-full" placeholder="主页链接">
+            </div>
+
+            <div class="form-group">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    <span class="mr-2">📧</span> 邮箱 (Email)
+                </label>
+                <input type="text" name="email" class="form-input w-full" placeholder="mailto:your@email.com">
+            </div>
+
+            <!-- 国际/技术 -->
+            <div class="col-span-1 md:col-span-2 mt-4">
+                <h3 class="text-lg font-bold border-b pb-2 mb-4">国际 / 技术社区</h3>
+            </div>
+
+            <div class="form-group">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    <span class="mr-2">🐱</span> GitHub
+                </label>
+                <input type="text" name="github" class="form-input w-full" placeholder="GitHub 主页链接">
+            </div>
+
+            <div class="form-group">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    <span class="mr-2">📺</span> YouTube
+                </label>
+                <input type="text" name="youtube" class="form-input w-full" placeholder="频道链接">
+            </div>
+            
+             <div class="form-group">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    <span class="mr-2">📷</span> Instagram
+                </label>
+                <input type="text" name="instagram" class="form-input w-full" placeholder="主页链接">
+            </div>
+
+            <div class="form-group">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    <span class="mr-2">🐦</span> Twitter / X
+                </label>
+                <input type="text" name="twitter" class="form-input w-full" placeholder="主页链接">
+            </div>
+            
+             <div class="form-group">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    <span class="mr-2">📘</span> Facebook
+                </label>
+                <input type="text" name="facebook" class="form-input w-full" placeholder="主页链接">
+            </div>
+            
+             <div class="form-group">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    <span class="mr-2">💼</span> LinkedIn
+                </label>
+                <input type="text" name="linkedIn" class="form-input w-full" placeholder="个人资料链接">
+            </div>
+            
+            <div class="form-group">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    <span class="mr-2">📡</span> RSS
+                </label>
+                <input type="text" name="rss" class="form-input w-full" placeholder="/rss.xml">
+            </div>
+        </div>
+
+        <div class="mt-8 flex justify-end">
+            <button id="save-btn" class="admin-btn admin-btn-primary px-8 py-3 text-base">保存配置</button>
+        </div>
+    </div>
+  </div>
+
+  <script>
+    // 加载数据
+    async function loadData() {
+        try {
+            const res = await fetch('/api/social');
+            if (res.ok) {
+                const data = await res.json();
+                fillForm(data);
+            }
+        } catch (e) {
+            console.error(e);
+            window.showToast('加载配置失败', 'error');
+        }
+    }
+
+    function fillForm(data) {
+        const inputs = document.querySelectorAll('#social-form input');
+        inputs.forEach((input: any) => {
+            const name = input.name;
+            if (data[name]) {
+                input.value = data[name];
+            }
+        });
+    }
+
+    // 保存数据
+    document.getElementById('save-btn')?.addEventListener('click', async () => {
+        const btn = document.getElementById('save-btn');
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '保存中...';
+
+        const formData = {};
+        const inputs = document.querySelectorAll('#social-form input');
+        inputs.forEach((input: any) => {
+            if (input.value.trim()) {
+                formData[input.name] = input.value.trim();
+            }
+        });
+
+        try {
+            const res = await fetch('/api/social', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            if (res.ok) {
+                window.showToast('社交媒体配置已更新！', 'success');
+            } else {
+                window.showToast('保存失败', 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            window.showToast('保存出错', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    });
+
+    // 初始化
+    loadData();
+  </script>
+
+  <style>
+    .form-input {
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 10px 12px;
+        transition: border-color 0.2s;
+    }
+    .form-input:focus {
+        border-color: #3498db;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(52,152,219,0.1);
+    }
+    .admin-btn-primary {
+        background-color: #3498db;
+        color: white;
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    .admin-btn-primary:hover {
+        background-color: #2980b9;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(52,152,219,0.2);
+    }
+  </style>
+</Layout>
