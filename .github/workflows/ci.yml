@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      PUBLIC_SITE_URL: https://example.com
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,5 +25,3 @@ jobs:
         run: npx astro sync
       - name: Build
         run: npm run build
-        env:
-          PUBLIC_SITE_URL: https://example.com
