@@ -21,8 +21,9 @@ const searchList = (await getEntriesBatch(
   undefined,
   false,
 )) as SearchableEntry[];
+const visibleSearchList = searchList.filter((entry) => entry.collection === "about" || !entry.id.startsWith("-"));
 
 
 ---
 
-<EntryLayout searchList={searchList} />
+<EntryLayout searchList={visibleSearchList} />

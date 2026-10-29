@@ -20,9 +20,9 @@ import {
 } from "react-icons/fa";
 
 export async function getStaticPaths() {
-  const notesEntries = await getCollection("notes", ({ filePath }) => {
+  const notesEntries = await getCollection("notes", ({ data, filePath }) => {
     if (filePath?.endsWith('-index.md')) return false;
-    return true;
+    return !data.draft;
   });
   return notesEntries.map((entry) => ({
     params: { slug: slugify(entry.data.title) },
@@ -61,7 +61,7 @@ const displayImageAlt = imageAlt || `${title} - 默认图片`;
 const entryDate = createdAt ? formatDate(createdAt) : null;
 
 // 获取相关动态（同标签的其他动态）
-const allNotes = await getCollection("notes");
+const allNotes = await getCollection("notes", ({ data, filePath }) => !data.draft && !filePath?.endsWith("-index.md"));
 const relatedNotes = allNotes
   .filter(
     (note) =>

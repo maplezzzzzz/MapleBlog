@@ -8,7 +8,7 @@ export async function getStaticPaths() {
   const blogEntries = await getCollection("blog", ({ data, filePath }) => {
     if (filePath?.endsWith('-index.md')) return false;
     if (isDev) return true;
-    return data.draft !== true;
+    return !data.draft && data.status === "published";
   });
 
   const paths = blogEntries.map((entry) => ({

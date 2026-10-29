@@ -65,6 +65,8 @@ PUBLIC_TWIKOO_ENV_ID=https://your-twikoo-service-url.example.com/.netlify/functi
 ```
 
 
+生产构建前，请将 `PUBLIC_SITE_URL` 设置为站点实际使用的公开 HTTPS 地址；RSS、站点地图和 robots.txt 会使用这个地址。
+
 ### 内容创作
 - 在 `src/content/blog/`、`src/content/notes/` 等目录新增 Markdown 文件
 - 基础 Frontmatter 示例：

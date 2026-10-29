@@ -4,7 +4,7 @@
  */
 
 // 获取当前环境
-export const NODE_ENV = import.meta.env.PUBLIC_ENV || 'development';
+export const NODE_ENV = import.meta.env.DEV ? 'development' : 'production';
 
 // 环境类型定义
 export type Environment = 'development' | 'production' | 'test';

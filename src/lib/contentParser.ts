@@ -33,7 +33,7 @@ export const getEntries = async (
     ? entries.filter((entry: GenericEntry) => !entry.id.match(/^-/))
     : entries;
   entries = noDrafts
-    ? entries.filter((entry: GenericEntry) => 'draft' in entry.data && !entry.data.draft)
+    ? entries.filter((entry: GenericEntry) => !entry.data.draft && (collection !== 'blog' || ('status' in entry.data && entry.data.status === 'published')))
     : entries;
   entries = sortFunction ? sortFunction(entries) : entries;
   return entries;

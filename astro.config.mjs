@@ -3,16 +3,21 @@ import react from "@astrojs/react";
 import tailwind from "@astrojs/tailwind";
 import AutoImport from "astro-auto-import";
 import { defineConfig } from "astro/config";
+import { loadEnv } from "vite";
 import remarkCollapse from "remark-collapse";
 import remarkToc from "remark-toc";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 import rehypeExternalLinks from "rehype-external-links";
 
-const isProd = process.env.PUBLIC_ENV === 'production';
+const isProd = process.env.NODE_ENV === 'production';
+const siteUrl = process.env.PUBLIC_SITE_URL || loadEnv(process.env.NODE_ENV || 'development', process.cwd(), '').PUBLIC_SITE_URL;
 
 function getSiteUrl() {
-  return isProd ? "https://maplezz.com" : "http://localhost:4321";
+  if (!siteUrl && isProd) throw new Error("生产构建需要设置 PUBLIC_SITE_URL");
+  const url = new URL(siteUrl || "http://localhost:4321");
+  if (!['http:', 'https:'].includes(url.protocol) || (isProd && (url.protocol !== 'https:' || ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)))) throw new Error("生产环境 PUBLIC_SITE_URL 必须是公开的 HTTPS 地址");
+  return url.origin;
 }
 
 export default defineConfig({

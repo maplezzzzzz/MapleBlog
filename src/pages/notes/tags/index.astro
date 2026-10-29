@@ -6,7 +6,7 @@ import { slugify } from "@lib/textConverter";
 const taxonomy = "tags";
 
 // 从content collections获取所有已发布的博客文章
-const allPosts = await getCollection("notes");
+const allPosts = await getCollection("notes", ({ data, filePath }) => !data.draft && !filePath?.endsWith("-index.md"));
 
 // 提取所有标签
 let allTaxa: string[] = [];

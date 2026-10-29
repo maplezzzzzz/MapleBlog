@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import { getSiteUrl } from '../lib/config';
+import { slugify } from '../lib/textConverter';
 
 // 动态生成sitemap.xml
 export const GET: APIRoute = async ({ request }) => {
@@ -10,7 +11,7 @@ export const GET: APIRoute = async ({ request }) => {
     
     // 获取所有内容集合
     const [blogPosts, pages, notes] = await Promise.all([
-      getCollection('blog', ({data, filePath}) => !data.draft && !filePath?.endsWith('-index.md')),
+      getCollection('blog', ({data, filePath}) => !data.draft && data.status === 'published' && !filePath?.endsWith('-index.md')),
       getCollection('pages', ({data, filePath}) => !data.draft && !filePath?.endsWith('-index.md')),
       getCollection('notes', ({data, filePath}) => !data.draft && !filePath?.endsWith('-index.md'))
     ]);
@@ -56,7 +57,7 @@ export const GET: APIRoute = async ({ request }) => {
       const lastmod = note.data.updatedAt || note.data.createdAt || new Date();
       urls.push(`
   <url>
-    <loc>${siteUrl}/notes/${note.id}</loc>
+    <loc>${siteUrl}/notes/${encodeURIComponent(slugify(note.data.title))}</loc>
     <lastmod>${lastmod.toISOString().split('T')[0]}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>

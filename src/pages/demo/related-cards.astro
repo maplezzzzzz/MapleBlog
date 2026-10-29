@@ -4,7 +4,7 @@ import RelatedCardCompact from "@components/blog/RelatedCardCompact.astro";
 import { getCollection } from "astro:content";
 
 // 获取示例文章数据
-const blogEntries = await getCollection("blog");
+const blogEntries = await getCollection("blog", ({ data, filePath }) => !data.draft && data.status === "published" && !filePath?.endsWith("-index.md"));
 const sampleEntries = blogEntries.slice(0, 6); // 取前6篇文章作为示例
 ---
 
@@ -29,24 +29,30 @@ const sampleEntries = blogEntries.slice(0, 6); // 取前6篇文章作为示例
       <!-- 自定义宽度 -->
       <h3 class="text-xl font-medium mb-4">自定义宽度示例</h3>
       <div class="flex flex-wrap gap-4 mb-8">
+        {sampleEntries[0] && (
         <RelatedCardCompact
           entry={sampleEntries[0]}
           width="w-64"
           height="h-80"
           imageAspect="aspect-square"
         />
+        )}
+        {sampleEntries[1] && (
         <RelatedCardCompact
           entry={sampleEntries[1]}
           width="w-80"
           height="h-72"
           imageAspect="aspect-[16/9]"
         />
+        )}
+        {sampleEntries[2] && (
         <RelatedCardCompact
           entry={sampleEntries[2]}
           width="w-72"
           height="h-96"
           imageAspect="aspect-[3/4]"
         />
+        )}
       </div>
 
       <!-- 横向布局示例 -->

@@ -46,11 +46,11 @@ export const UI_CONFIG = {
 } as const;
 
 function isProd(): boolean {
-  return import.meta.env.PUBLIC_ENV === 'production';
+  return import.meta.env.PROD;
 }
 
 export function getSiteUrl(): string {
-  return isProd() ? 'https://maplezz.com' : 'http://localhost:4321';
+  return import.meta.env.SITE.replace(/\/$/, '');
 }
 
 export function isDevelopment(): boolean {

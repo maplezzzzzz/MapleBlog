@@ -8,7 +8,7 @@ import type { NotesEntry } from "@/types";
 
 // 生成所有分类页面的静态路径和分页
 export async function getStaticPaths() {
-  const allPosts = await getCollection("notes");
+  const allPosts = await getCollection("notes", ({ data, filePath }) => !data.draft && !filePath?.endsWith("-index.md"));
 
   // 收集所有标签及其文章
   const tagPosts = new Map<string, any[]>();
@@ -96,7 +96,7 @@ const entries: NotesEntry[] = tagPosts.map((post: any) => ({
 }));
 
 // 从notes获取所有标签数据
-const allNotePosts = await getCollection("notes");
+const allNotePosts = await getCollection("notes", ({ data, filePath }) => !data.draft && !filePath?.endsWith("-index.md"));
 const tagStats = new Map<string, number>();
 allNotePosts.forEach((post) => {
   if (post.data.tags && Array.isArray(post.data.tags)) {

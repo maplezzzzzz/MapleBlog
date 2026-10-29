@@ -23,3 +23,5 @@ jobs:
         run: npx astro sync
       - name: Build
         run: npm run build
+        env:
+          PUBLIC_SITE_URL: https://example.com

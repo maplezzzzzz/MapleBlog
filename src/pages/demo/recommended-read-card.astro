@@ -4,7 +4,7 @@ import RecommendedReadCardComponent from "@components/blog/RecommendedReadCard.a
 import { getCollection } from "astro:content";
 
 // 获取一些博客文章作为演示数据
-const blogEntries = await getCollection("blog");
+const blogEntries = await getCollection("blog", ({ data, filePath }) => !data.draft && data.status === "published" && !filePath?.endsWith("-index.md"));
 const sampleEntries = blogEntries.slice(0, 5); // 取前5篇文章作为演示
 ---
 

@@ -1,6 +1,6 @@
 import type { SearchableEntry } from "@/types"
 import React, { useEffect, useRef, useState } from "react";
-import { plainify } from "@lib/textConverter";
+import { plainify, slugify } from "@lib/textConverter";
 import Fuse from "fuse.js";
 
 const descriptionLength = 100;
@@ -15,6 +15,8 @@ interface SearchResult {
 }
 
 const getPath = (entry: SearchableEntry) => {
+  if (entry.collection === "notes") return `notes/${slugify(entry.data.title)}`;
+  if (entry.collection === "pages") return `page/${entry.id}`;
   return `${entry.collection}/${entry.id.replace("-index", "")}`;
 };
 
