@@ -22,8 +22,8 @@ const allBlogCount = allPosts.length;
 let allTaxa: string[] = [];
 allPosts.forEach((post) => {
   const cat = post.data.categories;
-  if (cat) {
-    allTaxa.push(slugify(post.data.categories.toString()));
+  if (Array.isArray(cat)) {
+    cat.forEach((c) => { if (c) allTaxa.push(slugify(c)); });
   }
 });
 

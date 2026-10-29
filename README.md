@@ -45,8 +45,10 @@
 ### 安装与运行
 - 安装依赖：`npm install`
 - 本地开发：`npm run dev`，默认在 `http://localhost:4321/`
-- 生产构建：`npm run build`
+- 生产构建：`npm run build:prod`（推荐）或 `npm run build`
 - 预览构建产物：`npm run preview`
+
+> **注意**：生产构建前请确保 `.env` 中 `PUBLIC_ENV=production`，否则 `og:url`、`sitemap`、`rss` 等会使用本地地址。
 
 ### 环境变量（.env）
 在项目根目录创建 `.env`，常用变量如下：

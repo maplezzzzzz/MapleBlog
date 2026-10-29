@@ -25,136 +25,180 @@ const titleMap = Object.fromEntries(
   limit,
   titleMap
 }}>
+  const SAFE_PROTOCOLS = ['https:', 'http:'];
+  function sanitizeUrl(raw) {
+    if (!raw) return '#';
+    try {
+      const u = new URL(raw, location.href);
+      return SAFE_PROTOCOLS.includes(u.protocol) ? u.href : '#';
+    } catch { return '#'; }
+  }
+
   let list = document.getElementById("recent-comments-list");
-  const maxLen=100;
-  function showLoading(){
-    if(!list) return;
-    list.setAttribute('aria-busy','true');
-    list.innerHTML = `
-      <li class="py-4">
-        <div class="flex items-center justify-center gap-2 text-slate-500 dark:text-slate-200">
-          <span class="inline-block w-5 h-5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
-          <span>正在加载留言…</span>
-        </div>
-      </li>
-    `;
+  const maxLen = 100;
+
+  function showLoading() {
+    if (!list) return;
+    list.textContent = '';
+    list.setAttribute('aria-busy', 'true');
+    const li = document.createElement('li');
+    li.className = 'py-4';
+    const wrapper = document.createElement('div');
+    wrapper.className = 'flex items-center justify-center gap-2 text-slate-500 dark:text-slate-200';
+    const spinner = document.createElement('span');
+    spinner.className = 'inline-block w-5 h-5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin';
+    const label = document.createElement('span');
+    label.textContent = '正在加载留言…';
+    wrapper.appendChild(spinner);
+    wrapper.appendChild(label);
+    li.appendChild(wrapper);
+    list.appendChild(li);
   }
-  function showError(msg){
-    if(!list) return;
+
+  function showError(msg) {
+    if (!list) return;
+    list.textContent = '';
     list.removeAttribute('aria-busy');
-    list.innerHTML = `
-      <li class="py-4">
-        <div class="text-center text-red-600 dark:text-red-400">
-          ${msg || "评论获取失败，请稍后重试。"}
-        </div>
-      </li>
-    `;
+    const li = document.createElement('li');
+    li.className = 'py-4';
+    const inner = document.createElement('div');
+    inner.className = 'text-center text-red-600 dark:text-red-400';
+    inner.textContent = msg || '评论获取失败，请稍后重试。';
+    li.appendChild(inner);
+    list.appendChild(li);
     const btn = document.getElementById("rc-retry-btn");
-    if(btn){ btn.addEventListener("click", load, { once: true }); }
+    if (btn) { btn.addEventListener("click", load, { once: true }); }
   }
-  function stripHtml(s){
-    try{
-      return (s||"").replace(/<[^>]*>/g,"").trim()
-    }catch(e){
-      console.error('stripHtml报错：',e)
+
+  function stripHtml(s) {
+    try {
+      return (s || "").replace(/<[^>]*>/g, "").trim();
+    } catch (e) {
       return "";
     }
   }
-  function pathFromUrl(u){
-    try{
-      //根据/截取路径，获取最后一个路径段
-      if(u.indexOf("/")!=-1){
-        u=u.split("/")[u.split("/").length-1];
-      }
-      return decodeURIComponent(u)||u
-    }catch(e){
-      console.error('格式化路径报错：',e)
-      return u;
+
+  function pathFromUrl(u) {
+    try {
+      if (!u || u.indexOf("/") === -1) return u || "";
+      const segs = u.split("/");
+      const last = segs[segs.length - 1];
+      return decodeURIComponent(last) || last;
+    } catch (e) {
+      return u || "";
     }
   }
-  function ensureTwikoo(cb){
-    if(window.twikoo){cb();return}
-    const s=document.createElement("script");
-    s.src="https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.min.js";
-    s.async=true;
-    s.onload=cb;
+
+  function ensureTwikoo(cb) {
+    if (window.twikoo) { cb(); return; }
+    const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.min.js";
+    s.async = true;
+    s.onload = cb;
+    s.onerror = () => { showError("评论系统加载失败，请稍后重试。"); };
     document.body.appendChild(s);
   }
-  function render(items){
-    if(list){ list.removeAttribute('aria-busy'); }
-    if(!list || !items || items.length==0) {
-      //显示一个空提示
-      list.innerHTML=`
-        <li class="text-slate-500 dark:text-slate-200 text-center">还没有留言哦</li>
-      `;
+
+  function render(items) {
+    if (!list) return;
+    list.textContent = '';
+    list.removeAttribute('aria-busy');
+    if (!items || items.length === 0) {
+      const li = document.createElement('li');
+      li.className = 'text-slate-500 dark:text-slate-200 text-center';
+      li.textContent = '还没有留言哦';
+      list.appendChild(li);
       return;
     }
-    list.innerHTML="";
-    items.forEach((it,index)=>{
-      const url=it.url||it.link||"";
-      const path=pathFromUrl(url);
-      const title=titleMap[path]||path;
-      const full=stripHtml(it.comment||it.content||"");
-      const short=full.length>maxLen?full.slice(0,maxLen)+"…":full;
-      const li=document.createElement("li");
-      li.className="group rounded-[25px] hover:bg-primary/5 transition-all duration-300 intersect:animate-fadeUp opacity-0 p-3 hover:bg-orange-500 dark:hover:bg-orange-500 hover:text-darkmode-txt-light [&_*]:hover:text-darkmode-txt-p";
-      li.style.animationDelay=`${index * 200}ms`;
-      li.innerHTML=`
-        <a class="no-underline hover:text-primary" href="${url}">
-          <div class="text-txt-light dark:text-darkmode-txt-light flex items-center gap-2 mt-1 h-8">
-            <span class="glass w-9 h-9 rounded-full overflow-hidden hover:rotate-12 duration-300">
-              <img src="${it.avatar||it.avatarUrl||""}" alt="${it.nick||it.nickname||"匿名"}" class="w-9 h-9 rounded-full">
-            </span>
-            <div class="flex flex-col justify-center leading-tight h-8">
-              <span class="text-base text-txt-p dark:text-darkmode-txt-p">${it.nick||"匿名"}</span>
-              <span class="text-xs text-slate-500 dark:text-slate-200">${new Date(it.created||Date.now()).toLocaleString()}</span>
-            </div>
-          </div>
-          <div class="text-[#3e5f6a] dark:text-darkmode-txt-p leading-7 line-clamp-2 font-semibold mt-3" title="${full.replace(/"/g,'&quot;')}">${short}</div>
-          <div class="text-sm italic opacity-0 group-hover:opacity-100 text-slate-600 dark:text-slate-100/50 border-t border-slate-300/30 dark:border-darkmode-border/30 pt-1 text-right transition-opacity duration-300">
-            来自：${title}
-          </div>
-        </a>
-      `;
+    items.forEach((it, index) => {
+      const rawUrl = it.url || it.link || "#";
+      const safeUrl = sanitizeUrl(rawUrl);
+      const path = pathFromUrl(rawUrl);
+      const title = titleMap[path] || path;
+      const rawComment = it.comment || it.content || "";
+      const full = stripHtml(rawComment);
+      const short = full.length > maxLen ? full.slice(0, maxLen) + "…" : full;
+      const nick = it.nick || it.nickname || "匿名";
+      const avatar = it.avatar || it.avatarUrl || "";
+      const dateStr = (() => {
+        try { return new Date(it.created || Date.now()).toLocaleString(); }
+        catch { return ""; }
+      })();
+
+      const li = document.createElement('li');
+      li.className = "group rounded-[25px] hover:bg-primary/5 transition-all duration-300 intersect:animate-fadeUp opacity-0 p-3 hover:bg-orange-500 dark:hover:bg-orange-500 hover:text-darkmode-txt-light [&_*]:hover:text-darkmode-txt-p";
+      li.style.animationDelay = `${index * 200}ms`;
+
+      const a = document.createElement('a');
+      a.className = 'no-underline hover:text-primary';
+      a.href = safeUrl;
+
+      const flex = document.createElement('div');
+      flex.className = 'text-txt-light dark:text-darkmode-txt-light flex items-center gap-2 mt-1 h-8';
+
+      const avatarWrap = document.createElement('span');
+      avatarWrap.className = 'glass w-9 h-9 rounded-full overflow-hidden hover:rotate-12 duration-300';
+      const img = document.createElement('img');
+      img.src = sanitizeUrl(avatar);
+      img.alt = nick;
+      img.className = 'w-9 h-9 rounded-full';
+      avatarWrap.appendChild(img);
+
+      const nameCol = document.createElement('div');
+      nameCol.className = 'flex flex-col justify-center leading-tight h-8';
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'text-base text-txt-p dark:text-darkmode-txt-p';
+      nameSpan.textContent = nick;
+      const dateSpan = document.createElement('span');
+      dateSpan.className = 'text-xs text-slate-500 dark:text-slate-200';
+      dateSpan.textContent = dateStr;
+      nameCol.appendChild(nameSpan);
+      nameCol.appendChild(dateSpan);
+
+      flex.appendChild(avatarWrap);
+      flex.appendChild(nameCol);
+
+      const commentDiv = document.createElement('div');
+      commentDiv.className = 'text-[#3e5f6a] dark:text-darkmode-txt-p leading-7 line-clamp-2 font-semibold mt-3';
+      commentDiv.textContent = short;
+      commentDiv.title = full;
+
+      const sourceDiv = document.createElement('div');
+      sourceDiv.className = 'text-sm italic opacity-0 group-hover:opacity-100 text-slate-600 dark:text-slate-100/50 border-t border-slate-300/30 dark:border-darkmode-border/30 pt-1 text-right transition-opacity duration-300';
+      sourceDiv.textContent = '来自：' + title;
+
+      a.appendChild(flex);
+      a.appendChild(commentDiv);
+      a.appendChild(sourceDiv);
+      li.appendChild(a);
       list.appendChild(li);
     });
   }
-  function load(){
+
+  function load() {
     list = document.getElementById("recent-comments-list");
-    if(!list){return}
-    if(!twikooEnvId){
+    if (!list) return;
+    if (!twikooEnvId) {
       showError("留言模块未加载，Twikoo envId 未配置。");
       return;
     }
     showLoading();
-    ensureTwikoo(()=>{
-      if(!window.twikoo){
+    ensureTwikoo(() => {
+      if (!window.twikoo) {
         showError("评论系统初始化失败");
         return;
       }
       window.twikoo.getRecentComments({ envId: twikooEnvId, pageSize: limit })
-        .then((res)=>{
-          const arr=res?.comments||res||[];
-          console.log('从twikoo获取评论列表',arr)
+        .then((res) => {
+          const arr = res?.comments || res || [];
           render(arr);
         })
-        .catch((err)=>{
+        .catch((err) => {
           console.error('获取最近评论失败', err);
           showError("评论获取失败，请稍后重试。");
         });
     });
   }
-  // document.addEventListener("DOMContentLoaded", load);
+
   document.addEventListener("astro:page-load", load);
-  function ensureTwikoo(cb){
-    if(window.twikoo){cb();return}
-    const s=document.createElement("script");
-    s.src="https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.min.js";
-    s.async=true;
-    s.onload=cb;
-    s.onerror=()=>{
-      showError("评论系统加载失败，请稍后重试。");
-    };
-    document.body.appendChild(s);
-  }
 </script>

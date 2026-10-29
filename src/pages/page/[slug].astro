@@ -23,8 +23,8 @@ interface Page {
 }
 
 export async function getStaticPaths() {
-  const blogEntries = await getCollection("pages", ({ data }) => {
-    // 仅为非草稿的文章生成页面
+  const blogEntries = await getCollection("pages", ({ data, filePath }) => {
+    if (filePath?.endsWith('-index.md')) return false;
     return data.draft !== true;
   });
   const paths = blogEntries.map((entry) => ({

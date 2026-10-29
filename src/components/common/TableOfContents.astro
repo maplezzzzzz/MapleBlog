@@ -57,11 +57,9 @@ const toc = heirarchy.filter((heading) => heading.depth <= tocDepth);
   function getHeaderHeight(): number {
     const header = document.querySelector('header');
     if (header) {
-      const headerHeight = header.offsetHeight;
-      console.log('Header height:', headerHeight); // 调试信息
-      return headerHeight + 32; // 增加更多缓冲区
+      return header.offsetHeight + 32;
     }
-    return 140; // 增加默认值
+    return 140;
   }
 
   // 平滑滚动到锚点位置并添加偏移量
@@ -90,14 +88,6 @@ const toc = heirarchy.filter((heading) => heading.depth <= tocDepth);
           
           // 计算目标滚动位置：当前滚动位置 + 元素距离视口顶部的距离 - 头部高度
           const targetScrollTop = currentScrollTop + rect.top - headerHeight;
-          
-          // 调试信息
-          console.log('Target element:', targetElement);
-          console.log('Element rect.top:', rect.top);
-          console.log('Current scroll top:', currentScrollTop);
-          console.log('Header height:', headerHeight);
-          console.log('Target scroll position:', targetScrollTop);
-          
           window.scrollTo({
             top: Math.max(0, targetScrollTop),
             behavior: 'smooth'

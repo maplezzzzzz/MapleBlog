@@ -20,7 +20,10 @@ import {
 } from "react-icons/fa";
 
 export async function getStaticPaths() {
-  const notesEntries = await getCollection("notes");
+  const notesEntries = await getCollection("notes", ({ filePath }) => {
+    if (filePath?.endsWith('-index.md')) return false;
+    return true;
+  });
   return notesEntries.map((entry) => ({
     params: { slug: slugify(entry.data.title) },
     props: { entry },

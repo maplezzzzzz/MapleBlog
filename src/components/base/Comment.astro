@@ -35,7 +35,7 @@
                 const link = document.createElement('link');
                 link.id = 'twikoo-custom-link';
                 link.rel = 'stylesheet';
-                link.href = '/src/styles/twikoo-custom.scss'; // 需要构建工具支持
+                link.href = '/src/styles/twikoo-custom.scss';
                 document.head.appendChild(link);
             }
         `;
@@ -49,13 +49,14 @@
       const list = document.getElementById("tcomment");
       if(!list) return;
       list.removeAttribute('aria-busy');
-      list.innerHTML = `
-        <div class="py-4">
-          <div class="text-center text-red-600 dark:text-red-400">
-            ${msg || "评论获取失败，请稍后重试。"}
-          </div>
-        </div>
-      `;
+      list.textContent = '';
+      const inner = document.createElement('div');
+      inner.className = 'py-4';
+      const txt = document.createElement('div');
+      txt.className = 'text-center text-red-600 dark:text-red-400';
+      txt.textContent = msg || '评论获取失败，请稍后重试。';
+      inner.appendChild(txt);
+      list.appendChild(inner);
       const btn = document.getElementById("rc-retry-btn");
       if(btn){ btn.addEventListener("click", load, { once: true }); }
     }

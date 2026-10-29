@@ -6,8 +6,7 @@ import "@/styles/main.scss";
 import { ClientRouter } from "astro:transitions";
 import Background from "@/components/base/Background.astro";
 import { Tooltips } from "astro-tooltips";
-import { SITE_INFO } from "@lib/config";
-import { isDevelopment } from "@lib/env";
+import { SITE_INFO, getSiteUrl, isDevelopment } from "@lib/config";
 
 // types for frontmatters
 export interface Props {
@@ -31,7 +30,7 @@ let customSettings: any = {};
 const siteTitle = SITE_INFO.SITE_NAME;
 const siteSubTitle = SITE_INFO.SUBNAME;
 const siteImage = SITE_INFO.LOGO_IMAGE || "/favicon.ico";
-const baseUrl = SITE_INFO.URL || "/";
+const baseUrl = getSiteUrl();
 const siteKeywords = basicSettings?.site_keywords || "";
 const siteTagline = basicSettings?.site_tagline || "";
 
@@ -107,7 +106,7 @@ const customFooterCode = customSettings?.custom_footer_code || "";
 
     <meta
       property="og:title"
-      content={`${plainify(metaTitle + " " + siteTagline)}`}
+      content={plainify(title ? title + " | " + siteTitle : siteTitle + " | " + siteSubTitle)}
     />
     <meta
       property="og:description"
@@ -125,7 +124,7 @@ const customFooterCode = customSettings?.custom_footer_code || "";
 
     <meta
       name="twitter:title"
-      content={`${plainify(metaTitle + " " + siteTagline)}`}
+      content={plainify(title ? title + " | " + siteTitle : siteTitle + " | " + siteSubTitle)}
     />
     <meta
       name="twitter:description"

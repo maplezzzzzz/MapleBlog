@@ -5,7 +5,7 @@ import { slugify } from "@lib/textConverter";
 import { getPageSize } from "@lib/config";
 import type { NotesEntry } from "@/types";
 
-console.log("进入slug页面");
+
 // 生成所有分类页面的静态路径和分页
 export async function getStaticPaths() {
   const allPosts = await getCollection("notes");

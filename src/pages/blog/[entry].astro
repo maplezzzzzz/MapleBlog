@@ -5,12 +5,9 @@ import EntryLayout from "@components/blog/EntryLayout.astro";
 export async function getStaticPaths() {
   const isDev = import.meta.env.DEV;
 
-  const blogEntries = await getCollection("blog", ({ data }) => {
-    // 生产环境只显示已发布的非草稿文章
-    // 开发环境显示所有文章（包括草稿）
-    if (isDev) {
-      return true; // 开发环境显示所有文章
-    }
+  const blogEntries = await getCollection("blog", ({ data, filePath }) => {
+    if (filePath?.endsWith('-index.md')) return false;
+    if (isDev) return true;
     return data.draft !== true;
   });
 
@@ -19,7 +16,6 @@ export async function getStaticPaths() {
     props: { entry },
   }));
 
-  console.log("paths", paths);
   return paths;
 }
 

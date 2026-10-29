@@ -4,7 +4,7 @@ import { slugify } from "@lib/textConverter";
 
 // 生成所有标签页面的静态路径
 export async function getStaticPaths() {
-  const allPosts = await getCollection("notes");
+  const allPosts = await getCollection("notes", ({ filePath }) => !filePath?.endsWith('-index.md'));
 
   // 收集所有标签
   const allTags = new Set<string>();
@@ -26,5 +26,5 @@ export async function getStaticPaths() {
 const { slug } = Astro.params;
 
 // 使用 rewrite 重写到分页路由的第一页，保持 URL 不变
-return Astro.rewrite(`/notes/tags/${encodeURI(slug)}/1`);
+return Astro.rewrite(`/notes/tags/${encodeURI(slug)}/1/`);
 ---

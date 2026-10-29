@@ -8,21 +8,23 @@ import type { BlogEntry } from "@/types";
 
 // 生成所有分类页面的静态路径和分页
 export async function getStaticPaths() {
-  const allPosts = await getCollection("blog", ({ data }) => {
+  const allPosts = await getCollection("blog", ({ data, filePath }) => {
+    if (filePath?.endsWith('-index.md')) return false;
     return data.status === "published" && !data.draft;
   });
 
-  // 收集所有分类及其文章
   const categoryPosts = new Map<string, any[]>();
   allPosts.forEach((post: any) => {
     const postCategories = post.data.categories;
-    if (postCategories && postCategories.toString()) {
-      const categoryName = postCategories.toString();
-      const categorySlug = slugify(categoryName);
-      if (!categoryPosts.has(categorySlug)) {
-        categoryPosts.set(categorySlug, []);
-      }
-      categoryPosts.get(categorySlug)!.push({ post, categoryName });
+    if (Array.isArray(postCategories)) {
+      postCategories.forEach((cat: string) => {
+        if (!cat) return;
+        const categorySlug = slugify(cat);
+        if (!categoryPosts.has(categorySlug)) {
+          categoryPosts.set(categorySlug, []);
+        }
+        categoryPosts.get(categorySlug)!.push({ post, categoryName: cat });
+      });
     }
   });
 
@@ -95,27 +97,28 @@ const entries: BlogEntry[] = categoryPosts.map((post:any) => ({
   },
 }));
 
-const allPosts = await getCollection("blog", ({ data }) => {
+const allPosts = await getCollection("blog", ({ data, filePath }) => {
+  if (filePath?.endsWith('-index.md')) return false;
   return data.status === "published" && !data.draft;
 });
-// 生成分类统计数据
 const categoryStats = new Map<string, number>();
+const categoryNames = new Map<string, string>();
 allPosts.forEach((post) => {
-  if (post.data.categories) {
-    const cat = post.data.categories;
-    if (cat && cat.toString()) {
-      categoryStats.set(
-        cat.toString(),
-        (categoryStats.get(cat.toString()) || 0) + 1,
-      );
-    }
+  const cat = post.data.categories;
+  if (Array.isArray(cat)) {
+    cat.forEach((c) => {
+      if (!c) return;
+      const s = slugify(c);
+      categoryStats.set(s, (categoryStats.get(s) || 0) + 1);
+      if (!categoryNames.has(s)) categoryNames.set(s, c);
+    });
   }
 });
 
 const categories = Array.from(categoryStats.entries())
-  .map(([name, count]) => ({
-    name,
-    slug: slugify(name),
+  .map(([slug, count]) => ({
+    name: categoryNames.get(slug) || slug,
+    slug,
     count,
   }))
   .sort((a, b) => a.name.localeCompare(b.name));

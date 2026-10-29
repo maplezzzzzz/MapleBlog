@@ -99,13 +99,11 @@ async function extractImageUrls(content: string): Promise<string> {
   if (matches) {
     matches.forEach(match => {
       const url = match.match(/\((.*?)\)/)?.[1];
-      console.log("图片URL",url)
       if (url) {
         content = content.replace(url, transformImageUrl(url));
       }
     });
   }
-  console.log("替换后的文章内容",content)
   return content;
 }
 

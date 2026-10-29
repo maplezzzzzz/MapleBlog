@@ -9,7 +9,7 @@ import type { NotesEntry } from "@/types";
 // 获取笔记每页显示数量
 const entriesPerPage = getPageSize('notes'); // 复用博客的分页配置
 
-console.log("index entriesPerPage----->",entriesPerPage)
+
 
 // 固定为第一页
 const currentPageIndex = 1;
@@ -17,7 +17,7 @@ const entryIndex = (await getIndex("notes")) as NotesEntry;
 const entries = (await getEntries("notes", sortByDate)) as NotesEntry[];
 const allNotesCount = entries.length;
 
-console.log("站点动态页面获取数据：", entryIndex)
+
 
 // 获取标签列表
 const tags = await getTaxa("notes", "tags");

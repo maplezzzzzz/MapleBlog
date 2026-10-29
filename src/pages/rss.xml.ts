@@ -22,7 +22,8 @@ function formatDate(date: Date): string {
 
 export async function GET(context: APIContext) {
   // 获取所有已发布的博客文章
-  const blog = await getCollection('blog', ({ data }) => {
+  const blog = await getCollection('blog', ({ data, filePath }) => {
+    if (filePath?.endsWith('-index.md')) return false;
     return data.draft !== true && data.status === 'published';
   });
 

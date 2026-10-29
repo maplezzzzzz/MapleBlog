@@ -79,6 +79,15 @@
 
 <script>
   // @ts-nocheck
+  const SAFE_PROTOCOLS = ['https:', 'http:'];
+  function sanitizeUrl(raw) {
+    if (!raw) return '#';
+    try {
+      const u = new URL(raw, location.href);
+      return SAFE_PROTOCOLS.includes(u.protocol) ? u.href : '#';
+    } catch { return '#'; }
+  }
+
   // 友情链接数据和状态（本地 JSON）
   let categories = [];
   let friendLinks = [];
@@ -135,7 +144,7 @@
       renderFriendLinks();
       showContent();
     } catch (error) {
-      console.error("❌ 获取友情链接数据失败:", error);
+      console.error("获取友情链接数据失败:", error);
       showError();
     }
   }
@@ -146,7 +155,7 @@
     if (totalCountEl) {
       totalCountEl.textContent = String(friendLinks.length);
     } else {
-      console.error("❌ totalCountEl 元素未找到");
+      console.error("totalCountEl element not found");
     }
 
     // 显示空状态或内容
@@ -165,7 +174,8 @@
       return;
     }
 
-    // 按分类分组友链
+    friendLinksCategories.textContent = '';
+
     const linksByCategory = {};
     friendLinks.forEach((link) => {
       const code = link && link.category_code ? link.category_code : 'default';
@@ -175,94 +185,114 @@
       linksByCategory[code].push(link);
     });
 
-    // 将分类按 sort_order 排序
     const sortedCategories = [...categories].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-
-    // 生成分类和友链的 HTML
-    let categoriesHTML = "";
 
     sortedCategories.forEach((category) => {
       const code = category && category.code ? category.code : 'default';
       const categoryLinks = (linksByCategory[code] || []).filter(l => l && l.status !== 'lost');
       if (categoryLinks.length === 0) return;
 
-      categoriesHTML += `
-        <div class="category-section mb-12">
-          <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">
-            ${category.name || ''}
-            <span class="text-lg font-normal text-txt-light dark:text-darkmode-txt-light">(${String(categoryLinks.length)})</span>
-          </h2>
-          <div class="friends-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            ${categoryLinks
-              .map((link, index) => {
-                const cardHtml = createFriendLinkCard(link, index);
-                // 添加动画延迟
-                return `<div class="friend-item" style="animation-delay: ${String(index * 0.1)}s">${cardHtml}</div>`;
-              })
-              .join("")}
-          </div>
-        </div>
-      `;
-    });
+      const section = document.createElement('div');
+      section.className = 'category-section mb-12';
 
-    friendLinksCategories.innerHTML = categoriesHTML;
+      const h2 = document.createElement('h2');
+      h2.className = 'text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200';
+      const catName = document.createElement('span');
+      catName.textContent = category.name || '';
+      const count = document.createElement('span');
+      count.className = 'text-lg font-normal text-txt-light dark:text-darkmode-txt-light';
+      count.textContent = `(${categoryLinks.length})`;
+      h2.appendChild(catName);
+      h2.appendChild(count);
+
+      const grid = document.createElement('div');
+      grid.className = 'friends-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6';
+
+      categoryLinks.forEach((link, index) => {
+        const item = document.createElement('div');
+        item.className = 'friend-item';
+        item.style.animationDelay = `${index * 0.1}s`;
+        const card = createFriendLinkCard(link);
+        item.appendChild(card);
+        grid.appendChild(item);
+      });
+
+      section.appendChild(h2);
+      section.appendChild(grid);
+      friendLinksCategories.appendChild(section);
+    });
   }
 
-  // 创建友链卡片
-  function createFriendLinkCard(link, index) {
-    const name = link && link.name ? link.name : '';
-    const url = link && link.url ? link.url : '#';
-    const description = link && link.description ? link.description : '';
-    const avatar = link && link.avatar ? link.avatar : '/favicon/logo-192x192.png';
-    const status = link && link.status ? link.status : 'active';
-    
-    return `
-      <div class="friend-card glass h-full rounded-[18px] overflow-hidden transition-all duration-300 group backdrop-blur-md relative">
-        <a href="${url}" target="_blank" rel="external nofollow noopener noreferrer" class="block h-full p-4 no-underline">
-          <div class="flex items-center space-x-3 h-full">
-            <!-- 头像 -->
-            <div class="flex items-center relative">
-              <div class="friend-avatar relative w-16 h-16 rounded-full overflow-hidden ring-2 ring-primary/20 group-hover:ring-primary/40">
-                <img src="${avatar}" alt="${name} 的头像" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" loading="lazy" onerror="this.src='/favicon/logo-192x192.png'" />
-              </div>
-              ${
-                status === "active"
-                  ? `
-                  <div class="status-indicator top-5 right-2 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-800 z-10" title="正常状态"></div>
-                `
-                  : status === "lost"
-                    ? `
-                  <div class="status-indicator top-5 right-2 w-4 h-4 bg-red-500 rounded-full border-2 border-white dark:border-gray-800 z-10" title="已丢失"></div>
-                `
-                    : status === "error"
-                      ? `
-                  <div class="status-indicator top-5 right-2 w-4 h-4 bg-red-500 rounded-full border-2 border-white dark:border-gray-800 z-10" title="连接错误"></div>
-                `
-                      : ""
-              }
-            </div>
-            
-            <!-- 内容区域 -->
-            <div class="flex-1 min-w-0">
-              <!-- 网站名称 -->
-              <div class="flex items-center gap-2 mb-1">
-                <h3 class="friend-name text-lg font-bold text-txt-p dark:text-darkmode-txt-p truncate group-hover:text-primary transition-colors duration-200">
-                  ${name}
-                </h3>
-              </div>
-              
-              <!-- 网站描述 -->
-              <p class="friend-description text-sm text-txt-light dark:text-darkmode-txt-light line-clamp-2 leading-relaxed">
-                ${description}
-              </p>
-            </div>
-          </div>
-          
-          <!-- 悬浮效果 -->
-          <div class="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[18px]"></div>
-        </a>
-      </div>
-    `;
+  // 创建友链卡片（返回 DOM 节点，无 innerHTML 注入）
+  function createFriendLinkCard(link) {
+    const name = (link && link.name) ? link.name : '';
+    const rawUrl = (link && link.url) ? link.url : '#';
+    const description = (link && link.description) ? link.description : '';
+    const avatar = (link && link.avatar) ? link.avatar : '/favicon/logo-192x192.png';
+    const status = (link && link.status) ? link.status : 'active';
+
+    const safeUrl = sanitizeUrl(rawUrl);
+    const safeAvatar = sanitizeUrl(avatar);
+
+    const card = document.createElement('div');
+    card.className = 'friend-card glass h-full rounded-[18px] overflow-hidden transition-all duration-300 group backdrop-blur-md relative';
+
+    const a = document.createElement('a');
+    a.href = safeUrl;
+    a.target = '_blank';
+    a.rel = 'external nofollow noopener noreferrer';
+    a.className = 'block h-full p-4 no-underline';
+
+    const flex = document.createElement('div');
+    flex.className = 'flex items-center space-x-3 h-full';
+
+    const avatarWrap = document.createElement('div');
+    avatarWrap.className = 'flex items-center relative';
+    const avatarInner = document.createElement('div');
+    avatarInner.className = 'friend-avatar relative w-16 h-16 rounded-full overflow-hidden ring-2 ring-primary/20 group-hover:ring-primary/40';
+    const img = document.createElement('img');
+    img.src = safeAvatar;
+    img.alt = `${name} 的头像`;
+    img.className = 'w-full h-full object-cover transition-transform duration-300 group-hover:scale-110';
+    img.loading = 'lazy';
+    img.onerror = function() { this.src = '/favicon/logo-192x192.png'; };
+    avatarInner.appendChild(img);
+    avatarWrap.appendChild(avatarInner);
+
+    if (status === 'active' || status === 'lost' || status === 'error') {
+      const indicator = document.createElement('div');
+      indicator.className = `status-indicator top-5 right-2 w-4 h-4 rounded-full border-2 border-white dark:border-gray-800 z-10 ${status === 'active' ? 'bg-green-500' : 'bg-red-500'}`;
+      indicator.title = status === 'active' ? '正常状态' : status === 'lost' ? '已丢失' : '连接错误';
+      avatarWrap.appendChild(indicator);
+    }
+
+    const content = document.createElement('div');
+    content.className = 'flex-1 min-w-0';
+
+    const nameRow = document.createElement('div');
+    nameRow.className = 'flex items-center gap-2 mb-1';
+    const nameEl = document.createElement('h3');
+    nameEl.className = 'friend-name text-lg font-bold text-txt-p dark:text-darkmode-txt-p truncate group-hover:text-primary transition-colors duration-200';
+    nameEl.textContent = name;
+    nameRow.appendChild(nameEl);
+
+    const descEl = document.createElement('p');
+    descEl.className = 'friend-description text-sm text-txt-light dark:text-darkmode-txt-light line-clamp-2 leading-relaxed';
+    descEl.textContent = description;
+
+    content.appendChild(nameRow);
+    content.appendChild(descEl);
+
+    const hover = document.createElement('div');
+    hover.className = 'absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[18px]';
+
+    flex.appendChild(avatarWrap);
+    flex.appendChild(content);
+    a.appendChild(flex);
+    a.appendChild(hover);
+    card.appendChild(a);
+
+    return card;
   }
 
   // 重试按钮事件
