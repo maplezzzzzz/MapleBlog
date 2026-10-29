@@ -2,6 +2,7 @@
 import CollectionLayout from "@components/blog/CollectionLayout.astro";
 import { getCollection } from "astro:content";
 import { slugify } from "@lib/textConverter";
+import { sortBlogByDate } from "@lib/sortFunctions";
 import { getPageSize } from "@lib/config";
 import type { BlogEntry } from "@/types";
 
@@ -31,14 +32,7 @@ export async function getStaticPaths() {
   // 为每个分类生成分页路径
   categoryPosts.forEach((posts, categorySlug) => {
     const categoryName = posts[0].categoryName;
-    const sortedPosts = posts
-      .map((p) => p.post)
-      .sort((a, b) => {
-        const dateA = a.data.publishedAt || a.data.createdAt;
-        const dateB = b.data.publishedAt || b.data.createdAt;
-        if (!dateA || !dateB) return 0;
-        return new Date(dateB).getTime() - new Date(dateA).getTime();
-      });
+    const sortedPosts = sortBlogByDate(posts.map((p) => p.post));
 
     const pageCount = Math.ceil(sortedPosts.length / entriesPerPage);
 

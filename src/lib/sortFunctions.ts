@@ -10,6 +10,21 @@ export const sortByDate = (entries: GenericEntry[]): GenericEntry[] => {
   return sortedEntries;
 };
 
+// Blog lists use publication time, falling back to creation time.
+export const sortBlogByDate = <T extends { id: string; data: { publishedAt?: Date; createdAt?: Date } }>(entries: T[]): T[] => {
+  const time = (entry: T) => {
+    const date = entry.data.publishedAt ?? entry.data.createdAt;
+    const value = date?.getTime();
+    return value !== undefined && Number.isFinite(value) ? value : Number.NEGATIVE_INFINITY;
+  };
+  return entries.sort((a, b) => {
+    const aTime = time(a);
+    const bTime = time(b);
+    if (aTime !== bTime) return aTime > bTime ? -1 : 1;
+    return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  });
+};
+
 //sort by update
 export const sortByUpdate = (entries: GenericEntry[]): GenericEntry[] => {
   const sortedEntries = entries.sort(

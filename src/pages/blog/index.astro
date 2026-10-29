@@ -2,14 +2,14 @@
 import CollectionLayout from "@components/blog/CollectionLayout.astro";
 import { getTaxaMultiset, getTaxa, getTaxaWithCount } from "@lib/taxonomyParser";
 import { getEntries, getIndex } from "@lib/contentParser";
-import { sortByDate } from "@lib/sortFunctions";
+import { sortBlogByDate } from "@lib/sortFunctions";
 import { getPageSize } from "@lib/config";
 import type { BlogEntry } from "@/types";
 
 const currentPageIndex = 1;
 
 const entryIndex = (await getIndex("blog")) as BlogEntry;
-const entries = (await getEntries("blog", sortByDate)) as BlogEntry[];
+const entries = (await getEntries("blog", sortBlogByDate)) as BlogEntry[];
 const allBlogCount = entries.length;
 
 // 获取带有文章数量的分类数据

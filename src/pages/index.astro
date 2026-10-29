@@ -10,7 +10,7 @@ import ArticleCalendar from "@components/home/ArticleCalendar.astro";
 import AuthorProfile from "@components/home/AuthorProfile.astro";
 import { type CollectionEntry } from "astro:content";
 import { getSiteStats } from "@lib/contentParser";
-import { sortByDate } from "@lib/sortFunctions";
+import { sortByDate, sortBlogByDate } from "@lib/sortFunctions";
 import { getEntries } from "@lib/contentParser";
 import RecentComments from "@components/common/RecentComments.astro";
 import RecommendedReadCardComponent from "@components/blog/RecommendedReadCard.astro";
@@ -20,14 +20,9 @@ import RecommendedReadCardComponent from "@components/blog/RecommendedReadCard.a
 // 社交链接逻辑已移至 AuthorProfile 组件
 
 // 获取所有博客文章并排序
-const allPosts = (await getEntries("blog", sortByDate)) as BlogEntry[];
+const allPosts = (await getEntries("blog", sortBlogByDate)) as BlogEntry[];
 const publishedPosts = allPosts
-  .filter((post) => post.data.status === "published")
-  .sort((a, b) => {
-    const dateA = new Date(a.data.publishedAt || 0);
-    const dateB = new Date(b.data.publishedAt || 0);
-    return dateB.getTime() - dateA.getTime();
-  });
+  .filter((post) => post.data.status === "published");
 
 // 获取最新的动态内容
 const latestNotes = (await getEntries(
@@ -43,8 +38,8 @@ const featuredArticles = publishedPosts.slice(0, 8).map((post) => ({
   image: post.data.image || defaultImg,
   imageAlt: post.data.imageAlt || post.data.title,
   excerpt: post.data.description || "",
-  publishedAt: post.data.publishedAt || new Date(),
-  date: post.data.publishedAt || new Date(),
+  publishedAt: post.data.publishedAt || post.data.createdAt,
+  date: post.data.publishedAt || post.data.createdAt,
   categories: post.data.categories ? [post.data.categories] : [],
   tags: post.data.tags || [],
   complexity: "beginner",
@@ -53,7 +48,7 @@ const featuredArticles = publishedPosts.slice(0, 8).map((post) => ({
 }));
 
 const featuredPosts = (
-  (await getEntries("blog", sortByDate)) as BlogEntry[]
+  (await getEntries("blog", sortBlogByDate)) as BlogEntry[]
 ).slice(0, 8);
 
 // 获取分类数据

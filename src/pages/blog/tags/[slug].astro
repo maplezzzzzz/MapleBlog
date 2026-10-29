@@ -2,6 +2,7 @@
 import type { BlogEntry } from "@/types";
 import TaxonLayout from "@components/blog/TaxonLayout.astro";
 import { getCollection } from "astro:content";
+import { sortBlogByDate } from "@lib/sortFunctions";
 import { slugify } from "@lib/textConverter";
 
 export const prerender = true;
@@ -38,12 +39,12 @@ const allPosts = await getCollection("blog", ({ data }) => {
 });
 
 // 筛选包含当前标签的文章
-const entries: BlogEntry[] = allPosts
+const entries: BlogEntry[] = sortBlogByDate(allPosts
   .filter(post => {
     return post.data.tags && 
            Array.isArray(post.data.tags) && 
            post.data.tags.some(tag => slugify(tag) === slug);
-  })
+  }))
   .map(post => ({
     id: post.id,
     slug: post.id,
@@ -66,12 +67,7 @@ const entries: BlogEntry[] = allPosts
       views: post.data.views,
       hideToc: post.data.hideToc
     }
-  } as BlogEntry))
-  .sort((a, b) => {
-    const dateA = new Date(a.data.publishedAt!);
-    const dateB = new Date(b.data.publishedAt!);
-    return dateB.getTime() - dateA.getTime();
-  });
+  } as BlogEntry));
 ---
 
 <TaxonLayout taxon={taxon} entries={entries} />
